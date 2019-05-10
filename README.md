@@ -1,5 +1,7 @@
 # torchgpipe
 
+[![Build Status](https://travis-ci.org/KakaoBrain/torchgpipe.svg?branch=master)](https://travis-ci.org/KakaoBrain/torchgpipe)
+
 A [GPipe](https://arxiv.org/abs/1811.06965) implementation in PyTorch.
 
 ```python
