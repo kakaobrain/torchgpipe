@@ -11,3 +11,8 @@ model = GPipe(model, balance=[1,1,1,1], chunks=8)
 for input in data_loader:
     outputs = model(input)
 ```
+
+---
+
+This project is still under development. Any public API would be changed
+without deprecation warnings until v0.1.0.
