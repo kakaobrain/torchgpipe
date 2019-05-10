@@ -13,7 +13,7 @@ setup(
     maintainer='Heungsub Lee, Myungryong Jeong',
     zip_safe=False,
     packages=['torchgpipe'],
-    install_requires=['torch'],
+    install_requires=['torch>=1,<1.1'],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest'],
+    tests_require=['pytest>=4'],
 )
