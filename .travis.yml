@@ -1,0 +1,33 @@
+language: python
+
+# Supported Python versions
+dist: xenial  # required for Python >= 3.7
+python:
+  - 3.6
+  - 3.7
+
+# Supported PyTorch versions
+env:
+  - PYTORCH=1.0.0
+  - PYTORCH=1.0.1
+
+stages:
+  - lint
+  - test
+
+# Run Lint first with Python 3.6 and PyTorch 1.0.0.
+jobs:
+  include:
+    - stage: lint
+      install:
+        - pip install flake8 mypy
+      script:
+        - flake8 .
+        - mypy .
+
+# Test with various Python and PyTorch versions.
+install:
+  - pip install torch==$PYTORCH
+  - python setup.py install
+script:
+  - python setup.py test
