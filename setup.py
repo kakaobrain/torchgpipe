@@ -14,4 +14,6 @@ setup(
     zip_safe=False,
     packages=['torchgpipe'],
     install_requires=['torch'],
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
 )
