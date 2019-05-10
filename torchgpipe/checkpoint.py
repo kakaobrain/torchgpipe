@@ -14,7 +14,7 @@ Function = Callable[[TensorOrTensors], TensorOrTensors]
 
 
 def checkpoint(module: Function, input: TensorOrTensors) -> Tuple[TensorOrTensors, Tensor]:
-    """Checkpoints a model or part of the model.
+    """Makes a checkpoint at the given module.
 
     It is very similar to :func:`torch.utils.checkpoint.checkpoint` but it
     provides a recomputation autograd edge together to allow recomputing before
@@ -51,7 +51,7 @@ def checkpoint(module: Function, input: TensorOrTensors) -> Tuple[TensorOrTensor
 
 
 class Result:
-    """The shared memory between :class:`Checkpoint` and :class:`Recompute`."""
+    """A shared memory between :class:`Checkpoint` and :class:`Recompute`."""
     __slots__ = ('value',)
 
     def __init__(self) -> None:
@@ -70,8 +70,9 @@ class Context:
     """
     result: Result
 
-    # NOTE(sublee): module cannot be annotated with Function
-    # because mypy infers this attribute as an instance method.
+    # NOTE(sublee): 'module' cannot be annotated with 'Function' because mypy
+    # infers this attribute as an instance method. That's why this is annotated
+    # with 'Any' instead.
     # See: https://github.com/python/mypy/issues/708.
     module: Any
 

@@ -27,7 +27,7 @@ ChunkedTensorOrTensors = Union[List[Tensor], List[Tensors]]
 
 
 class Message(NamedTuple):
-    """Partitions communicate with this message."""
+    """Workers communicate with this message."""
     i: int
     payload: Any
 
@@ -49,7 +49,7 @@ class GPipe(nn.Module):
     each device just like naive model parallelism. Its :meth:`forward` divides
     a mini-batch into multiple micro-batches. Each partition sends a
     micro-batch output to the next partition then takes the next micro-batch as
-    soon as possible. So unlike native model parallelism, those partitions can
+    soon as possible. So unlike naive model parallelism, those partitions can
     be overlapped with each other.
 
     GPipe also integrates checkpointing to futher reduce memory usage.
@@ -57,15 +57,15 @@ class GPipe(nn.Module):
     pass.
 
     .. note::
-        There are still idle time called "bubbling." The utilization might be
-        less than 100%. But the bubbling can be partly shrunk by the number of
-        micro-batches or partiiton balancing.
+        There are still idle time called "bubbling" so the utilization might be
+        less than 100%. But the bubbling can be partly shrunk by increasing the
+        number of micro-batches or balanced partitioning.
 
     Args:
         module (nn.Sequential):
             sequential module to be parallelized
         balance (ints):
-            lengths of each partition
+            lengths of layers on each partition
 
     Keyword Args:
         devices (iterable of devices):
@@ -73,7 +73,7 @@ class GPipe(nn.Module):
         chunks (int):
             number of micro-batches (default: 1)
         checkpoint (str):
-            when checkpoints are enabled, one of 'always', 'except_last', or
+            when to enable checkpoints, one of 'always', 'except_last', or
             'never' (default: 'except_last')
         deferred_batch_norm (bool):
             enable deferred BatchNorm moving statistics (default: False)
