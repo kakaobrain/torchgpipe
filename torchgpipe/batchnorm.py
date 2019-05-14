@@ -6,6 +6,8 @@ from torch import Tensor
 import torch.nn as nn
 from torch.nn.modules.batchnorm import _BatchNorm as BatchNorm
 
+from torchgpipe.checkpoint import is_recomputing
+
 __all__ = ['patch_deferred_batch_norm']
 
 
@@ -42,6 +44,13 @@ class DeferredBatchNormHook:
         if not (bn.training and bn.track_running_stats):
             return
 
+        # Don't track the running stats of this batch. It is already deferred.
+        bn.track_running_stats = False
+
+        # Skip if this forward pass is triggered by checkpoint recomputation.
+        if is_recomputing():
+            return
+
         input, = inputs
 
         # Detach from the autograd graph.
@@ -56,9 +65,6 @@ class DeferredBatchNormHook:
 
         size = input.size().numel() / input.size(1)
         bn.counter += size
-
-        # Don't track the running stats of this batch. It is already deferred.
-        bn.track_running_stats = False
 
         # Enable the backward hook.
         self.tracked = True
