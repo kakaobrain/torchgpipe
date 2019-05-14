@@ -380,3 +380,19 @@ def test_lockstep():
     # Partition #1:    000! 111! 222!
     #
     assert timeline == [(0, 0), (0, 1), (1, 0), (0, 2), (1, 1), (1, 2)]
+
+
+@pytest.mark.parametrize('checkpoint', ['never', 'always', 'except_last'])
+def test_deferred_batch_norm(checkpoint):
+    bn = nn.BatchNorm2d(3)
+    bn_under_gpipe = nn.BatchNorm2d(3)
+
+    gpipe = GPipe(nn.Sequential(bn_under_gpipe), balance=[1], devices=['cpu'], chunks=2,
+                  checkpoint=checkpoint, deferred_batch_norm=True)
+
+    x = torch.rand(4, 3, 10, 10)
+    gpipe(x).mean().backward()
+    bn(x)
+
+    assert torch.allclose(bn_under_gpipe.running_mean, bn.running_mean, atol=1e-4)
+    assert torch.allclose(bn_under_gpipe.running_var, bn.running_var, atol=1e-4)
