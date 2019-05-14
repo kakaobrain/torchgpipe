@@ -22,6 +22,7 @@ setup(
     zip_safe=False,
 
     packages=['torchgpipe'],
+    package_data={'torchgpipe': ['py.typed']},
 
     install_requires=['torch>=1,<1.1'],
     setup_requires=['pytest-runner'],
