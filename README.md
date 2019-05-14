@@ -1,6 +1,6 @@
 # torchgpipe
 
-[![Build Status](https://travis-ci.org/KakaoBrain/torchgpipe.svg?branch=master)](https://travis-ci.org/KakaoBrain/torchgpipe)
+[![Build Status](https://travis-ci.org/kakaobrain/torchgpipe.svg?branch=master)](https://travis-ci.org/kakaobrain/torchgpipe)
 
 A [GPipe](https://arxiv.org/abs/1811.06965) implementation in PyTorch.
 
