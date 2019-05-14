@@ -22,7 +22,7 @@ jobs:
       install:
         - pip install flake8 mypy
       script:
-        - flake8 .
+        - flake8
         - mypy .
 
 # Test with various Python and PyTorch versions.
