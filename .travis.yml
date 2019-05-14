@@ -27,7 +27,10 @@ jobs:
 
 # Test with various Python and PyTorch versions.
 install:
+  - pip install pytest-cov coveralls
   - pip install torch==$PYTORCH
   - python setup.py install
 script:
-  - python setup.py test
+  - PYTEST_ADDOPTS='--cov torchgpipe' python setup.py test
+after_success:
+  - coveralls
