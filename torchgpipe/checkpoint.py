@@ -1,11 +1,12 @@
 """Checkpointing with preceding recomputaiton."""
+import threading
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
 import torch.autograd
 
-__all__ = ['checkpoint', 'first']
+__all__ = ['checkpoint', 'is_recomputing', 'first']
 
 
 Tensors = Tuple[Tensor, ...]
@@ -143,6 +144,15 @@ class Recompute(torch.autograd.Function):
         return (None,) * (len(ctx.saved_tensors) + 4)
 
 
+_local = threading.local()
+
+
+def is_recomputing() -> bool:
+    """Whether if the current thread is under checkpoint recomputation."""
+    # 'recompute_once' sets it as True jus for recompuation.
+    return getattr(_local, 'is_recomputing', False)
+
+
 def recompute_once(ctx: Context) -> Tuple[TensorOrTensors, Tensors]:  # pragma: no cover
     """Ensures the recomputation only once."""
     already_recomputed = ctx.result.get()
@@ -152,8 +162,12 @@ def recompute_once(ctx: Context) -> Tuple[TensorOrTensors, Tensors]:  # pragma: 
     input = ctx.saved_tensors
     input_leaf = tuple(x.detach().requires_grad_() for x in input)
 
-    with torch.enable_grad():
-        output = ctx.module(input_leaf[0] if ctx.unwrap_input else input_leaf)
+    _local.is_recomputing = True
+    try:
+        with torch.enable_grad():
+            output = ctx.module(input_leaf[0] if ctx.unwrap_input else input_leaf)
+    finally:
+        _local.is_recomputing = False
 
     ctx.result.set((output, input_leaf))
 
