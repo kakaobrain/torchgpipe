@@ -4,6 +4,23 @@
 
 A [GPipe](https://arxiv.org/abs/1811.06965) implementation in PyTorch.
 
+## How to use
+
+Prerequisites are:
+
+- Python 3.6+
+- PyTorch 1.0
+
+Install via PyPI:
+
+```sh
+$ pip install torchgpipe
+```
+
+Wrap your `nn.Sequential` module with `torchgpipe.GPipe`. You have to specify
+`balance` to partition the module. Then you can specify the number of
+micro-batches with `chunks`:
+
 ```python
 from torchgpipe import GPipe
 
