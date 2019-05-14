@@ -57,10 +57,10 @@ class Result:
     def __init__(self) -> None:
         self.value: Any = None
 
-    def set(self, value: Any) -> None:
+    def set(self, value: Any) -> None:  # pragma: no cover
         self.value = value
 
-    def get(self) -> Any:
+    def get(self) -> Any:  # pragma: no cover
         return self.value
 
 
@@ -80,7 +80,7 @@ class Context:
 
     saved_tensors: Tuple[Tensor, ...]
 
-    def save_for_backward(self, *tensors: Tensor) -> None:
+    def save_for_backward(self, *tensors: Tensor) -> None:  # pragma: no cover
         pass
 
 
@@ -104,7 +104,9 @@ class Checkpoint(torch.autograd.Function):
         return output
 
     @staticmethod
-    def backward(ctx: Context, *grad_output: Tensor) -> Tuple[Optional[Tensor], ...]:
+    def backward(ctx: Context,
+                 *grad_output: Tensor,
+                 ) -> Tuple[Optional[Tensor], ...]:  # pragma: no cover
         output, input_leaf = recompute_once(ctx)
 
         if isinstance(output, tuple):
@@ -135,13 +137,13 @@ class Recompute(torch.autograd.Function):
         return dummy
 
     @staticmethod
-    def backward(ctx: Context, *grad_output: Tensor) -> Tuple[None, ...]:
+    def backward(ctx: Context, *grad_output: Tensor) -> Tuple[None, ...]:  # pragma: no cover
         _ = grad_output
         recompute_once(ctx)
         return (None,) * (len(ctx.saved_tensors) + 4)
 
 
-def recompute_once(ctx: Context) -> Tuple[TensorOrTensors, Tensors]:
+def recompute_once(ctx: Context) -> Tuple[TensorOrTensors, Tensors]:  # pragma: no cover
     """Ensures the recomputation only once."""
     already_recomputed = ctx.result.get()
     if already_recomputed:
@@ -180,5 +182,5 @@ class First(torch.autograd.Function):
         return tensor1
 
     @staticmethod
-    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, None]:
+    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, None]:  # pragma: no cover
         return grad_output, None

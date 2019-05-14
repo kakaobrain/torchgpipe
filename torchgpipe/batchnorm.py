@@ -67,7 +67,9 @@ class DeferredBatchNormHook:
         # Any internal state modified by this hook should not be visible to users.
         bn.track_running_stats = True
 
-    def backward_hook(self, bn: BatchNorm, grad_input: Tensor, grad_output: Tensor) -> None:
+    def backward_hook(self, bn: BatchNorm,
+                      grad_input: Tensor,
+                      grad_output: Tensor) -> None:  # pragma: no cover
         if not self.tracked:
             return
 

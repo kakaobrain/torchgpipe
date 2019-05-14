@@ -57,6 +57,13 @@ def test_running_stats(bn, def_bn):
     assert torch.allclose(bn.running_var, def_bn.running_var, atol=1e-4)
 
 
+def test_noop():
+    bn = nn.BatchNorm2d(3, track_running_stats=False)
+    bn.apply(patch_deferred_batch_norm)
+    y = bn(torch.rand(16, 3, 224, 224))
+    y.mean().backward()
+
+
 def test_eval(bn, def_bn):
     input = torch.rand(16, 3, 224, 224)
     input = tilt_dist(input)

@@ -237,7 +237,7 @@ def test_exception_early_stop():
     count_front = Counter()
     count_back = Counter()
     model = nn.Sequential(count_front, Raise(), count_back)
-    model = GPipe(model, balance=[1, 2], devices=['cpu', 'cpu'], chunks=1000)
+    model = GPipe(model, balance=[1, 1, 1], devices=['cpu', 'cpu', 'cpu'], chunks=1000)
 
     with pytest.raises(ExpectedException):
         model(torch.rand(1000, 1))
