@@ -173,6 +173,10 @@ class GPipe(nn.Module):
         else:
             devices = [torch.device(d) for d in devices]
 
+        if len(balance) > len(devices):
+            raise ValueError('too few devices to hold given partitions '
+                             '(devices: %s, paritions: %d)' % (len(devices), len(balance)))
+
         i = 0
         partitions = []
         partition_layers = []

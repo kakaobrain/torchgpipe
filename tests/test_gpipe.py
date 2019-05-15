@@ -51,6 +51,15 @@ def test_balance_wrong_length():
         GPipe(model, balance=[3])
 
 
+def test_too_few_devices():
+    x = nn.Linear(1, 1)
+    model = nn.Sequential(x, x, x, x)
+
+    with pytest.raises(ValueError):
+        # len(balance) > len(devices)
+        model = GPipe(model, balance=[1,1,1,1], devices=['cpu'])
+
+
 def test_identicalness():
     def sum_grad(parameters):
         return sum([p.grad.sum() for p in parameters if p.grad is not None])
