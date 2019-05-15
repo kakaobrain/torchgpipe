@@ -2,14 +2,16 @@ from setuptools import setup
 
 
 about = {}  # type: ignore
-with open('torchgpipe/__about__.py') as f:
+with open('torchgpipe/__version__.py') as f:
     exec(f.read(), about)  # pylint: disable=W0122
+version = about['__version__']
+del about
 
 
 setup(
     name='torchgpipe',
 
-    version=about['__version__'],
+    version=version,
 
     license='Apache License 2.0',
     url='https://github.com/kakaobrain/torchgpipe',
