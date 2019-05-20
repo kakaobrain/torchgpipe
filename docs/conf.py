@@ -22,7 +22,13 @@ copyright = '2019, Kakao Brain'
 author = 'Kakao Brain'
 
 # The full version, including alpha/beta/rc tags
-release = __import__('torchgpipe').__version__
+about = {}
+with open('../torchgpipe/__version__.py') as f:
+    exec(f.read(), about)
+release = about['__version__']
+del about
+
+master_doc = 'index'
 
 
 # -- General configuration ---------------------------------------------------
@@ -47,6 +53,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 extensions.append('sphinx.ext.intersphinx')
 intersphinx_mapping = {'torch': ('https://pytorch.org/docs/stable/', None)}
 
+# Mock up 'torch' to make sure build on Read the Docs.
+autodoc_mock_imports = ['torch']
 
 # -- Options for HTML output -------------------------------------------------
 
