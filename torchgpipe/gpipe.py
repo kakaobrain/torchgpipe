@@ -41,31 +41,29 @@ class Message(NamedTuple):
 
 
 class GPipe(nn.Module):
-    """Implements `GPipe <https://arxiv.org/abs/1811.06965>`_ a scalable
-    pipeline parallelism at the module level. GPipe aims to reduce peak memory
-    usage while minimizing device under-untilization.
+    """Wraps an arbitrary :class:`~torch.nn.Sequential` module to train on
+    GPipe_. If the module requires lots of memory, GPipe will be very
+    efficient::
 
-    This container separates a sequential module into several partitions over
-    each device just like naive model parallelism. Its :meth:`forward` divides
-    a mini-batch into multiple micro-batches. Each partition sends a
-    micro-batch output to the next partition then takes the next micro-batch as
-    soon as possible. So unlike naive model parallelism, those partitions can
-    be overlapped with each other.
+        model = torch.nn.Sequential(l1, l2, l3, l4)
+        gpipe = GPipe(model, balance=[1,1,1,1], chunks=8)
+        output = gpipe(input)
 
-    GPipe also integrates checkpointing to futher reduce memory usage.
-    Recomputation of a micro-batch can be evaluated preceding its backward
-    pass.
+    .. _GPipe: https://arxiv.org/abs/1811.06965
 
-    .. note::
-        There are still idle time called "bubbling" so the utilization might be
-        less than 100%. But the bubbling can be partly shrunk by increasing the
-        number of micro-batches or balanced partitioning.
+    GPipe combines pipeline parallelism with checkpointing to reduce peak
+    memory required to train while minimizing device under-utilization.
+
+    You should determine the balance when defining a GPipe module, as balancing
+    will not be done automatically. The module will be partitioned into
+    multiple devices according to the given balance. You may rely on heuristics
+    to find your own optimal configuration.
 
     Args:
         module (nn.Sequential):
             sequential module to be parallelized
         balance (ints):
-            lengths of layers on each partition
+            list of number of layers in each partition
 
     Keyword Args:
         devices (iterable of devices):
@@ -73,16 +71,10 @@ class GPipe(nn.Module):
         chunks (int):
             number of micro-batches (default: 1)
         checkpoint (str):
-            when to enable checkpoints, one of 'always', 'except_last', or
+            when to enable checkpointing, one of 'always', 'except_last', or
             'never' (default: 'except_last')
         deferred_batch_norm (bool):
-            enable deferred BatchNorm moving statistics (default: False)
-
-    Example::
-
-        >>> model = torch.nn.Sequential(l1, l2, l3, l4)
-        >>> gpipe = GPipe(model, balance=[1, 1, 1, 1], chunks=8)
-        >>> output = gpipe(input)
+            whether to use deferred BatchNorm moving statistics (default: False)
 
     """
 
@@ -351,6 +343,19 @@ class GPipe(nn.Module):
         return output
 
     def forward(self, input: TensorOrTensors) -> TensorOrTensors:
+        """:class:`GPipe` is a fairly transparent module wrapper. It doesn't
+        modify the input and output signature of the underlying module. But
+        there's type restriction. Input and output have to be a
+        :class:`~torch.Tensor` or a tuple of tensors. This restriction is
+        applied at partition boundaries too.
+
+        Args:
+            input (tensor or tensors): input mini-batch
+
+        Returns:
+            tensor or tensors: output mini-batch
+
+        """
         in_queue, out_queue = self.spawn_workers()
         num_inputs = self.push_input(input, in_queue)
         return self.pull_output(num_inputs, in_queue, out_queue)
