@@ -45,9 +45,9 @@ class GPipe(nn.Module):
     GPipe_. If the module requires lots of memory, GPipe will be very
     efficient::
 
-        model = torch.nn.Sequential(l1, l2, l3, l4)
-        gpipe = GPipe(model, balance=[1,1,1,1], chunks=8)
-        output = gpipe(input)
+        model = nn.Sequential(a, b, c, d)
+        model = GPipe(model, balance=[1, 1, 1, 1], chunks=8)
+        output = model(input)
 
     .. _GPipe: https://arxiv.org/abs/1811.06965
 

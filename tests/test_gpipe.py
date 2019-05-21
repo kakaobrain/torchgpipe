@@ -57,7 +57,7 @@ def test_too_few_devices():
 
     with pytest.raises(ValueError):
         # len(balance) > len(devices)
-        model = GPipe(model, balance=[1,1,1,1], devices=['cpu'])
+        model = GPipe(model, balance=[1, 1, 1, 1], devices=['cpu'])
 
 
 def test_identicalness():
