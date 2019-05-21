@@ -94,6 +94,8 @@ class GPipe(nn.Module):
         self._partitions, self.balance, self.in_device, self.out_device = \
             self.partition(module, balance, devices)
 
+        if chunks <= 0:
+            raise ValueError('number of chunks must be positive integer')
         self.chunks = chunks
 
         if checkpoint not in ['always', 'except_last', 'never']:
@@ -159,6 +161,9 @@ class GPipe(nn.Module):
         if len(module) != sum(balance):
             raise ValueError('module and sum of balance have different length '
                              '(module: %d, sum of balance: %d)' % (len(module), sum(balance)))
+        if any(x <= 0 for x in balance):
+            raise ValueError('all balance numbers must be positive integer '
+                             '(balance: %r)' % balance)
 
         if devices is None:
             devices = [torch.device(d) for d in range(torch.cuda.device_count())]

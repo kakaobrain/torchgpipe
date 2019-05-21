@@ -51,6 +51,29 @@ def test_balance_wrong_length():
         GPipe(model, balance=[3])
 
 
+def test_balance_less_than_1():
+    a = nn.Linear(1, 1)
+    b = nn.Linear(1, 1)
+
+    model = nn.Sequential(a, b)
+
+    with pytest.raises(ValueError):
+        GPipe(model, balance=[0, 2])
+
+    with pytest.raises(ValueError):
+        GPipe(model, balance=[-1, 3])
+
+
+def test_chunks_less_than_1():
+    model = nn.Sequential(nn.Linear(1, 1))
+
+    with pytest.raises(ValueError):
+        GPipe(model, balance=[1], devices=['cpu'], chunks=0)
+
+    with pytest.raises(ValueError):
+        GPipe(model, balance=[1], devices=['cpu'], chunks=-1)
+
+
 def test_too_few_devices():
     x = nn.Linear(1, 1)
     model = nn.Sequential(x, x, x, x)
