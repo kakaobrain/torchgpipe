@@ -4,6 +4,7 @@
 [![Build Status](https://travis-ci.org/kakaobrain/torchgpipe.svg?branch=master)](https://travis-ci.org/kakaobrain/torchgpipe)
 [![Coverage Status](https://coveralls.io/repos/github/KakaoBrain/torchgpipe/badge.svg?branch=master)](https://coveralls.io/github/KakaoBrain/torchgpipe?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/torchgpipe/badge/?version=latest)](https://torchgpipe.readthedocs.io/en/latest/?badge=latest)
+[![English README](https://img.shields.io/badge/readme-english-blue.svg)](README.md)
 
 PyTorch 용 [GPipe](https://arxiv.org/abs/1811.06965) 구현입니다. TPU 대신
 CUDA를 활용합니다.
