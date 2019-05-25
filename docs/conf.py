@@ -64,7 +64,7 @@ autodoc_mock_imports = ['torch']
 html_theme = 'alabaster'
 
 html_theme_options = {
-    'description': 'GPipe in PyTorch',
+    'description': 'GPipe for PyTorch',
 
     'github_user': 'KakaoBrain',
     'github_repo': 'torchgpipe',

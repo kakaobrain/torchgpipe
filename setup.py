@@ -18,7 +18,7 @@ setup(
     author='Kakao Brain',
     maintainer='Heungsub Lee, Myungryong Jeong',
 
-    description='GPipe in PyTorch',
+    description='GPipe for PyTorch',
     keywords='pytorch gpipe',
 
     zip_safe=False,
