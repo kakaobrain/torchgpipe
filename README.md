@@ -13,7 +13,7 @@ A [GPipe](https://arxiv.org/abs/1811.06965) implementation in PyTorch.
 Prerequisites are:
 
 - Python 3.6+
-- PyTorch 1.0
+- PyTorch 1.0+
 - Your `nn.Sequential` module
 
 Install via PyPI:
