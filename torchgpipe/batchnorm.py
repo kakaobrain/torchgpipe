@@ -46,6 +46,8 @@ class DeferredBatchNormHook:
 
         # Don't track the running stats of this batch. It is already deferred.
         bn.track_running_stats = False
+        bn.momentum_ = bn.momentum
+        bn.momentum = None
 
         # Skip if this forward pass is triggered by checkpoint recomputation.
         if is_recomputing():
@@ -72,6 +74,12 @@ class DeferredBatchNormHook:
     def forward_hook(self, bn: BatchNorm, input: Tensor, output: Tensor) -> None:
         # Any internal state modified by this hook should not be visible to users.
         bn.track_running_stats = True
+        try:
+            bn.momentum = bn.momentum_
+        except AttributeError:
+            pass
+        else:
+            del bn.momentum_
 
     def backward_hook(self, bn: BatchNorm,
                       grad_input: Tensor,
