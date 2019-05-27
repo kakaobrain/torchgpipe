@@ -15,7 +15,7 @@ from torchgpipe.checkpoint import first
 from torchgpipe.microbatch import gather, scatter
 from torchgpipe.partition import Partition
 
-__all__ = ['GPipe']
+__all__ = ['GPipe', 'current_microbatch']
 
 
 Device = Union[torch.device, int, str]
@@ -38,6 +38,25 @@ class Message(NamedTuple):
         # need this class instead of a built-in tuple.
         other_i, _ = other
         return self.i < other_i
+
+
+# The micro-batch leaf tensor storage for each partition worker thread.
+_local = threading.local()
+
+
+def current_microbatch() -> Optional[Tensor]:
+    """Gets the current micro-batch identifier as a tensor.
+
+    If your modules should rely on where the current micro-batch lane, use it
+    to identify the lane.
+
+    It returns ``None`` on out of partitions.
+
+    """
+    try:
+        return _local.microbatch
+    except AttributeError:
+        return None
 
 
 class GPipe(nn.Module):
@@ -249,7 +268,11 @@ class GPipe(nn.Module):
             if failed:
                 continue
 
-            input, checkpoint = msg.payload
+            input, leaf, checkpoint = msg.payload
+
+            # Track the current micro-batch lane by the leaf tensor of the
+            # lane. It can be accessed by current_microbatch().
+            _local.microbatch = leaf
 
             # Linearize micro-batches by dependency between nth micro-batch
             # input and n-1th micro-batch output. It prevents unexpected
@@ -279,7 +302,7 @@ class GPipe(nn.Module):
             # don't send the current micro-batch until the next partition is ready to receive it.
             out_queue.join()
 
-            msg = Message(msg.i, (output, checkpoint))
+            msg = Message(msg.i, (output, leaf, checkpoint))
             out_queue.put(msg)
 
     def push_input(self,
@@ -302,7 +325,11 @@ class GPipe(nn.Module):
             elif self.checkpoint == 'never':
                 checkpoint = False
 
-            msg = Message(i, (_input, checkpoint))
+            # Every partition should track the current micro-batch. A
+            # micro-batch lane can be identified its detached leaf tensor.
+            leaf = (_input[0] if isinstance(_input, tuple) else _input).detach()
+
+            msg = Message(i, (_input, leaf, checkpoint))
             in_queue.put(msg)
 
         close = Message(num_inputs, None)
@@ -339,7 +366,7 @@ class GPipe(nn.Module):
                 exc_info = msg.payload
                 raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
 
-            output, _ = msg.payload
+            output, _, _ = msg.payload
             outputs.append(output)
 
         output = gather(outputs, device=self.out_device)
