@@ -130,7 +130,7 @@ License 2.0 사용권](LICENSE)으로 배포됩니다.
 @Misc{torchgpipe,
   author       = {Kakao Brain},
   title        = {torchgpipe, {A} {GPipe} implementation in {PyTorch}},
-  howpublished = {\url{https://github.com/KakaoBrain/torchgpipe/}},
+  howpublished = {\url{https://github.com/kakaobrain/torchgpipe/}},
   year         = {2019}
 }
 ```
