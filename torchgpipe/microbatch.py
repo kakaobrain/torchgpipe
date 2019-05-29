@@ -31,7 +31,10 @@ def _scatter_1(tensor: Tensor, chunks: int, device: torch.device) -> List[Tensor
         tensor = tensor.to(device)
         return list(torch.chunk(tensor, chunks))
 
-    return list(torch.cuda.comm.scatter(tensor, [device.index] * chunks))
+    device_id = device.index
+    if device_id is None:
+        device_id = torch.cuda.current_device()
+    return list(torch.cuda.comm.scatter(tensor, [device_id] * chunks))
 
 
 def gather(outputs: ChunkedTensorOrTensors, device: torch.device) -> TensorOrTensors:
@@ -50,4 +53,7 @@ def _gather_1(tensors: List[Tensor], device: torch.device) -> Tensor:
         tensor = torch.cat(tensors)
         return tensor.to(device)
 
-    return torch.cuda.comm.gather(tensors, destination=device.index)
+    device_id = device.index
+    if device_id is None:
+        device_id = torch.cuda.current_device()
+    return torch.cuda.comm.gather(tensors, destination=device_id)
