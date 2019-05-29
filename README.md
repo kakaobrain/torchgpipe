@@ -6,25 +6,74 @@
 [![Documentation Status](https://readthedocs.org/projects/torchgpipe/badge/?version=latest)](https://torchgpipe.readthedocs.io/en/latest/?badge=latest)
 [![Korean README](https://img.shields.io/badge/readme-korean-blue.svg)](README.ko.md)
 
-A [GPipe](https://arxiv.org/abs/1811.06965) implementation in PyTorch.
+A [GPipe](https://arxiv.org/abs/1811.06965) implementation in PyTorch. It is
+optimized for CUDA rather than TPU.
 
-## How to use
+```python
+from torchgpipe import GPipe
+model = nn.Sequential(a, b, c, d)
+model = GPipe(model, balance=[1, 1, 1, 1], chunks=8)
+output = model(input)
+```
 
-Prerequisites are:
+## What is GPipe?
+
+GPipe is a scalable pipeline parallelism library published by Google Brain,
+which allows efficient training of large, memory-consuming models. According to
+the paper, GPipe can train a 25x larger model by using 8x devices (TPU), and
+train a model 3.5x faster by using 4x devices.
+
+[GPipe: Efficient Training of Giant Neural Networks using Pipeline Parallelism](https://arxiv.org/abs/1811.06965)
+
+Google trained AmoebaNet-B with 557M parameters over GPipe. This model has
+achieved 84.3% top-1 and 97.0% top-5 accuracy on ImageNet classification
+benchmark (the state-of-the-art performance as of May 2019).
+
+GPipe uses (a) pipeline parallelism and (b) automatic recomputation of the
+forward-propagation during the back-propagation, hence leverages training a
+large model. We refer to (b) as [checkpointing][], following the well-known
+terminology in PyTorch community.
+
+[checkpointing]: https://pytorch.org/docs/stable/checkpoint.html
+
+<dl>
+<dt>Pipeline Parallelism</dt>
+<dd>GPipe splits a model into multiple partitions and places each partition on
+    a different device to occupy more memory capacity. And it splits a
+    mini-batch into multiple micro-batches to make the partitions work as
+    parallel as possible.</dd>
+
+<dt>Checkpointing</dt>
+<dd>Checkpointing is applied to each partition to minimize the overall memory
+    consumption by a model. During forward propagation, only the tensors at the
+    boundaries between partitions are remembered. All other intermediate
+    tensors are volatilized, and recomputed during backward propagation when
+    necessary.</dd>
+</dl>
+
+## Usage
+
+Currently, torchgpipe requires the following environments:
 
 - Python 3.6+
 - PyTorch 1.0+
-- Your `nn.Sequential` module
 
-Install via PyPI:
+To use torchgpipe, install it via PyPI:
 
 ```sh
 $ pip install torchgpipe
 ```
 
-Wrap your `nn.Sequential` module with `torchgpipe.GPipe`. You have to specify
-`balance` to partition the module. Then you can specify the number of
-micro-batches with `chunks`:
+To train a module with GPipe, simply wrap it with `torchgpipe.GPipe`. Your
+module must be `nn.Sequential` as GPipe will automatically break up the module
+into partitions with consecutive layers. `balance` argument determines the
+number of layers in each partition. `chunks` argument specifies the number of
+micro-batches. Input, output, and intermediate tensors must be `Tensor` or
+`Tuple[Tensor, ...]`.
+
+The below example code shows how to split a module with four layers into four
+partitions each having a single layer. This code also splits a mini-batch into
+8 micro-batches:
 
 ```python
 from torchgpipe import GPipe
@@ -36,7 +85,64 @@ for input in data_loader:
     output = model(input)
 ```
 
----
+## Documentation
 
-This project is still under development. Any public API would be changed
-without deprecation warnings until v0.1.0.
+Visit [torchgpipe.readthedocs.io][rtd] for more information including the API
+references.
+
+[rtd]: https://torchgpipe.readthedocs.io/
+
+## Benchmarking
+
+### ResNet-101 Performance Benchmark
+
+Experiment | torchgpipe | GPipe (original)
+---------- | ----: | ----:
+naive-1    | 1     | 1
+pipeline-1 | 0.74  | 0.8
+pipeline-2 | 1.352 | 1.418
+pipeline-4 | 2.181 | 2.182
+pipeline-8 | 2.808 | 2.891
+
+The table shows the reproduced performance benchmark on ResNet-101, as stated by
+reported in Figure 3(b) of the paper.
+
+Naive-1 indicates the baseline setting that ResNet-101 on a single device is
+trained without GPipe. The speeds under other settings are measured relative to
+the speed of naive-1 (which is considered as the unit speed). Pipeline-k means
+k partitions with GPipe using k devices. Pipeline-1 is slower than naive-1
+since it does not benefit from pipeline parallelism but has checkpointing
+overhead.
+
+## Notes
+
+This project is functional, but the interface is not confirmed yet. All public
+APIs are subject to change without warning until v0.1.0.
+
+## Authors and Licensing
+
+torchgpipe project is developed by [Heungsub Lee][] and [Myungryong Jeong][] at
+[Kakao Brain][], with [Sungbin Lim][], [Chiheon Kim][], [Ildoo Kim][], and
+[Woonhyuk Baek][]'s help. It is distributed under [Apache License
+2.0](LICENSE).
+
+[Kakao Brain]: https://kakaobrain.com/
+[Heungsub Lee]: https://subl.ee/
+[Myungryong Jeong]: https://github.com/mrJeong
+[Sungbin Lim]: https://github.com/sungbinlim
+[Chiheon Kim]: https://github.com/chiheonk
+[Ildoo Kim]: https://github.com/ildoonet
+[Woonhyuk Baek]: https://github.com/wbaek
+
+## Citation
+
+If you apply this library to any project and research, please cite our code:
+
+```
+@Misc{torchgpipe,
+  author       = {Kakao Brain},
+  title        = {torchgpipe, {A} {GPipe} implementation in {PyTorch}},
+  howpublished = {\url{https://github.com/kakaobrain/torchgpipe}},
+  year         = {2019}
+}
+```

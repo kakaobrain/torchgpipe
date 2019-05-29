@@ -60,10 +60,12 @@ $ pip install torchgpipe
 ```
 
 임의의 `nn.Sequential` 모듈을 `torchgpipe.GPipe`로 감싸면 GPipe가 적용됩니다.
-`balance` 인자는 각 파티션의 레이어 개수를 정합니다. 다음 예제코드는 총 4층으로
-이뤄진 모듈을 각각 1층씩 지니는 4개의 파티션으로 나누는 방법을 보여줍니다.
-`chunks` 인자는 마이크로배치 개수를 설정합니다. 모듈의 입출력과 각 파티션
-경계의 입출력은 모두 `Tensor` 혹은 `Tuple[Tensor, ...]` 형식이어야 합니다:
+`balance` 인자는 각 파티션의 레이어 개수를 정합니다. `chunks` 인자는
+마이크로배치 개수를 설정합니다. 모듈의 입출력과 각 파티션 경계의 입출력은 모두
+`Tensor` 혹은 `Tuple[Tensor, ...]` 형식이어야 합니다.
+
+다음 예제코드는 총 4층으로 이뤄진 모듈을 각각 1층씩 지니는 4개의 파티션으로
+나누는 방법을 보여줍니다. 마이크로배치 개수는 8개로 설정했습니다:
 
 ```python
 from torchgpipe import GPipe
@@ -86,7 +88,7 @@ API 문서를 비롯한 자세한 문서는 [torchgpipe.readthedocs.io][rtd]에�
 
 ### ResNet-101 속도 벤치마크
 
-실험 | torchgpipe | 논문
+실험 | torchgpipe | GPipe (논문)
 ---------- | ----: | ----:
 naive-1    | 1     | 1
 pipeline-1 | 0.74  | 0.8
@@ -130,7 +132,7 @@ License 2.0 사용권](LICENSE)으로 배포됩니다.
 @Misc{torchgpipe,
   author       = {Kakao Brain},
   title        = {torchgpipe, {A} {GPipe} implementation in {PyTorch}},
-  howpublished = {\url{https://github.com/kakaobrain/torchgpipe/}},
+  howpublished = {\url{https://github.com/kakaobrain/torchgpipe}},
   year         = {2019}
 }
 ```
