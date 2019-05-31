@@ -12,8 +12,11 @@ class _BatchNorm(Module):
     affine: bool
     track_running_stats: bool
 
+    weight: Tensor
+    bias: Tensor
     running_mean: Tensor
     running_var: Tensor
+    num_batches_tracked: Tensor
 
     # for DeferredBatchNorm
     sum: Tensor

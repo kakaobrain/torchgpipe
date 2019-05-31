@@ -1,5 +1,5 @@
 #MODIFIED BY TORCHGPIPE
-from typing import Any, Callable, Iterable, Iterator, TypeVar
+from typing import Any, Callable, Iterable, Iterator, Tuple, TypeVar
 
 from torch import Tensor, device
 
@@ -32,6 +32,9 @@ class Module:
     def register_backward_hook(self, hook: __Hook2) -> __RemovableHandle: ...
     def register_forward_pre_hook(self, hook: __Hook1) -> __RemovableHandle: ...
     def register_forward_hook(self, hook: __Hook2) -> __RemovableHandle: ...
+
+    def named_children(self) -> Iterable[Tuple[str, Module]]: ...
+    def add_module(self, name: str, module: Module) -> None: ...
 
 
 class Sequential(Module):
