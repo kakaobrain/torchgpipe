@@ -1,5 +1,5 @@
 """Tracks the moving average for each mini-batch instead of micro-batch."""
-from typing import Tuple
+from typing import Optional, Tuple
 
 import torch
 from torch import Tensor
@@ -26,6 +26,7 @@ def patch_deferred_batch_norm(module: nn.Module) -> None:
 class DeferredBatchNormHook:
     def __init__(self) -> None:
         self.tracked = False
+        self.momentum: Optional[float] = None
 
     def __call__(self, bn: BatchNorm) -> None:
         if not bn.track_running_stats or bn.momentum is None:
@@ -46,7 +47,7 @@ class DeferredBatchNormHook:
 
         # Don't track the running stats of this batch. It is already deferred.
         bn.track_running_stats = False
-        bn.momentum_ = bn.momentum
+        self.momentum = bn.momentum
         bn.momentum = None
 
         # Skip if this forward pass is triggered by checkpoint recomputation.
@@ -65,7 +66,7 @@ class DeferredBatchNormHook:
         bn.sum += input.sum(dim)
         bn.sum_squares += (input**2).sum(dim)
 
-        size = input.size().numel() / input.size(1)
+        size = input.size().numel() // input.size(1)
         bn.counter += size
 
         # Enable the backward hook.
@@ -75,15 +76,16 @@ class DeferredBatchNormHook:
         # Any internal state modified by this hook should not be visible to users.
         bn.track_running_stats = True
         try:
-            bn.momentum = bn.momentum_
+            bn.momentum = self.momentum
         except AttributeError:
             pass
-        else:
-            del bn.momentum_
 
     def backward_hook(self, bn: BatchNorm,
                       grad_input: Tensor,
                       grad_output: Tensor) -> None:  # pragma: no cover
+        _ = grad_input
+        _ = grad_output
+
         if not self.tracked:
             return
 
@@ -91,6 +93,7 @@ class DeferredBatchNormHook:
         new_var = bn.sum_squares/bn.counter - new_mean**2
 
         # Calculate the exponential moving average here.
+        assert bn.momentum is not None
         bn.running_mean = bn.running_mean*(1-bn.momentum) + new_mean*bn.momentum
         bn.running_var = bn.running_var*(1-bn.momentum) + new_var*bn.momentum
 

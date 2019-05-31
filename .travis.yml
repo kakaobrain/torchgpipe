@@ -3,14 +3,14 @@ language: python
 # Supported Python versions
 dist: xenial  # required for Python >= 3.7
 python:
-  - 3.6
   - 3.7
+  - 3.6
 
 # Supported PyTorch versions
 env:
-  - PYTORCH=1.0.0
-  - PYTORCH=1.0.1
   - PYTORCH=1.1.0
+  - PYTORCH=1.0.1
+  - PYTORCH=1.0.0
 
 stages:
   - lint
@@ -21,6 +21,7 @@ jobs:
   include:
     - stage: lint
       install:
+        - pip install torch==$PYTORCH
         - pip install flake8 mypy
       script:
         - flake8 .

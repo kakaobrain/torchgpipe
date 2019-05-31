@@ -87,7 +87,7 @@ class Context:
 
 class Checkpoint(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: Context,
+    def forward(ctx: Context,  # type: ignore
                 result: Result,
                 module: Function,
                 unwrap_input: bool,
@@ -122,7 +122,7 @@ class Checkpoint(torch.autograd.Function):
 
 class Recompute(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: Context,
+    def forward(ctx: Context,  # type: ignore
                 dummy: Tensor,
                 result: Result,
                 module: Function,
@@ -191,10 +191,12 @@ def first(input: TensorOrTensors, dummy: Optional[Tensor]) -> TensorOrTensors:
 
 class First(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: Context, tensor1: Tensor, tensor2: Tensor) -> Tensor:
+    def forward(ctx: Context, tensor1: Tensor, tensor2: Tensor) -> Tensor:  # type: ignore
         _ = tensor2
         return tensor1
 
     @staticmethod
-    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, None]:  # pragma: no cover
+    def backward(ctx: Context,              # type: ignore
+                 grad_output: Tensor,
+                 ) -> Tuple[Tensor, None]:  # pragma: no cover
         return grad_output, None

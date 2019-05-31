@@ -2,7 +2,7 @@
 from queue import PriorityQueue
 import sys
 import threading
-from typing import Any, Iterable, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Iterable, Iterator, List, NamedTuple, Optional, Tuple, Union, cast
 
 import torch
 from torch import Tensor
@@ -122,21 +122,27 @@ class GPipe(nn.Module):
 
         self.checkpoint = checkpoint
 
-    def __iter__(self) -> Iterable[nn.Module]:
+    def __iter__(self) -> Iterator[nn.Module]:
         """Iterates over underlying sequential layers."""
-        for partition in self._partitions:
+        # NOTE(sublee): self._partitions is typed as nn.ModuleList which
+        # iterates over nn.Modules. But actually, it includes only Partitions.
+        # Here we cast it to List[Partition] for activation of Partition's
+        # iteration capabilities during type checking.
+        partitions = cast(List[Partition], self._partitions)
+
+        for partition in partitions:
             yield from partition
 
     def __len__(self) -> int:
         """Counts the length of the underlying sequential module."""
-        return sum(len(p) for p in self._partitions)
+        partitions = cast(List[Partition], self._partitions)
+        return sum(len(p) for p in partitions)
 
     def __getitem__(self, index: int) -> nn.Module:
         """Gets a layer in the underlying sequential module."""
+        partitions = cast(List[Partition], self._partitions)
         if index < 0:
-            partitions = reversed(self._partitions)
-        else:
-            partitions = self._partitions
+            partitions = cast(List[Partition], reversed(partitions))
 
         for partition in partitions:
             try:
@@ -155,7 +161,8 @@ class GPipe(nn.Module):
 
     def partitions(self) -> List[Partition]:
         """The underlying partitions."""
-        return list(self._partitions)
+        partitions = cast(List[Partition], self._partitions)
+        return list(partitions)
 
     @staticmethod
     def partition(module: nn.Sequential,

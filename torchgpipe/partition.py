@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Union
+from typing import Iterator, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -29,6 +29,9 @@ class Partition(nn.Module):
 
         self.module = module
         self.device = device
+
+    def __iter__(self) -> Iterator[nn.Module]:
+        yield from self.module
 
     def __len__(self) -> int:
         return len(self.module)
