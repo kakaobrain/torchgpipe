@@ -1,5 +1,5 @@
 #MODIFIED BY TORCHGPIPE
-from typing import Any, Callable, Iterable, Iterator, Tuple, TypeVar
+from typing import Any, Callable, Iterable, Iterator, Optional, Tuple, TypeVar
 
 from torch import Tensor, device
 
@@ -17,6 +17,13 @@ class __RemovableHandle:
     def remove(self) -> None: ...
 
 
+class Parameter(Tensor):
+    def __new__(cls,
+                data: Optional[Tensor] = None,
+                requires_grad: bool = True,
+                ) -> Parameter: ...
+
+
 class Module:
     training: bool
 
@@ -27,7 +34,7 @@ class Module:
     def apply(self, fn: Callable[[Module], None]) -> Module: ...
 
     def register_buffer(self, name: str, tensor: Tensor) -> None: ...
-    def register_parameter(self, name: str, tensor: Tensor) -> None: ...
+    def register_parameter(self, name: str, param: Parameter) -> None: ...
 
     def register_backward_hook(self, hook: __Hook2) -> __RemovableHandle: ...
     def register_forward_pre_hook(self, hook: __Hook1) -> __RemovableHandle: ...
