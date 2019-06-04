@@ -66,7 +66,7 @@ html_theme = 'alabaster'
 html_theme_options = {
     'description': 'GPipe for PyTorch',
 
-    'github_user': 'KakaoBrain',
+    'github_user': 'kakaobrain',
     'github_repo': 'torchgpipe',
     'github_type': 'star',
 }
