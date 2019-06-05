@@ -105,6 +105,90 @@ GPipe 없이 한 장치에서 ResNet-101을 학습 시켰을 때 상대속도를
 Parallelism이 적용되지 않고 Checkpointing 오버헤드만 있어서 naive-1에 비해
 오히려 더 느립니다.
 
+### AmoebaNet-D 메모리 벤치마크
+
+<table>
+  <thead>
+    <tr>
+      <th rowspan="2">실험</th>
+      <th colspan="2">naive-1</th>
+      <th colspan="2">pipeline-1</th>
+      <th colspan="2">pipeline-2</th>
+      <th colspan="2">pipeline-4</th>
+      <th colspan="2">pipeline-8</th>
+    </tr>
+    <tr align="center">
+      <td>torchgpipe</td>
+      <td>논문</td>
+      <td>torchgpipe</td>
+      <td>논문</td>
+      <td>torchgpipe</td>
+      <td>논문</td>
+      <td>torchgpipe</td>
+      <td>논문</td>
+      <td>torchgpipe</td>
+      <td>논문</td>
+    </tr>
+  </thead>
+  <tbody>
+    <tr align="center">
+      <td>AmoebaNet-D (L, F)</td>
+      <td colspan="2">(6, 208)</td>
+      <td colspan="2">(6, 416)</td>
+      <td colspan="2">(6, 544)</td>
+      <td colspan="2">(12, 544)</td>
+      <td colspan="2">(24, 512)</td>
+    </tr>
+    <tr align="center">
+      <td># of Model Parameters</td>
+      <td>90M</td>
+      <td>82M</td>
+      <td>358M</td>
+      <td>318M</td>
+      <td>613M</td>
+      <td>542M</td>
+      <td>1.16B</td>
+      <td>1.05B</td>
+      <td>2.01B</td>
+      <td>1.80B</td>
+    </tr>
+    <tr align="center">
+      <td>Total Peak Model Parameter Memory</td>
+      <td>1.00GB</td>
+      <td>1.05GB</td>
+      <td>4.01GB</td>
+      <td>3.80GB</td>
+      <td>6.45GB</td>
+      <td>6.45GB</td>
+      <td>13.00GB</td>
+      <td>12.53GB</td>
+      <td>22.42GB</td>
+      <td>24.62GB</td>
+    </tr>
+    <tr align="center">
+      <td>Total Peak Activation Memory</td>
+      <td>-</td>
+      <td>6.26GB</td>
+      <td>6.64GB</td>
+      <td>3.46GB</td>
+      <td>11.31GB</td>
+      <td>8.11GB</td>
+      <td>18.72GB</td>
+      <td>15.21GB</td>
+      <td>35.78GB</td>
+      <td>26.24GB</td>
+    </tr>
+  </tbody>
+</table>
+
+GPipe 논문의 테이블1에 보고된 AmoebaNet-D 메모리 효율 벤치마크를
+재현했습니다. AmoebaNet-D 모델은 레이어 수에 비례하는 파라미터 L과
+필터 개수에 비례하는 파라미터 F로 모델크기를 조절할 수 있습니다.
+
+한 개의 GPU에서 GPipe를 사용하지 않은 naive-1보다 GPipe를 사용한 pipeline-1에서
+더 큰 모델을 학습시킬 수 있는걸 볼 수 있습니다. GPU 개수를 늘린 pipeline-8에선
+naive-1 대비 22배 이상 큰 모델도 학습시킬 수 있었습니다.
+
 ## 참고사항
 
 이 프로젝트는 개발진이 의도한대로 동작하나, 아직 인터페이스가 확정되지
