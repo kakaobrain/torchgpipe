@@ -10,7 +10,7 @@ import torch.autograd
 import torch.cuda
 import torch.nn as nn
 
-from torchgpipe.batchnorm import patch_deferred_batch_norm
+from torchgpipe.batchnorm import DeferredBatchNorm
 from torchgpipe.checkpoint import first
 from torchgpipe.microbatch import gather, scatter
 from torchgpipe.partition import Partition
@@ -107,12 +107,6 @@ class GPipe(nn.Module):
                  deferred_batch_norm: bool = False):
         super().__init__()
 
-        if deferred_batch_norm:
-            module.apply(patch_deferred_batch_norm)
-
-        self._partitions, self.balance, self.in_device, self.out_device = \
-            self.partition(module, balance, devices)
-
         if chunks <= 0:
             raise ValueError('number of chunks must be positive integer')
         self.chunks = chunks
@@ -122,7 +116,13 @@ class GPipe(nn.Module):
 
         self.checkpoint = checkpoint
 
-    def __iter__(self) -> Iterator[nn.Module]:
+        if deferred_batch_norm:
+            module = DeferredBatchNorm.convert_deferred_batch_norm(module, self.chunks)
+
+        self._partitions, self.balance, self.in_device, self.out_device = \
+            self.partition(module, balance, devices)
+
+    def __iter__(self) -> Iterable[nn.Module]:
         """Iterates over underlying sequential layers."""
         # NOTE(sublee): self._partitions is typed as nn.ModuleList which
         # iterates over nn.Modules. But actually, it includes only Partitions.

@@ -2,7 +2,7 @@
 from typing import Any, Callable, Iterable, Iterator, Optional
 
 from torch import Tensor
-from torch.nn import Module
+from torch.nn import Module, Parameter
 
 
 class _BatchNorm(Module):
@@ -12,8 +12,8 @@ class _BatchNorm(Module):
     affine: bool
     track_running_stats: bool
 
-    weight: Tensor
-    bias: Tensor
+    weight: Parameter
+    bias: Parameter
     running_mean: Tensor
     running_var: Tensor
     num_batches_tracked: Tensor

@@ -1,105 +1,155 @@
-"""Tracks the moving average for each mini-batch instead of micro-batch."""
-from typing import Optional, Tuple
+"""Tracks the running statistics per mini-batch instead of micro-batch."""
+from typing import Optional, TypeVar, cast
 
 import torch
 from torch import Tensor
 import torch.nn as nn
-from torch.nn.modules.batchnorm import _BatchNorm as BatchNorm
+import torch.nn.functional as F
+from torch.nn.modules.batchnorm import _BatchNorm
 
 from torchgpipe.checkpoint import is_recomputing
 
-__all__ = ['patch_deferred_batch_norm']
+__all__ = ['DeferredBatchNorm']
 
 
-def patch_deferred_batch_norm(module: nn.Module) -> None:
-    """Apply this function to a module to patch the BatchNorm layers to become deferred::
+TModule = TypeVar('TModule', bound=nn.Module)
 
-        model = resnet101()
-        model.apply(patch_deferred_batch_norm)
 
+class DeferredBatchNorm(_BatchNorm):
+    """A BatchNorm layer tracks multiple micro-batches to update running
+    statistics per mini-batch.
     """
-    if isinstance(module, BatchNorm):
-        hook = DeferredBatchNormHook()
-        hook(module)
+    sum: Tensor
+    sum_squares: Tensor
 
+    def __init__(self,
+                 num_features: int,
+                 eps: float = 1e-5,
+                 momentum: Optional[float] = 0.1,
+                 affine: bool = True,
+                 chunks: int = 1) -> None:
+        super().__init__(num_features, eps, momentum, affine, track_running_stats=True)
 
-class DeferredBatchNormHook:
-    def __init__(self) -> None:
-        self.tracked = False
-        self.momentum: Optional[float] = None
+        self.register_buffer('sum', torch.zeros_like(self.running_mean))
+        self.register_buffer('sum_squares', torch.zeros_like(self.running_var))
 
-    def __call__(self, bn: BatchNorm) -> None:
-        if not bn.track_running_stats or bn.momentum is None:
-            # The given batch norm doesn't track running stats.
-            return
+        self.counter = 0
+        self.tracked = 0
+        self.chunks = chunks
 
-        bn.register_buffer('sum', torch.zeros_like(bn.running_mean))
-        bn.register_buffer('sum_squares', torch.zeros_like(bn.running_var))
-        bn.register_buffer('counter', torch.tensor(0, dtype=torch.long))
+    def _check_input_dim(self, input: Tensor) -> None:
+        # It's the typical _check_input_dim() implementation in PyTorch.
+        if input.dim() <= 2:
+            raise ValueError('expected at least 3D input (got %dD input)' % input.dim())
 
-        bn.register_forward_pre_hook(self.forward_pre_hook)
-        bn.register_forward_hook(self.forward_hook)
-        bn.register_backward_hook(self.backward_hook)
-
-    def forward_pre_hook(self, bn: BatchNorm, inputs: Tuple[Tensor, ...]) -> None:
-        if not (bn.training and bn.track_running_stats):
-            return
-
-        # Don't track the running stats of this batch. It is already deferred.
-        bn.track_running_stats = False
-        self.momentum = bn.momentum
-        bn.momentum = None
-
-        # Skip if this forward pass is triggered by checkpoint recomputation.
-        if is_recomputing():
-            return
-
-        input, = inputs
-
-        # Detach from the autograd graph.
-        input = input.detach()
-
+    def _track(self, input: Tensor) -> bool:
+        """Tracks statistics of a micro-batch."""
         # Dimensions except channel. For example, (0, 2, 3) is for BatchNorm2d.
         dim = [0]
         dim.extend(range(2, input.dim()))
 
-        bn.sum += input.sum(dim)
-        bn.sum_squares += (input**2).sum(dim)
+        with torch.no_grad():
+            self.sum += input.sum(dim)
+            self.sum_squares += (input**2).sum(dim)
 
-        size = input.size().numel() // input.size(1)
-        bn.counter += size
+        size = input.size().numel() / input.size(1)
+        self.counter += size
+        self.tracked += 1
 
-        # Enable the backward hook.
-        self.tracked = True
+        return (self.tracked == self.chunks)
 
-    def forward_hook(self, bn: BatchNorm, input: Tensor, output: Tensor) -> None:
-        # Any internal state modified by this hook should not be visible to users.
-        bn.track_running_stats = True
-        try:
-            bn.momentum = self.momentum
-        except AttributeError:
-            pass
+    def _commit(self) -> None:
+        """Updates the running statistics of a mini-batch."""
+        exponential_average_factor = 0.0
+        self.num_batches_tracked += 1
+        if self.momentum is None:  # use cumulative moving average
+            exponential_average_factor = 1.0 / float(self.num_batches_tracked)
+        else:  # use exponential moving average
+            exponential_average_factor = self.momentum
 
-    def backward_hook(self, bn: BatchNorm,
-                      grad_input: Tensor,
-                      grad_output: Tensor) -> None:  # pragma: no cover
-        _ = grad_input
-        _ = grad_output
-
-        if not self.tracked:
-            return
-
-        new_mean = bn.sum/bn.counter
-        new_var = bn.sum_squares/bn.counter - new_mean**2
+        mean = self.sum/self.counter
+        var = self.sum_squares/self.counter - mean**2
 
         # Calculate the exponential moving average here.
-        assert bn.momentum is not None
-        bn.running_mean = bn.running_mean*(1-bn.momentum) + new_mean*bn.momentum
-        bn.running_var = bn.running_var*(1-bn.momentum) + new_var*bn.momentum
+        m = exponential_average_factor
 
-        bn.sum.zero_()
-        bn.sum_squares.zero_()
-        bn.counter.zero_()
+        self.running_mean *= 1 - m
+        self.running_mean += mean * m
 
-        # Disable the backward hook until the next forward pass.
-        self.tracked = False
+        self.running_var *= 1 - m
+        self.running_var += var * m
+
+        self.sum.zero_()
+        self.sum_squares.zero_()
+        self.counter = 0
+        self.tracked = 0
+
+    def forward(self, input: Tensor) -> Tensor:
+        if not self.training:
+            # Don't train parameters on the evaluation mode.
+            return F.batch_norm(
+                input,
+                running_mean=self.running_mean,
+                running_var=self.running_var,
+                weight=self.weight,
+                bias=self.bias,
+                training=False,
+                momentum=0.0,
+                eps=self.eps,
+            )
+
+        if not is_recomputing():
+            # Track a micro-batch on the training mode
+            # but not under a recomputation.
+            tracked_enough = self._track(input)
+
+            # Update the running statistics for a mini-batch
+            # if it has tracked enough micro-batches.
+            if tracked_enough:
+                self._commit()
+
+        # Normalize a micro-batch and train the parameters.
+        return F.batch_norm(
+            input,
+            running_mean=None,
+            running_var=None,
+            weight=self.weight,
+            bias=self.bias,
+            training=True,
+            momentum=0.0,
+            eps=self.eps,
+        )
+
+    @classmethod
+    def convert_deferred_batch_norm(cls, module: TModule, chunks: int = 1) -> TModule:
+        """Converts a :class:`nn.BatchNorm` or underlying
+        :class:`nn.BatchNorm`s into :class:`DeferredBatchNorm`::
+
+            from torchvision.models.resnet import resnet101
+            from torchgpipe.batchnorm import DeferredBatchNorm
+            model = resnet101()
+            model = DeferredBatchNorm.convert_deferred_batch_norm(model)
+
+        """
+        if isinstance(module, DeferredBatchNorm) and module.chunks is chunks:
+            return cast(TModule, module)
+
+        module_output: nn.Module = module
+
+        if isinstance(module, _BatchNorm) and module.track_running_stats:
+            module_output = DeferredBatchNorm(module.num_features,
+                                              module.eps,
+                                              module.momentum,
+                                              module.affine,
+                                              chunks)
+            if module.affine:
+                module_output.register_parameter('weight', module.weight)
+                module_output.register_parameter('bias', module.bias)
+            module_output.register_buffer('running_mean', module.running_mean)
+            module_output.register_buffer('running_var', module.running_var)
+            module_output.register_buffer('num_batches_tracked', module.num_batches_tracked)
+
+        for name, child in module.named_children():
+            module_output.add_module(name, cls.convert_deferred_batch_norm(child, chunks))
+
+        return cast(TModule, module_output)

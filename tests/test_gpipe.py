@@ -1,3 +1,4 @@
+from copy import deepcopy
 import time
 
 import pytest
@@ -417,17 +418,34 @@ def test_lockstep():
 @pytest.mark.parametrize('checkpoint', ['never', 'always', 'except_last'])
 def test_deferred_batch_norm(checkpoint):
     bn = nn.BatchNorm2d(3)
-    bn_under_gpipe = nn.BatchNorm2d(3)
-
-    gpipe = GPipe(nn.Sequential(bn_under_gpipe), balance=[1], devices=['cpu'], chunks=2,
+    gpipe_bn = deepcopy(bn)
+    gpipe = GPipe(nn.Sequential(gpipe_bn), balance=[1], devices=['cpu'], chunks=2,
                   checkpoint=checkpoint, deferred_batch_norm=True)
 
     x = torch.rand(4, 3, 10, 10)
     gpipe(x).mean().backward()
-    bn(x)
+    bn(x).mean().backward()
 
-    assert torch.allclose(bn_under_gpipe.running_mean, bn.running_mean, atol=1e-4)
-    assert torch.allclose(bn_under_gpipe.running_var, bn.running_var, atol=1e-4)
+    assert torch.allclose(gpipe[0].running_mean, bn.running_mean, atol=1e-4)
+    assert torch.allclose(gpipe[0].running_var, bn.running_var, atol=1e-4)
+
+
+@pytest.mark.parametrize('checkpoint', ['never', 'always'])
+def test_deferred_batch_norm_params(checkpoint):
+    bn = nn.BatchNorm2d(3)
+    gpipe_bn = deepcopy(bn)
+    gpipe = GPipe(nn.Sequential(gpipe_bn), balance=[1], devices=['cpu'], chunks=1,
+                  checkpoint=checkpoint, deferred_batch_norm=True)
+
+    x = torch.rand(4, 3, 10, 10)
+    gpipe(x).mean().backward()
+    bn(x).mean().backward()
+
+    assert gpipe[0].weight.grad is not None
+    assert gpipe[0].bias.grad is not None
+
+    assert torch.allclose(gpipe[0].weight.grad, bn.weight.grad, atol=1e-4)
+    assert torch.allclose(gpipe[0].bias.grad, bn.bias.grad, atol=1e-4)
 
 
 def test_current_microbatch():
