@@ -52,7 +52,7 @@ class DeferredBatchNorm(_BatchNorm):
             self.sum += input.sum(dim)
             self.sum_squares += (input**2).sum(dim)
 
-        size = input.size().numel() / input.size(1)
+        size = input.size().numel() // input.size(1)
         self.counter += size
         self.tracked += 1
 

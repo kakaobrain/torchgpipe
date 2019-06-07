@@ -18,11 +18,6 @@ class _BatchNorm(Module):
     running_var: Tensor
     num_batches_tracked: Tensor
 
-    # for DeferredBatchNorm
-    sum: Tensor
-    sum_squares: Tensor
-    counter: Tensor
-
     def __init__(self,
                  num_features: int,
                  eps: float = 1e-5,
