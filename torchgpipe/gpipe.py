@@ -2,7 +2,7 @@
 from queue import PriorityQueue
 import sys
 import threading
-from typing import Any, Iterable, Iterator, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import Any, Iterable, List, NamedTuple, Optional, Tuple, Union, cast
 
 import torch
 from torch import Tensor
