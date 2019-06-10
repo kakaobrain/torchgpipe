@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 
 from torchgpipe import GPipe, current_microbatch
+from torchgpipe.partition import Partition
 
 
 def test_parameters():
@@ -487,3 +488,17 @@ def test_devices():
     cpu = torch.device('cpu')
     # Extra devices must be discarded.
     assert model.devices == (cpu, cpu, cpu)
+
+
+def test_partitions():
+    a = nn.Linear(1, 1)
+    b = nn.Linear(1, 1)
+
+    model = nn.Sequential(a, b)
+    model = GPipe(model, [1, 1], devices=['cpu', 'cpu'])
+
+    assert isinstance(model.partitions, nn.ModuleList)
+    assert isinstance(model.partitions[0], Partition)
+    assert isinstance(model.partitions[1], Partition)
+
+    assert 'partitions.0.module.0.weight' in model.state_dict()

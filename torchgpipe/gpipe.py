@@ -137,27 +137,16 @@ class GPipe(nn.Module):
         if deferred_batch_norm:
             module = DeferredBatchNorm.convert_deferred_batch_norm(module, self.chunks)
 
-        self._partitions, self.balance, self.devices = self.partition(module, balance, devices)
-
-    def __iter__(self) -> Iterable[nn.Module]:
-        """Iterates over underlying sequential layers."""
-        # NOTE(sublee): self._partitions is typed as nn.ModuleList which
-        # iterates over nn.Modules. But actually, it includes only Partitions.
-        # Here we cast it to List[Partition] for activation of Partition's
-        # iteration capabilities during type checking.
-        partitions = cast(List[Partition], self._partitions)
-
-        for partition in partitions:
-            yield from partition
+        self.partitions, self.balance, self.devices = self.partition(module, balance, devices)
 
     def __len__(self) -> int:
         """Counts the length of the underlying sequential module."""
-        partitions = cast(List[Partition], self._partitions)
+        partitions = cast(List[Partition], self.partitions)
         return sum(len(p) for p in partitions)
 
     def __getitem__(self, index: int) -> nn.Module:
         """Gets a layer in the underlying sequential module."""
-        partitions = cast(List[Partition], self._partitions)
+        partitions = cast(List[Partition], self.partitions)
         if index < 0:
             partitions = cast(List[Partition], reversed(partitions))
 
@@ -175,11 +164,6 @@ class GPipe(nn.Module):
                 index -= shift
 
         raise IndexError
-
-    def partitions(self) -> List[Partition]:
-        """The underlying partitions."""
-        partitions = cast(List[Partition], self._partitions)
-        return list(partitions)
 
     @staticmethod
     def partition(module: nn.Sequential,
@@ -244,11 +228,13 @@ class GPipe(nn.Module):
 
     def spawn_workers(self) -> Tuple[PriorityQueue, PriorityQueue]:
         """Creates worker threads."""
-        n = len(self._partitions)
+        partitions = cast(List[Partition], self.partitions)
+
+        n = len(partitions)
         queues: List[PriorityQueue] = [PriorityQueue() for _ in range(n+1)]
         grad_enabled = torch.is_grad_enabled()
 
-        for i, partition in enumerate(self._partitions):
+        for i, partition in enumerate(partitions):
             in_queue = queues[i]
             out_queue = queues[i+1]
 
