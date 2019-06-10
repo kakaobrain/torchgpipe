@@ -471,3 +471,19 @@ def test_current_microbatch():
 
     # Not in a partition.
     assert current_microbatch() is None
+
+
+def test_devices():
+    a = nn.Linear(1, 1)
+    b = nn.Linear(1, 1)
+    c = nn.Linear(1, 1)
+
+    # There are extra two devices.
+    devices = ['cpu', 'cpu', 'cpu', 'cpu', 'cpu']
+
+    model = nn.Sequential(a, b, c)
+    model = GPipe(model, [1, 1, 1], devices=devices)
+
+    cpu = torch.device('cpu')
+    # Extra devices must be discarded.
+    assert model.devices == (cpu, cpu, cpu)

@@ -97,6 +97,24 @@ class GPipe(nn.Module):
 
     """
 
+    #: The devices mapped to each partition.
+    #:
+    #: ``devices[-1]`` refers to the device of the last partition, which means
+    #: it is the output device. Probably, you need to use it to transfer the
+    #: target to calculate the loss without a device mismatch
+    #: :exc:`RuntimeError`. For example::
+    #:
+    #:     out_device = gpipe.devices[-1]
+    #:
+    #:     for input, target in loader:
+    #:         target = target.to(out_device, non_blocking=True)
+    #:         output = gpipe(input)
+    #:         loss = F.cross_entropy(output, target)
+    #:
+    devices: Tuple[torch.device, ...] = ()
+    #                                 ^^^^
+    # The default value () required for Sphinx's autoattribute.
+
     def __init__(self,
                  module: nn.Sequential,
                  balance: Iterable[int],
@@ -109,18 +127,17 @@ class GPipe(nn.Module):
 
         if chunks <= 0:
             raise ValueError('number of chunks must be positive integer')
-        self.chunks = chunks
 
         if checkpoint not in ['always', 'except_last', 'never']:
             raise ValueError("checkpoint is not one of 'always', 'except_last', or 'never'")
 
+        self.chunks = chunks
         self.checkpoint = checkpoint
 
         if deferred_batch_norm:
             module = DeferredBatchNorm.convert_deferred_batch_norm(module, self.chunks)
 
-        self._partitions, self.balance, self.in_device, self.out_device = \
-            self.partition(module, balance, devices)
+        self._partitions, self.balance, self.devices = self.partition(module, balance, devices)
 
     def __iter__(self) -> Iterable[nn.Module]:
         """Iterates over underlying sequential layers."""
@@ -168,11 +185,11 @@ class GPipe(nn.Module):
     def partition(module: nn.Sequential,
                   balance: Iterable[int],
                   devices: Optional[Devices],
-                  ) -> Tuple[nn.ModuleList, List[int], torch.device, torch.device]:
+                  ) -> Tuple[nn.ModuleList, Tuple[int, ...], Tuple[torch.device, ...]]:
         """Partitions the given sequential module onto the devices.
 
         Returns:
-            A tuple of (partitions, input device, output device).
+            A tuple of (partitions, balance, devices).
 
             Partitions are represented as a :class:`~torch.nn.ModuleList` whose
             item is a partition. All layers in a partition are placed in the
@@ -221,10 +238,9 @@ class GPipe(nn.Module):
                 del partition_layers[:]
                 i += 1
 
-        in_device = partitions[0].device
-        out_device = partitions[-1].device
+        del devices[i:]
 
-        return nn.ModuleList(partitions), balance, in_device, out_device
+        return nn.ModuleList(partitions), tuple(balance), tuple(devices)
 
     def spawn_workers(self) -> Tuple[PriorityQueue, PriorityQueue]:
         """Creates worker threads."""
@@ -318,7 +334,8 @@ class GPipe(nn.Module):
                    ) -> int:
         """Pushes chunked inputs to the first partition."""
         # Divide a mini-batch into micro-batches.
-        inputs = scatter(input, chunks=self.chunks, device=self.in_device)
+        in_device = self.devices[0]
+        inputs = scatter(input, chunks=self.chunks, device=in_device)
 
         # The number of inputs might be smaller than the number of chunks.
         num_inputs = len(inputs)
@@ -376,7 +393,8 @@ class GPipe(nn.Module):
             output, _, _ = msg.payload
             outputs.append(output)
 
-        output = gather(outputs, device=self.out_device)
+        out_device = self.devices[-1]
+        output = gather(outputs, device=out_device)
         out_queue.get()
 
         return output

@@ -36,6 +36,9 @@ API
 
    .. automethod:: forward(input)
 
+   .. autoattribute:: devices
+      :annotation:
+
 
 Licensing and Authors
 ---------------------
