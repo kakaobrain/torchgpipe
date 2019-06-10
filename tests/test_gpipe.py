@@ -226,7 +226,7 @@ def test_no_grad():
         nonlocal latent
         latent = output
 
-    partition = list(model.partitions())[0]
+    partition = model.partitions[0]
     partition.register_forward_hook(hook)
 
     with torch.no_grad():
