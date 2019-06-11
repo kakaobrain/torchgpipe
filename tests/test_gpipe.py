@@ -502,3 +502,41 @@ def test_partitions():
     assert isinstance(model.partitions[1], Partition)
 
     assert 'partitions.0.module.0.weight' in model.state_dict()
+
+
+def test_deny_moving():
+    a = nn.Linear(1, 1)
+    b = nn.Linear(1, 1)
+
+    model = nn.Sequential(a, b)
+    model = GPipe(model, [1, 1], devices=['cpu', 'cpu'])
+
+    # Moving is denied.
+    with pytest.raises(TypeError):
+        model.cuda()
+
+    with pytest.raises(TypeError):
+        model.cpu()
+
+    with pytest.raises(TypeError):
+        model.to(torch.device('cuda'))
+
+    with pytest.raises(TypeError):
+        model.to(0)
+
+    with pytest.raises(TypeError):
+        model.to('cuda')
+
+    with pytest.raises(TypeError):
+        model.to(device=0)
+
+    with pytest.raises(TypeError):
+        model.to(torch.rand(1))
+
+    with pytest.raises(TypeError):
+        model.to(tensor=torch.rand(1))
+
+    # Casting is allowed.
+    model.half()
+    model.to(torch.double)
+    model.to(dtype=torch.float)

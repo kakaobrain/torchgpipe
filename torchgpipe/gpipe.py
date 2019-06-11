@@ -59,6 +59,10 @@ def current_microbatch() -> Optional[Tensor]:
         return None
 
 
+MOVING_DENIED = TypeError('denied to move parameters and buffers, '
+                          'because GPipe should manage device placement')
+
+
 class GPipe(nn.Module):
     """Wraps an arbitrary :class:`~torch.nn.Sequential` module to train on
     GPipe_. If the module requires lots of memory, GPipe will be very
@@ -164,6 +168,35 @@ class GPipe(nn.Module):
                 index -= shift
 
         raise IndexError
+
+    # GPipe should manage the device of each partition.
+    # Deny cuda(), cpu(), and to() with device, by TypeError.
+    def cuda(self, device: Any = None) -> nn.Module:
+        raise MOVING_DENIED
+
+    def cpu(self) -> nn.Module:
+        raise MOVING_DENIED
+
+    def to(self, *args: Any, **kwargs: Any) -> nn.Module:
+        # Deny these usages:
+        #
+        # - to(device[, dtype, non_blocking])
+        # - to(tensor[, non_blocking])
+        #
+        # But allow this:
+        #
+        # - to(dtype[, non_blocking])
+        #
+        if 'device' in kwargs or 'tensor' in kwargs:
+            raise MOVING_DENIED
+
+        if args:
+            if isinstance(args[0], (torch.device, int, str)):
+                raise MOVING_DENIED
+            if isinstance(args[0], Tensor):
+                raise MOVING_DENIED
+
+        return super().to(*args, **kwargs)
 
     @staticmethod
     def partition(module: nn.Sequential,
