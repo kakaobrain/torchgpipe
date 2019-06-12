@@ -33,8 +33,6 @@ the history.
   (`2*i + 1` not `2 * i + 1`.)
 - Lint by mypy and Flake8 with our `setup.cfg`.
 - Format code by autopep8 and isort with our `setup.cfg`.
-- Prefer PyTorch's coding style rather than PEP 8 (`input` is a good name for
-  input tensors.)
 
 ## Development
 
