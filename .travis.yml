@@ -23,9 +23,10 @@ jobs:
       install:
         - pip install torch==$PYTORCH
         - pip install flake8 mypy
+        - lint () { flake8 "$1" && mypy "$1"; }
       script:
-        - flake8 .
-        - mypy .
+        - lint .
+        - lint examples/resnet
 
 # Test with various Python and PyTorch versions.
 install:

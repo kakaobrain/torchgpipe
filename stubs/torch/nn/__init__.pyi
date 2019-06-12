@@ -1,5 +1,5 @@
 #MODIFIED BY TORCHGPIPE
-from typing import Any, Callable, Iterable, Iterator, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Tuple, TypeVar, Union, overload
 
 from torch import Tensor, device
 
@@ -45,6 +45,10 @@ class Module:
 
 
 class Sequential(Module):
+    @overload
+    def __init__(self, args: Dict[str, Module]) -> None: ...
+
+    @overload
     def __init__(self, *args: Module) -> None: ...
 
     def __iter__(self) -> Iterator[Module]: ...
@@ -60,5 +64,65 @@ class ModuleList(Module):
     def __iter__(self) -> Iterator[Module]: ...
     def __len__(self) -> int: ...
     def __getitem__(self, index: int) -> Module: ...
+
+
+class Linear(Module):
+    def __init__(self,
+                 in_features: int,
+                 out_features: int,
+                 bias: bool = True,
+                 ) -> None: ...
+
+
+class Conv2d(Module):
+    in_channels: int
+    out_channels: int
+    kernel_size: Union[int, Tuple[int, ...]]
+
+    weight: Tensor
+    bias: Tensor
+
+    def __init__(self,
+                 in_channels: int,
+                 out_channels: int,
+                 kernel_size: Union[int, Tuple[int, ...]],
+                 stride: int = 1,
+                 padding: int = 0,
+                 dilation: int = 1,
+                 groups: int = 1,
+                 bias: bool = True,
+                 padding_mode: str = 'zeros',
+                 ) -> None: ...
+
+
+class BatchNorm2d(Module):
+    weight: Tensor
+    bias: Tensor
+
+    def __init__(self,
+                 num_features: int,
+                 eps: float = 1e-5,
+                 momentum: Optional[float] = 0.1,
+                 affine: bool = True,
+                 track_running_stats: bool = True,
+                 ) -> None: ...
+
+
+class MaxPool2d(Module):
+    def __init__(self,
+                 kernel_size: Union[int, Tuple[int, ...]],
+                 stride: Optional[int] = None,
+                 padding: int = 0,
+                 dilation: int = 1,
+                 return_indices: bool = False,
+                 ceil_mode: bool = False) -> None: ...
+
+
+class AdaptiveAvgPool2d(Module):
+    def __init__(self, output_size: Union[int, Tuple[int, ...]]) -> None: ...
+
+
+class ReLU(Module):
+    def __init__(self, inplace: bool = False) -> None: ...
 
 #END
