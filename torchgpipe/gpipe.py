@@ -284,7 +284,7 @@ class GPipe(nn.Module):
                out_queue: PriorityQueue,
                grad_enabled: bool,
                ) -> None:
-        """A worker thread runs it."""
+        """Run by worker threads."""
         torch.set_grad_enabled(grad_enabled)
 
         input: TensorOrTensors
