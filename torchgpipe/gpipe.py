@@ -177,7 +177,7 @@ class GPipe(nn.Module):
     def cpu(self) -> nn.Module:
         raise MOVING_DENIED
 
-    def to(self, *args: Any, **kwargs: Any) -> nn.Module:
+    def to(self, *args: Any, **kwargs: Any) -> 'GPipe':
         # Deny these usages:
         #
         # - to(device[, dtype, non_blocking])
