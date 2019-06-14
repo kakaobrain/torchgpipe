@@ -2,7 +2,21 @@ import pytest
 import torch
 import torch.cuda
 
-from torchgpipe.microbatch import gather, scatter
+from torchgpipe.microbatch import check, gather, scatter
+
+
+def test_check():
+    check(torch.tensor(42))
+    check((torch.tensor(4), torch.tensor(2)))
+
+    with pytest.raises(TypeError):
+        check(42)
+
+    with pytest.raises(TypeError):
+        check('str')
+
+    with pytest.raises(TypeError):
+        check((torch.tensor(4), 2))
 
 
 def test_gather_tensors():

@@ -12,7 +12,7 @@ import torch.nn as nn
 
 from torchgpipe.batchnorm import DeferredBatchNorm
 from torchgpipe.checkpoint import first
-from torchgpipe.microbatch import gather, scatter
+from torchgpipe.microbatch import check, gather, scatter
 from torchgpipe.partition import Partition
 
 __all__ = ['GPipe', 'current_microbatch']
@@ -432,6 +432,12 @@ class GPipe(nn.Module):
             tensor or tensors: output mini-batch
 
         """
+        if not self.devices:
+            # An empty sequential module is wrapped. Empty sequential module is
+            # not illegal. Just check the input type.
+            check(input)
+            return input
+
         in_queue, out_queue = self.spawn_workers()
         num_inputs = self.push_input(input, in_queue)
         return self.pull_output(num_inputs, in_queue, out_queue)

@@ -540,3 +540,16 @@ def test_deny_moving():
     model.half()
     model.to(torch.double)
     model.to(dtype=torch.float)
+
+
+def test_empty_module():
+    # Empty sequential module is not illegal.
+    model = nn.Sequential()
+    model = GPipe(model, [])
+
+    assert model(torch.tensor(42)) == torch.tensor(42)
+    assert model((torch.tensor(42),)) == (torch.tensor(42),)
+
+    # But only tensor or tensors is legal in GPipe.
+    with pytest.raises(TypeError):
+        model(42)

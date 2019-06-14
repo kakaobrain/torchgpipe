@@ -5,12 +5,28 @@ import torch
 from torch import Tensor
 import torch.cuda.comm
 
-__all__ = ['scatter', 'gather']
+__all__ = ['check', 'scatter', 'gather']
 
 
 Tensors = Tuple[Tensor, ...]
 TensorOrTensors = Union[Tensor, Tensors]
 ChunkedTensorOrTensors = Union[List[Tensor], List[Tensors]]
+
+
+def check(input: TensorOrTensors) -> None:
+    """Checks whether the input is a tensor or tensors.
+
+    Raises:
+        TypeError: input is not a tensor or tensors.
+
+    """
+    if isinstance(input, tuple):
+        for x in input:
+            check(x)
+        return
+
+    if not isinstance(input, Tensor):
+        raise TypeError('expected Tensor, but got %s' % input.__class__.__name__)
 
 
 def scatter(input: TensorOrTensors, chunks: int, device: torch.device) -> ChunkedTensorOrTensors:
