@@ -24,7 +24,7 @@ class Partition(nn.Module):
 
     """
 
-    def __init__(self, module: nn.Sequential, device: torch.device):
+    def __init__(self, module: nn.Sequential, device: torch.device) -> None:
         super().__init__()
 
         self.module = module

@@ -27,7 +27,8 @@ class DeferredBatchNorm(_BatchNorm):
                  eps: float = 1e-5,
                  momentum: Optional[float] = 0.1,
                  affine: bool = True,
-                 chunks: int = 1) -> None:
+                 chunks: int = 1,
+                 ) -> None:
         super().__init__(num_features, eps, momentum, affine, track_running_stats=True)
 
         self.register_buffer('sum', torch.zeros_like(self.running_mean))

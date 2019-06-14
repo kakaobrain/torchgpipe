@@ -127,7 +127,8 @@ class GPipe(nn.Module):
                  devices: Optional[Devices] = None,
                  chunks: int = 1,
                  checkpoint: str = 'except_last',
-                 deferred_batch_norm: bool = False):
+                 deferred_batch_norm: bool = False,
+                 ) -> None:
         super().__init__()
 
         if chunks <= 0:
