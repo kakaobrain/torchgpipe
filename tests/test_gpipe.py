@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from copy import deepcopy
 import time
 
@@ -553,3 +554,20 @@ def test_empty_module():
     # But only tensor or tensors is legal in GPipe.
     with pytest.raises(TypeError):
         model(42)
+
+
+def test_named_children():
+    a = nn.Linear(1, 1)
+    b = nn.Linear(1, 1)
+
+    model = nn.Sequential(OrderedDict([('a', a), ('b', b)]))
+    model = GPipe(model, [1, 1], devices=['cpu', 'cpu'])
+
+    names = set(n for n, _ in model.named_modules())
+    assert 'partitions.0.module.a' in names
+    assert 'partitions.1.module.b' in names
+
+    # GPipe doesn't support __getattr__. Unlike nn.Sequential, GPipe requires
+    # several methods in its namespace.
+    with pytest.raises(AttributeError):
+        model.a

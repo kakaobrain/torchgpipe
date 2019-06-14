@@ -1,8 +1,9 @@
 """The GPipe implemtation."""
+from collections import OrderedDict
 from queue import PriorityQueue
 import sys
 import threading
-from typing import Any, Iterable, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union, cast
 
 import torch
 from torch import Tensor
@@ -236,14 +237,14 @@ class GPipe(nn.Module):
 
         i = 0
         partitions = []
-        partition_layers = []
+        layers_buffer: Dict[str, nn.Module] = OrderedDict()
 
-        for layer in module:
-            partition_layers.append(layer)
+        for name, layer in module.named_children():
+            layers_buffer[name] = layer
 
-            if len(partition_layers) == balance[i]:
+            if len(layers_buffer) == balance[i]:
                 # Group buffered layers as a partition.
-                partition_module = nn.Sequential(*partition_layers)
+                partition_module = nn.Sequential(layers_buffer)
 
                 device = devices[i]
                 partition = Partition(partition_module, device)
@@ -252,7 +253,7 @@ class GPipe(nn.Module):
                 partitions.append(partition)
 
                 # Prepare for the next partition.
-                del partition_layers[:]
+                layers_buffer.clear()
                 i += 1
 
         del devices[i:]
