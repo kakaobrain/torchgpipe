@@ -234,7 +234,7 @@ class GPipe(nn.Module):
 
         if len(balance) > len(devices):
             raise ValueError('too few devices to hold given partitions '
-                             '(devices: %s, paritions: %d)' % (len(devices), len(balance)))
+                             '(devices: %s, partitions: %d)' % (len(devices), len(balance)))
 
         i = 0
         partitions = []
