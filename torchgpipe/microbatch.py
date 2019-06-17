@@ -5,7 +5,7 @@ import torch
 from torch import Tensor
 import torch.cuda.comm
 
-__all__ = ['check', 'scatter', 'gather']
+__all__: List[str] = []
 
 
 Tensors = Tuple[Tensor, ...]
@@ -32,13 +32,13 @@ def check(input: TensorOrTensors) -> None:
 def scatter(input: TensorOrTensors, chunks: int, device: torch.device) -> ChunkedTensorOrTensors:
     """Splits an input mini-batch into multiple micro-batches."""
     if isinstance(input, tuple):
-        buf = [_scatter_1(x, chunks, device) for x in input]
+        buf = [scatter_1(x, chunks, device) for x in input]
         return list(zip(*buf))
 
-    return _scatter_1(input, chunks, device)
+    return scatter_1(input, chunks, device)
 
 
-def _scatter_1(tensor: Tensor, chunks: int, device: torch.device) -> List[Tensor]:
+def scatter_1(tensor: Tensor, chunks: int, device: torch.device) -> List[Tensor]:
     """Choose the best PyTorch API for :func:`scatter`."""
     if not isinstance(tensor, Tensor):
         raise TypeError('expected Tensor to scatter, but got %s' % tensor.__class__.__name__)
@@ -56,14 +56,14 @@ def _scatter_1(tensor: Tensor, chunks: int, device: torch.device) -> List[Tensor
 def gather(outputs: ChunkedTensorOrTensors, device: torch.device) -> TensorOrTensors:
     """Concatenates output micro-batches into a mini-batch."""
     if isinstance(outputs[0], tuple):
-        buf = [_gather_1(list(chunks), device) for chunks in zip(*outputs)]
+        buf = [gather_1(list(chunks), device) for chunks in zip(*outputs)]
         return tuple(buf)
 
     # NOTE(sublee): mypy could not infer the type after the above isinstance.
-    return _gather_1(outputs, device)  # type: ignore
+    return gather_1(outputs, device)  # type: ignore
 
 
-def _gather_1(tensors: List[Tensor], device: torch.device) -> Tensor:
+def gather_1(tensors: List[Tensor], device: torch.device) -> Tensor:
     """Choose the best PyTorch API for :func:`gather`."""
     if device.type == 'cpu':
         tensor = torch.cat(tensors)

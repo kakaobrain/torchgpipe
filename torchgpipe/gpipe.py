@@ -143,7 +143,7 @@ class GPipe(nn.Module):
         if deferred_batch_norm:
             module = DeferredBatchNorm.convert_deferred_batch_norm(module, self.chunks)
 
-        self.partitions, self.balance, self.devices = self.partition(module, balance, devices)
+        self.partitions, self.balance, self.devices = self._partition(module, balance, devices)
 
     def __len__(self) -> int:
         """Counts the length of the underlying sequential module."""
@@ -201,10 +201,10 @@ class GPipe(nn.Module):
         return super().to(*args, **kwargs)
 
     @staticmethod
-    def partition(module: nn.Sequential,
-                  balance: Iterable[int],
-                  devices: Optional[Devices],
-                  ) -> Tuple[nn.ModuleList, Tuple[int, ...], Tuple[torch.device, ...]]:
+    def _partition(module: nn.Sequential,
+                   balance: Iterable[int],
+                   devices: Optional[Devices],
+                   ) -> Tuple[nn.ModuleList, Tuple[int, ...], Tuple[torch.device, ...]]:
         """Partitions the given sequential module onto the devices.
 
         Returns:
@@ -261,7 +261,7 @@ class GPipe(nn.Module):
 
         return nn.ModuleList(partitions), tuple(balance), tuple(devices)
 
-    def spawn_workers(self) -> Tuple[PriorityQueue, PriorityQueue]:
+    def _spawn_workers(self) -> Tuple[PriorityQueue, PriorityQueue]:
         """Creates worker threads."""
         partitions = cast(List[Partition], self.partitions)
 
@@ -274,18 +274,18 @@ class GPipe(nn.Module):
             out_queue = queues[i+1]
 
             args = (partition, in_queue, out_queue, grad_enabled)
-            t = threading.Thread(target=GPipe.worker, args=args)
+            t = threading.Thread(target=GPipe._worker, args=args)
             t.daemon = True
             t.start()
 
         return queues[0], queues[-1]
 
     @staticmethod
-    def worker(partition: Partition,
-               in_queue: PriorityQueue,
-               out_queue: PriorityQueue,
-               grad_enabled: bool,
-               ) -> None:
+    def _worker(partition: Partition,
+                in_queue: PriorityQueue,
+                out_queue: PriorityQueue,
+                grad_enabled: bool,
+                ) -> None:
         """Run by worker threads."""
         torch.set_grad_enabled(grad_enabled)
 
@@ -349,10 +349,10 @@ class GPipe(nn.Module):
             msg = Message(msg.i, (output, leaf, checkpoint))
             out_queue.put(msg)
 
-    def push_input(self,
-                   input: TensorOrTensors,
-                   in_queue: PriorityQueue,
-                   ) -> int:
+    def _push_input(self,
+                    input: TensorOrTensors,
+                    in_queue: PriorityQueue,
+                    ) -> int:
         """Pushes chunked inputs to the first partition."""
         # Divide a mini-batch into micro-batches.
         in_device = self.devices[0]
@@ -382,11 +382,11 @@ class GPipe(nn.Module):
 
         return num_inputs
 
-    def pull_output(self,
-                    num_inputs: int,
-                    in_queue: PriorityQueue,
-                    out_queue: PriorityQueue,
-                    ) -> Tensor:
+    def _pull_output(self,
+                     num_inputs: int,
+                     in_queue: PriorityQueue,
+                     out_queue: PriorityQueue,
+                     ) -> Tensor:
         """Collects and concatenates chunked outputs from the last partition.
 
         If an exception from a parititon is detected, all workers are closed
@@ -440,6 +440,6 @@ class GPipe(nn.Module):
             check(input)
             return input
 
-        in_queue, out_queue = self.spawn_workers()
-        num_inputs = self.push_input(input, in_queue)
-        return self.pull_output(num_inputs, in_queue, out_queue)
+        in_queue, out_queue = self._spawn_workers()
+        num_inputs = self._push_input(input, in_queue)
+        return self._pull_output(num_inputs, in_queue, out_queue)

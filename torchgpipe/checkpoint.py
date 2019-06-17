@@ -6,7 +6,7 @@ import torch
 from torch import Tensor
 import torch.autograd
 
-__all__ = ['checkpoint', 'is_recomputing', 'first']
+__all__ = ['is_recomputing']
 
 
 Tensors = Tuple[Tensor, ...]
