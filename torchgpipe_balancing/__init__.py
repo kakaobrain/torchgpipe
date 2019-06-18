@@ -13,7 +13,7 @@ Usage::
 
 """
 import time
-from typing import Any, List, Optional, Union
+from typing import List, Optional, Union
 
 import torch
 from torch import Tensor
@@ -79,6 +79,46 @@ def balance_by_time(module: nn.Sequential,
     return utils.balance_cost(map(sum, times), partitions)
 
 
-def balance_by_size(*args: Any, **kwargs: Any) -> Any:
-    """Balances the given seqeuntial module by memory usage per layer."""
-    raise NotImplementedError
+def balance_by_size(module: nn.Sequential,
+                    sample: Tensor,
+                    *,
+                    partitions: int = 1,
+                    device: Optional[Device] = None,
+                    ) -> List[int]:
+    """Balances the given seqeuntial module by memory usage per layer.
+
+    Args:
+        module (nn.Sequential):
+            sequential module to be partitioned
+        sample (Tensor):
+            example input
+
+    Keyword Args:
+        partitions (int):
+            intended number of partitions (default: 1)
+        device (torch.device):
+            CUDA device where the module is profiled (default: any related CUDA
+            device or ``torch.device('cuda')``)
+
+    Returns:
+        A list of number of layers in each partition. Use it for the
+        ``balance`` parameter of :class:`torchgpipe.GPipe`.
+
+    """
+    if not hasattr(torch.cuda, 'reset_max_memory_allocated'):
+        raise NotImplementedError('balance_by_size requires PyTorch>=1.1')
+
+    sample, device = utils.concentrate_on_device(module, sample, device)
+
+    if device.type != 'cuda':
+        raise ValueError('balance_by_size supports only CUDA device')
+
+    sizes: List[int] = []
+
+    x = sample
+    for i, layer in enumerate(module):
+        torch.cuda.reset_max_memory_allocated(device)
+        x = layer(x)
+        sizes.append(torch.cuda.max_memory_allocated(device))
+
+    return utils.balance_cost(sizes, partitions)
