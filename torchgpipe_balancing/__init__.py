@@ -12,14 +12,71 @@ Usage::
     gpipe = GPipe(model, balance, chunks=8)
 
 """
-from typing import Any
+import time
+from typing import Any, List, Optional, Union
+
+import torch
+from torch import Tensor
+import torch.nn as nn
+
+from torchgpipe_balancing import utils
 
 __all__ = ['balance_by_time', 'balance_by_size']
 
 
-def balance_by_time(*args: Any, **kwargs: Any) -> Any:
-    """Balances the given seqeuntial module by elapsed time per layer."""
-    raise NotImplementedError
+Device = Union[torch.device, int, str]
+
+
+def balance_by_time(module: nn.Sequential,
+                    sample: Tensor,
+                    *,
+                    partitions: int = 1,
+                    device: Optional[Device] = None,
+                    timeout: float = 1.0,
+                    ) -> List[int]:
+    """Balances the given seqeuntial module by elapsed time per layer.
+
+    Args:
+        module (nn.Sequential):
+            sequential module to be partitioned
+        sample (Tensor):
+            example input
+
+    Keyword Args:
+        partitions (int):
+            intended number of partitions (default: 1)
+        device (torch.device):
+            CUDA device where the module is profiled (default: any related CUDA
+            device or ``torch.device('cuda')``)
+        timeout (float):
+            profiling iterates again if the timeout (as second) is not exceeded
+            (default: 1 second)
+
+    Returns:
+        A list of number of layers in each partition. Use it for the
+        ``balance`` parameter of :class:`torchgpipe.GPipe`.
+
+    """
+    sample, device = utils.concentrate_on_device(module, sample, device)
+
+    times: List[List[float]] = [[] for _ in module]
+
+    begun_at = time.time()
+    while time.time() - begun_at < timeout:
+
+        x = sample
+        for i, layer in enumerate(module):
+            utils.synchronize_device(device)
+            tick = time.time()
+
+            x = layer(x)
+
+            utils.synchronize_device(device)
+            tock = time.time()
+
+            times[i].append(tock - tick)
+
+    return utils.balance_cost(map(sum, times), partitions)
 
 
 def balance_by_size(*args: Any, **kwargs: Any) -> Any:
