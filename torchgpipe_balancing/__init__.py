@@ -87,6 +87,11 @@ def balance_by_size(module: nn.Sequential,
                     ) -> List[int]:
     """Balances the given seqeuntial module by memory usage per layer.
 
+    Note:
+        This function relies on :func:`torch.cuda.reset_max_memory_allocated`
+        which is introduced at PyTorch 1.1. Therefore, it doesn't support
+        neither CPU tensors nor PyTorch 1.0.x.
+
     Args:
         module (nn.Sequential):
             sequential module to be partitioned
