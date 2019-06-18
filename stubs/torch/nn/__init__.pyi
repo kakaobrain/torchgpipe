@@ -1,5 +1,5 @@
 #MODIFIED BY TORCHGPIPE
-from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Tuple, TypeVar, Union, overload
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Tuple, TypeVar, Union, overload
 
 from torch import Tensor, device
 
