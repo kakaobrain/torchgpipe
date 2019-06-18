@@ -4,7 +4,7 @@ import pytest
 import torch
 from torch import nn
 
-from torchgpipe_balancing import balance_by_time, blockpartition
+from torchgpipe_balancing import balance_by_size, balance_by_time, blockpartition
 
 
 def test_blockpartition():
@@ -42,4 +42,23 @@ def test_balance_by_time():
     model = nn.Sequential(*[Delay(i/100) for i in [1, 2, 3, 4, 5, 6]])
     sample = torch.rand(1)
     balance = balance_by_time(model, sample, partitions=2, device='cpu')
+    assert balance == [4, 2]
+
+
+# balance_by_size supports only CUDA device.
+@pytest.mark.skipif(not torch.cuda.is_available(), reason='cuda required')
+def test_balance_by_size():
+    class Expand(nn.Module):
+        def __init__(self, times):
+            super().__init__()
+            self.times = times
+
+        def forward(self, x):
+            for i in range(self.times):
+                x = x + torch.rand_like(x, requires_grad=True)
+            return x
+
+    model = nn.Sequential(*[Expand(i) for i in [1, 2, 3, 4, 5, 6]])
+    sample = torch.rand(10, 100, 100)
+    balance = balance_by_size(model, sample, partitions=2, device='cuda')
     assert balance == [4, 2]
