@@ -100,6 +100,14 @@ class GPipe(nn.Module):
         deferred_batch_norm (bool):
             whether to use deferred BatchNorm moving statistics (default: False)
 
+    Raises:
+        TypeError:
+            the module is not a :class:`~torch.nn.Sequential`.
+        ValueError:
+            invalid arguments, or wrong balance
+        IndexError:
+            the number of devices is fewer than the number of partitions.
+
     """
 
     #: The devices mapped to each partition.
@@ -223,6 +231,12 @@ class GPipe(nn.Module):
             Partitions are represented as a :class:`~torch.nn.ModuleList` whose
             item is a partition. All layers in a partition are placed in the
             same device.
+
+        Raises:
+            ValueError:
+                wrong balance
+            IndexError:
+                the number of devices is fewer than the number of partitions.
 
         """
         if len(module) != sum(balance):
@@ -432,6 +446,9 @@ class GPipe(nn.Module):
 
         Returns:
             tensor or tensors: output mini-batch
+
+        Raises:
+            TypeError: input is not a tensor or tensors.
 
         """
         if not self.devices:
