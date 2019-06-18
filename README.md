@@ -139,7 +139,7 @@ torchgpipe project is developed by [Heungsub Lee][] and [Myungryong Jeong][] at
 If you apply this library to any project and research, please cite our code:
 
 ```
-@Misc{torchgpipe,
+@misc{torchgpipe,
   author       = {Kakao Brain},
   title        = {torchgpipe, {A} {GPipe} implementation in {PyTorch}},
   howpublished = {\url{https://github.com/kakaobrain/torchgpipe}},

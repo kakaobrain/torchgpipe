@@ -213,7 +213,7 @@ License 2.0 사용권](LICENSE)으로 배포됩니다.
 해당 라이브러리를 연구용으로 사용할 경우, 아래 BibTeX 링크를 인용해야 합니다.
 
 ```
-@Misc{torchgpipe,
+@misc{torchgpipe,
   author       = {Kakao Brain},
   title        = {torchgpipe, {A} {GPipe} implementation in {PyTorch}},
   howpublished = {\url{https://github.com/kakaobrain/torchgpipe}},
