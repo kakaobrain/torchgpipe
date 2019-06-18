@@ -571,3 +571,17 @@ def test_named_children():
     # several methods in its namespace.
     with pytest.raises(AttributeError):
         model.a
+
+
+def test_recommend_torchgpipe_balancing():
+    with pytest.raises(ValueError, match='torchgpipe_balancing'):
+        # balance is required
+        GPipe(nn.Sequential())
+
+    with pytest.raises(ValueError, match='torchgpipe_balancing'):
+        # module and sum of balance have differen length (module: 0, sum of balance: 1)
+        GPipe(nn.Sequential(), [1])
+
+    with pytest.raises(ValueError, match='torchgpipe_balancing'):
+        # module and sum of balance have different length (module: 2, sum of balance: 1)
+        GPipe(nn.Sequential(nn.Linear(1, 1), nn.Linear(1, 1)), [1])
