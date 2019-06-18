@@ -62,3 +62,34 @@ def test_balance_by_size():
     sample = torch.rand(10, 100, 100)
     balance = balance_by_size(model, sample, partitions=2, device='cuda')
     assert balance == [4, 2]
+
+
+def test_sandbox():
+    model = nn.Sequential(nn.BatchNorm2d(3))
+
+    before = {k: v.clone() for k, v in model.state_dict().items()}
+
+    sample = torch.rand(1, 3, 10, 10)
+    balance_by_time(model, sample, partitions=1, device='cpu')
+
+    after = model.state_dict()
+
+    assert before.keys() == after.keys()
+    for key, value in before.items():
+        assert torch.allclose(after[key], value)
+
+
+def test_not_training():
+    class AssertTraining(nn.Module):
+        def forward(self, x):
+            assert self.training
+            return x
+    model = nn.Sequential(AssertTraining())
+
+    model.eval()
+    assert not model.training
+
+    sample = torch.rand(1)
+    balance_by_time(model, sample, partitions=1, device='cpu')
+
+    assert not model.training
