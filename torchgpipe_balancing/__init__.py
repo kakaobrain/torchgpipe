@@ -65,16 +65,17 @@ def balance_by_time(module: nn.Sequential,
     while time.time() - begun_at < timeout:
 
         x = sample
-        for i, layer in enumerate(module):
-            utils.synchronize_device(device)
-            tick = time.time()
+        with utils.training_sandbox(module):
+            for i, layer in enumerate(module):
+                utils.synchronize_device(device)
+                tick = time.time()
 
-            x = layer(x)
+                x = layer(x)
 
-            utils.synchronize_device(device)
-            tock = time.time()
+                utils.synchronize_device(device)
+                tock = time.time()
 
-            times[i].append(tock - tick)
+                times[i].append(tock - tick)
 
     return utils.balance_cost(map(sum, times), partitions)
 
@@ -121,9 +122,10 @@ def balance_by_size(module: nn.Sequential,
     sizes: List[int] = []
 
     x = sample
-    for i, layer in enumerate(module):
-        torch.cuda.reset_max_memory_allocated(device)
-        x = layer(x)
-        sizes.append(torch.cuda.max_memory_allocated(device))
+    with utils.training_sandbox(module):
+        for i, layer in enumerate(module):
+            torch.cuda.reset_max_memory_allocated(device)
+            x = layer(x)
+            sizes.append(torch.cuda.max_memory_allocated(device))
 
     return utils.balance_cost(sizes, partitions)
