@@ -131,6 +131,9 @@ class GPipe(nn.Module):
                  ) -> None:
         super().__init__()
 
+        if not isinstance(module, nn.Sequential):
+            raise TypeError('non-sequential module cannot be partitioned')
+
         if chunks <= 0:
             raise ValueError('number of chunks must be positive integer')
 
@@ -142,6 +145,13 @@ class GPipe(nn.Module):
 
         if deferred_batch_norm:
             module = DeferredBatchNorm.convert_deferred_batch_norm(module, self.chunks)
+
+        # Split the module into multiple partitions.
+        balance = list(balance)
+
+        if devices is None:
+            devices = range(torch.cuda.device_count())
+        devices = [torch.device(d) for d in devices]
 
         self.partitions, self.balance, self.devices = self._partition(module, balance, devices)
 
@@ -202,8 +212,8 @@ class GPipe(nn.Module):
 
     @staticmethod
     def _partition(module: nn.Sequential,
-                   balance: Iterable[int],
-                   devices: Optional[Devices],
+                   balance: List[int],
+                   devices: List[torch.device],
                    ) -> Tuple[nn.ModuleList, Tuple[int, ...], Tuple[torch.device, ...]]:
         """Partitions the given sequential module onto the devices.
 
@@ -215,11 +225,6 @@ class GPipe(nn.Module):
             same device.
 
         """
-        if not isinstance(module, nn.Sequential):
-            raise TypeError('non-sequential module cannot be partitioned')
-
-        balance = list(balance)
-
         if len(module) != sum(balance):
             raise ValueError('module and sum of balance have different length '
                              '(module: %d, sum of balance: %d)' % (len(module), sum(balance)))
@@ -227,13 +232,8 @@ class GPipe(nn.Module):
             raise ValueError('all balance numbers must be positive integer '
                              '(balance: %r)' % balance)
 
-        if devices is None:
-            devices = [torch.device(d) for d in range(torch.cuda.device_count())]
-        else:
-            devices = [torch.device(d) for d in devices]
-
         if len(balance) > len(devices):
-            raise ValueError('too few devices to hold given partitions '
+            raise IndexError('too few devices to hold given partitions '
                              '(devices: %s, partitions: %d)' % (len(devices), len(balance)))
 
         i = 0

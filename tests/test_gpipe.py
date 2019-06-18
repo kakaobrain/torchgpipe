@@ -81,7 +81,7 @@ def test_too_few_devices():
     x = nn.Linear(1, 1)
     model = nn.Sequential(x, x, x, x)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         # len(balance) > len(devices)
         model = GPipe(model, balance=[1, 1, 1, 1], devices=['cpu'])
 
