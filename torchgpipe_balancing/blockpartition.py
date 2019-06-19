@@ -18,7 +18,7 @@ def solve(sequence: List[float], partitions: int = 1) -> List[List[float]]:
 
     """
     if partitions < 1:
-        return []
+        raise ValueError('partitions must be a positive integer (%d < 1)' % (partitions,))
 
     n = len(sequence)
     if n < partitions:
