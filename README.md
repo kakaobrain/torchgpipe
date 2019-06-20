@@ -30,7 +30,7 @@ achieved 84.3% top-1 and 97.0% top-5 accuracy on ImageNet classification
 benchmark (the state-of-the-art performance as of May 2019).
 
 GPipe uses (a) pipeline parallelism and (b) automatic recomputation of the
-forward-propagation during the back-propagation, hence leverages training a
+forward propagation during the backpropagation, hence leverages training a
 large model. We refer to (b) as [checkpointing][], following the well-known
 terminology in PyTorch community.
 
@@ -104,8 +104,8 @@ pipeline-2 | 1.352 | 1.418
 pipeline-4 | 2.181 | 2.182
 pipeline-8 | 2.808 | 2.891
 
-The table shows the reproduced performance benchmark on ResNet-101, as stated by
-reported in Figure 3(b) of the paper.
+The table shows the reproduced performance benchmark on ResNet-101, as stated
+by reported in Figure 3(b) of the paper.
 
 Naive-1 indicates the baseline setting that ResNet-101 on a single device is
 trained without GPipe. The speeds under other settings are measured relative to
