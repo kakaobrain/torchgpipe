@@ -47,7 +47,7 @@ terminology in PyTorch community.
 <dd>Checkpointing is applied to each partition to minimize the overall memory
     consumption by a model. During forward propagation, only the tensors at the
     boundaries between partitions are remembered. All other intermediate
-    tensors are volatilized, and recomputed during backward propagation when
+    tensors are volatilized, and recomputed during backpropagation when
     necessary.</dd>
 </dl>
 
