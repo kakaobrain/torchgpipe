@@ -39,6 +39,9 @@ API
    .. autoattribute:: devices
       :annotation:
 
+.. autofunction:: torchgpipe_balancing.balance_by_time(module, canary, partitions, device, timeout)
+
+.. autofunction:: torchgpipe_balancing.balance_by_size(module, canary, partitions, device)
 
 Licensing and Authors
 ---------------------

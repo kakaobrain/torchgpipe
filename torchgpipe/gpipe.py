@@ -60,6 +60,26 @@ def current_microbatch() -> Optional[Tensor]:
         return None
 
 
+def recommend_torchgpipe_balancing(title: str) -> ValueError:
+    """Creates a :exc:`ValueError` with recommendation to
+    :mod:`torchgpipe_balancing`.
+    """
+    return ValueError('''{title}
+
+If your model is still under development, its optimal balance would change
+frequently. In this case, we highly recommend torchgpipe_balancing for naive
+automatic balancing:
+
+  from torchgpipe import GPipe
+  from torchgpipe_balancing import balance_by_time
+
+  sample = torch.rand(...)
+  balance = balance_by_time(model, sample, partitions=...)
+
+  model = GPipe(model, balance, chunks=...)
+'''.format(title=title))
+
+
 MOVING_DENIED = TypeError('denied to move parameters and buffers, '
                           'because GPipe should manage device placement')
 
@@ -130,7 +150,7 @@ class GPipe(nn.Module):
 
     def __init__(self,
                  module: nn.Sequential,
-                 balance: Iterable[int],
+                 balance: Optional[Iterable[int]] = None,
                  *,
                  devices: Optional[Devices] = None,
                  chunks: int = 1,
@@ -141,6 +161,9 @@ class GPipe(nn.Module):
 
         if not isinstance(module, nn.Sequential):
             raise TypeError('non-sequential module cannot be partitioned')
+
+        if balance is None:
+            raise recommend_torchgpipe_balancing('balance is required')
 
         if chunks <= 0:
             raise ValueError('number of chunks must be positive integer')
@@ -161,7 +184,10 @@ class GPipe(nn.Module):
             devices = range(torch.cuda.device_count())
         devices = [torch.device(d) for d in devices]
 
-        self.partitions, self.balance, self.devices = self._partition(module, balance, devices)
+        try:
+            self.partitions, self.balance, self.devices = self._partition(module, balance, devices)
+        except ValueError as exc:
+            raise recommend_torchgpipe_balancing(str(exc))
 
     def __len__(self) -> int:
         """Counts the length of the underlying sequential module."""

@@ -23,7 +23,7 @@ setup(
 
     zip_safe=False,
 
-    packages=['torchgpipe'],
+    packages=['torchgpipe', 'torchgpipe_balancing'],
     package_data={'torchgpipe': ['py.typed']},
 
     install_requires=['torch>=1'],
