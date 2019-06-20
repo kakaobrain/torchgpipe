@@ -114,6 +114,92 @@ k partitions with GPipe using k devices. Pipeline-1 is slower than naive-1
 since it does not benefit from pipeline parallelism but has checkpointing
 overhead.
 
+### AmoebaNet-D Memory Benchmark
+
+<table>
+  <thead>
+    <tr>
+      <th rowspan="2">Experiment</th>
+      <th colspan="2">naive-1</th>
+      <th colspan="2">pipeline-1</th>
+      <th colspan="2">pipeline-2</th>
+      <th colspan="2">pipeline-4</th>
+      <th colspan="2">pipeline-8</th>
+    </tr>
+    <tr align="center">
+      <td>torchgpipe</td>
+      <td>GPipe<br>(original)</td>
+      <td>torchgpipe</td>
+      <td>GPipe<br>(original)</td>
+      <td>torchgpipe</td>
+      <td>GPipe<br>(original)</td>
+      <td>torchgpipe</td>
+      <td>GPipe<br>(original)</td>
+      <td>torchgpipe</td>
+      <td>GPipe<br>(original)</td>
+    </tr>
+  </thead>
+  <tbody>
+    <tr align="center">
+      <td>AmoebaNet-D (L, F)</td>
+      <td colspan="2">(6, 208)</td>
+      <td colspan="2">(6, 416)</td>
+      <td colspan="2">(6, 544)</td>
+      <td colspan="2">(12, 544)</td>
+      <td colspan="2">(24, 512)</td>
+    </tr>
+    <tr align="center">
+      <td># of Model Parameters</td>
+      <td>90M</td>
+      <td>82M</td>
+      <td>358M</td>
+      <td>318M</td>
+      <td>613M</td>
+      <td>542M</td>
+      <td>1.16B</td>
+      <td>1.05B</td>
+      <td>2.01B</td>
+      <td>1.80B</td>
+    </tr>
+    <tr align="center">
+      <td>Total Peak Model Parameter Memory</td>
+      <td>1.00GB</td>
+      <td>1.05GB</td>
+      <td>4.01GB</td>
+      <td>3.80GB</td>
+      <td>6.45GB</td>
+      <td>6.45GB</td>
+      <td>13.00GB</td>
+      <td>12.53GB</td>
+      <td>22.42GB</td>
+      <td>24.62GB</td>
+    </tr>
+    <tr align="center">
+      <td>Total Peak Activation Memory</td>
+      <td>-</td>
+      <td>6.26GB</td>
+      <td>6.64GB</td>
+      <td>3.46GB</td>
+      <td>11.31GB</td>
+      <td>8.11GB</td>
+      <td>18.72GB</td>
+      <td>15.21GB</td>
+      <td>35.78GB</td>
+      <td>26.24GB</td>
+    </tr>
+  </tbody>
+</table>
+
+It shows the better memory utilization of AmoebaNet-D with GPipe,
+as stated in Table 1 of the paper. The size of an AmoebaNet-D
+model is determined by two hyperparameters L and F which are proportional
+to the number of layers and filters, respectively.
+
+The difference between naive-1 and pipeline-1 indicates GPipe's
+capability to leverage training a larger model. With 8 GPUs,
+GPipe is capable of training a model which is 22 times larger compared
+to the naive-1 setting.
+
 ## Notes
 
 This project is functional, but the interface is not confirmed yet. All public
