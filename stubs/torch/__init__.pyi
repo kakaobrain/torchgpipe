@@ -25,6 +25,11 @@ from .autograd import no_grad as no_grad, enable_grad as enable_grad, \
 from . import cuda as cuda
 from . import optim as optim
 
+#MODIFIED BY TORCHGPIPE
+from . import version
+from . import backends
+#END
+
 class dtype: ...
 
 class layout: ...
