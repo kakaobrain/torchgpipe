@@ -97,12 +97,12 @@ references.
 ### ResNet-101 Performance Benchmark
 
 Experiment | torchgpipe | GPipe (original)
----------- | ----: | ----:
-naive-1    | 1     | 1
-pipeline-1 | 0.74  | 0.8
-pipeline-2 | 1.352 | 1.418
-pipeline-4 | 2.181 | 2.182
-pipeline-8 | 2.808 | 2.891
+---------- | -----: | -----:
+naive-1    |     1x |     1x
+pipeline-1 | 0.736x |   0.8x
+pipeline-2 | 1.350x | 1.418x
+pipeline-4 | 2.291x | 2.182x
+pipeline-8 | 3.114x | 2.891x
 
 The table shows the reproduced performance benchmark on ResNet-101, as stated
 by reported in Figure 3(b) of the paper.
@@ -113,6 +113,9 @@ the speed of naive-1 (which is considered as the unit speed). Pipeline-k means
 k partitions with GPipe using k devices. Pipeline-1 is slower than naive-1
 since it does not benefit from pipeline parallelism but has checkpointing
 overhead.
+
+The reproducible code can be found in
+[examples/resnet101_performance_benchmark](examples/resnet101_performance_benchmark).
 
 ### AmoebaNet-D Memory Benchmark
 

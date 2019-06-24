@@ -89,12 +89,12 @@ API 문서를 비롯한 자세한 문서는 [torchgpipe.readthedocs.io][rtd]에�
 ### ResNet-101 속도 벤치마크
 
 실험 | torchgpipe | GPipe (논문)
----------- | ----: | ----:
-naive-1    | 1     | 1
-pipeline-1 | 0.74  | 0.8
-pipeline-2 | 1.352 | 1.418
-pipeline-4 | 2.181 | 2.182
-pipeline-8 | 2.808 | 2.891
+---------- | -----: | -----:
+naive-1    |     1x |     1x
+pipeline-1 | 0.736x |   0.8x
+pipeline-2 | 1.350x | 1.418x
+pipeline-4 | 2.291x | 2.182x
+pipeline-8 | 3.114x | 2.891x
 
 GPipe 논문의 그림3 (b)에 보고된 ResNet-101 학습 속도 벤치마크를
 재현했습니다.
@@ -104,6 +104,9 @@ GPipe 없이 한 장치에서 ResNet-101을 학습 시켰을 때 상대속도를
 학습시켰을 때 naive-1 대비 상대속도를 나타냅니다. pipeline-1의 경우 Pipeline
 Parallelism이 적용되지 않고 Checkpointing 오버헤드만 있어서 naive-1에 비해
 오히려 더 느립니다.
+
+[examples/resnet101_performance_benchmark](examples/resnet101_performance_benchmark)에서
+실험 코드를 확인할 수 있습니다.
 
 ### AmoebaNet-D 메모리 벤치마크
 
