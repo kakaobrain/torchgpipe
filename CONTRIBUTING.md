@@ -1,8 +1,8 @@
 # Contributing to torchgpipe
 
 torchgpipe is currently under development. We will try to make it stable and
-usable. Until v0.1.0, which will be our first production release, we don't open
-up receiving issues or pull requests. Please wait for a while.
+usable. Until v0.1.0, which will be our first production release, we open up
+only bug reports, but not feature or pull requests. Please wait for a while.
 
 Kakao Brain, the project owner, has authority to update this guide.
 
