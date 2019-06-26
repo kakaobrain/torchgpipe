@@ -44,17 +44,17 @@ def balance_by_time(module: nn.Sequential,
 
     Keyword Args:
         partitions (int):
-            intended number of partitions (default: 1)
+            intended number of partitions (default: ``1``)
         device (torch.device):
             CUDA device where the module is profiled (default: any related CUDA
             device or ``torch.device('cuda')``)
         timeout (float):
-            profiling iterates again if the timeout (as second) is not exceeded
-            (default: 1 second)
+            profiling iterates again if the timeout (in second) is not exceeded
+            (default: ``1.0``)
 
     Returns:
         A list of number of layers in each partition. Use it for the
-        ``balance`` parameter of :class:`torchgpipe.GPipe`.
+        ``balance`` parameter of :class:`~torchgpipe.GPipe`.
 
     """
     sample, device = utils.concentrate_on_device(module, sample, device)
@@ -101,14 +101,14 @@ def balance_by_size(module: nn.Sequential,
 
     Keyword Args:
         partitions (int):
-            intended number of partitions (default: 1)
+            intended number of partitions (default: ``1``)
         device (torch.device):
             CUDA device where the module is profiled (default: any related CUDA
             device or ``torch.device('cuda')``)
 
     Returns:
         A list of number of layers in each partition. Use it for the
-        ``balance`` parameter of :class:`torchgpipe.GPipe`.
+        ``balance`` parameter of :class:`~torchgpipe.GPipe`.
 
     """
     if not hasattr(torch.cuda, 'reset_max_memory_allocated'):

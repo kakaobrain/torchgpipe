@@ -16,39 +16,55 @@ A GPipe_ implementation in PyTorch_.
    for input in data_loader:
        output = model(input)
 
+What is GPipe?
+~~~~~~~~~~~~~~
 
-Installing
-----------
+GPipe is a scalable pipeline parallelism library published by Google Brain,
+which allows efficient training of large, memory-consuming models. According to
+the paper, GPipe can train a 25x larger model by using 8x devices (TPU), and
+train a model 3.5x faster by using 4x devices.
 
-torchgpipe is available on PyPI_.
+`GPipe: Efficient Training of Giant Neural Networks using Pipeline Parallelism
+<https://arxiv.org/abs/1811.06965>`_
 
-.. sourcecode:: console
+Google trained AmoebaNet-B with 557M parameters over GPipe. This model has
+achieved 84.3% top-1 and 97.0% top-5 accuracy on ImageNet classification
+benchmark (the state-of-the-art performance as of May 2019).
 
-   $ pip install torchgpipe
+Documentations
+~~~~~~~~~~~~~~
 
-.. _PyPI: https://pypi.org/project/torchgpipe
+.. toctree::
+   :maxdepth: 2
 
+   gpipe
+   guide
+   api
+   benchmarks
+   changelog
 
-API
----
+Authors and Licensing
+~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: torchgpipe.GPipe(module, balance, \**kwargs)
-
-   .. automethod:: forward(input)
-
-   .. autoattribute:: devices
-      :annotation:
-
-.. autofunction:: torchgpipe_balancing.balance_by_time(module, canary, partitions, device, timeout)
-
-.. autofunction:: torchgpipe_balancing.balance_by_size(module, canary, partitions, device)
-
-Licensing and Authors
----------------------
-
-This package is opened under the Apache License 2.0.
-
-We are `Heungsub Lee`_ and Myungryong Jeong in `Kakao Brain`_.
+This project is developed by `Heungsub Lee`_ and `Myungryong Jeong`_ at `Kakao
+Brain`_, with `Sungbin Lim`_, `Chiheon Kim`_, `Ildoo Kim`_, and `Woonhyuk
+Baek`_'s help. It is distributed under Apache License 2.0.
 
 .. _Heungsub Lee: https://subl.ee/
+.. _Myungryong Jeong: https://github.com/mrJeong
+.. _Sungbin Lim: https://github.com/sungbinlim
+.. _Chiheon Kim: https://github.com/chiheonk
+.. _Ildoo Kim: https://github.com/ildoonet
+.. _Woonhyuk Baek: https://github.com/wbaek
 .. _Kakao Brain: https://kakaobrain.com/
+
+If you apply this library to any project and research, please cite our code:
+
+.. sourcecode:: bibtex
+
+   @misc{torchgpipe,
+     author       = {Kakao Brain},
+     title        = {torchgpipe, {A} {GPipe} implementation in {PyTorch}},
+     howpublished = {\url{https://github.com/kakaobrain/torchgpipe}},
+     year         = {2019}
+   }

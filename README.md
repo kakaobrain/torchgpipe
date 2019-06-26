@@ -1,4 +1,4 @@
-# torchgpipe
+# torchgpipe <img src="docs/_static/not-pipe.svg" height="20" />
 
 [![PyPI](https://img.shields.io/pypi/v/torchgpipe.svg)](https://pypi.org/project/torchgpipe)
 [![Build Status](https://travis-ci.org/kakaobrain/torchgpipe.svg?branch=master)](https://travis-ci.org/kakaobrain/torchgpipe)
@@ -65,7 +65,7 @@ $ pip install torchgpipe
 ```
 
 To train a module with GPipe, simply wrap it with `torchgpipe.GPipe`. Your
-module must be `nn.Sequential` as GPipe will automatically break up the module
+module must be `nn.Sequential` as GPipe will automatically split the module
 into partitions with consecutive layers. `balance` argument determines the
 number of layers in each partition. `chunks` argument specifies the number of
 micro-batches. Input, output, and intermediate tensors must be `Tensor` or

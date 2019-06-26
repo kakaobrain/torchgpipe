@@ -1,0 +1,45 @@
+Benchmarks
+==========
+
+ResNet-101
+~~~~~~~~~~
+
+ResNet-101 Performance Benchmark
+--------------------------------
+
+==========  ===================  =======
+Experiment  Throughput           Speedup
+==========  ===================  =======
+naive-1     100.506 samples/sec   1.000x
+pipeline-1   73.925 samples/sec   0.736x
+pipeline-2  135.691 samples/sec   1.350x
+pipeline-4  230.216 samples/sec   2.291x
+pipeline-8  312.945 samples/sec   3.114x
+==========  ===================  =======
+
+The code which is reproducible on Tesla P40 GPUs, and the experiment details
+can be found in `examples/resnet101_performance_benchmark`_.
+
+.. _examples/resnet101_performance_benchmark:
+   https://github.com/kakaobrain/torchgpipe/
+   tree/master/examples/resnet101_performance_benchmark
+
+AmoebaNet-D
+~~~~~~~~~~~
+
+.. AmoebaNet-D Performance Benchmark
+.. ---------------------------------
+
+AmoebaNet-D Memory Benchmark
+----------------------------
+
+==========  ===========  ==========  ================  =================
+Experiment  AmoebaNet-D  # of Model  Total Model       Total Peak
+            (L, F)       Parameters  Parameter Memory  Activation Memory
+==========  ===========  ==========  ================  =================
+naive-1     (6, 208)     90M         1.00GB            --
+pipeline-1  (6, 416)     358M        4.01GB            6.64GB
+pipeline-2  (6, 544)     613M        6.45GB            11.31GB
+pipeline-4  (12, 544)    1.16B       13.00GB           18.72GB
+pipeline-8  (24, 512)    2.01B       22.42GB           35.78GB
+==========  ===========  ==========  ================  =================

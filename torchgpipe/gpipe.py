@@ -48,10 +48,14 @@ _local = threading.local()
 def current_microbatch() -> Optional[Tensor]:
     """Gets the current micro-batch identifier as a tensor.
 
-    If your modules should rely on where the current micro-batch lane, use it
-    to identify the lane.
+    If your module relies on where the current micro-batch lane, use it to
+    identify the lane.
 
-    It returns ``None`` on out of partitions.
+    Returns:
+        tensor or ``None``: A tensor which identifies the current micro-batch
+        lane, or ``None`` for out of a GPipe context.
+
+    .. seealso:: :ref:`Long Skip Connections`
 
     """
     try:
@@ -113,12 +117,13 @@ class GPipe(nn.Module):
         devices (iterable of devices):
             devices to use (default: all CUDA devices)
         chunks (int):
-            number of micro-batches (default: 1)
+            number of micro-batches (default: ``1``)
         checkpoint (str):
-            when to enable checkpointing, one of 'always', 'except_last', or
-            'never' (default: 'except_last')
+            when to enable checkpointing, one of ``'always'``,
+            ``'except_last'``, or ``'never'`` (default: ``'except_last'``)
         deferred_batch_norm (bool):
-            whether to use deferred BatchNorm moving statistics (default: False)
+            whether to use deferred BatchNorm moving statistics
+            (default: ``False``, See :ref:`Deferred BatchNorm` for more details)
 
     Raises:
         TypeError:

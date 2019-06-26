@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg viewBox="0 0 640 110" xmlns="http://www.w3.org/2000/svg">
+  <!-- labels -->
+  <style>
+    text {
+      font: 15px Georgia, serif;
+      fill: #3e4349;
+    }
+  </style>
+  <text x="5" y="28">cuda:0</text>
+  <text x="5" y="43">cuda:1</text>
+  <text x="5" y="58">cuda:2</text>
+  <text x="5" y="73">cuda:3</text>
+
+  <text x="85" y="95">forward</text>
+  <text x="205" y="95">backward</text>
+
+  <!-- lines -->
+  <style>
+    line {
+      stroke: #ddd;
+    }
+  </style>
+  <line x1="60" y1="15" x2="100%" y2="15" />
+  <line x1="60" y1="30" x2="100%" y2="30" />
+  <line x1="60" y1="45" x2="100%" y2="45" />
+  <line x1="60" y1="60" x2="100%" y2="60" />
+  <line x1="60" y1="75" x2="100%" y2="75" />
+
+  <!-- forward -->
+  <style>
+    rect {
+      fill: #3e4349;
+      stroke: #fff;
+    }
+  </style>
+
+  <rect  x="60" y="15" width="5" height="15" />
+  <rect  x="65" y="15" width="5" height="15" />
+  <rect  x="75" y="15" width="5" height="15" />
+  <rect x="85" y="15" width="5" height="15" />
+  <rect x="95" y="15" width="5" height="15" />
+  <rect x="105" y="15" width="5" height="15" />
+  <rect x="115" y="15" width="5" height="15" />
+  <rect x="125" y="15" width="5" height="15" />
+
+  <rect  x="65" y="30" width="10" height="15" />
+  <rect  x="75" y="30" width="10" height="15" />
+  <rect x="85" y="30" width="10" height="15" />
+  <rect x="95" y="30" width="10" height="15" />
+  <rect x="105" y="30" width="10" height="15" />
+  <rect x="115" y="30" width="10" height="15" />
+  <rect x="125" y="30" width="10" height="15" />
+  <rect x="135" y="30" width="10" height="15" />
+
+  <rect  x="75" y="45" width="5" height="15" />
+  <rect x="85" y="45" width="5" height="15" />
+  <rect x="95" y="45" width="5" height="15" />
+  <rect x="105" y="45" width="5" height="15" />
+  <rect x="115" y="45" width="5" height="15" />
+  <rect x="125" y="45" width="5" height="15" />
+  <rect x="135" y="45" width="5" height="15" />
+  <rect x="145" y="45" width="5" height="15" />
+
+  <rect x="80" y="60" width="5" height="15" />
+  <rect x="90" y="60" width="5" height="15" />
+  <rect x="100" y="60" width="5" height="15" />
+  <rect x="110" y="60" width="5" height="15" />
+  <rect x="120" y="60" width="5" height="15" />
+  <rect x="130" y="60" width="5" height="15" />
+  <rect x="140" y="60" width="5" height="15" />
+  <rect x="150" y="60" width="5" height="15" />
+
+  <!-- backward -->
+  <rect x="155" y="60" width="10" height="15" />
+  <rect x="165" y="60" width="10" height="15" />
+  <rect x="185" y="60" width="10" height="15" />
+  <rect x="205" y="60" width="10" height="15" />
+  <rect x="225" y="60" width="10" height="15" />
+  <rect x="245" y="60" width="10" height="15" />
+  <rect x="265" y="60" width="10" height="15" />
+  <rect x="285" y="60" width="10" height="15" />
+
+  <rect x="165" y="45" width="10" height="15" />
+  <rect x="175" y="45" width="10" height="15" />
+  <rect x="195" y="45" width="10" height="15" />
+  <rect x="215" y="45" width="10" height="15" />
+  <rect x="235" y="45" width="10" height="15" />
+  <rect x="255" y="45" width="10" height="15" />
+  <rect x="275" y="45" width="10" height="15" />
+  <rect x="295" y="45" width="10" height="15" />
+
+  <rect x="175" y="30" width="20" height="15" />
+  <rect x="195" y="30" width="20" height="15" />
+  <rect x="215" y="30" width="20" height="15" />
+  <rect x="235" y="30" width="20" height="15" />
+  <rect x="255" y="30" width="20" height="15" />
+  <rect x="275" y="30" width="20" height="15" />
+  <rect x="295" y="30" width="20" height="15" />
+  <rect x="315" y="30" width="20" height="15" />
+
+  <rect x="195" y="15" width="10" height="15" />
+  <rect x="215" y="15" width="10" height="15" />
+  <rect x="235" y="15" width="10" height="15" />
+  <rect x="255" y="15" width="10" height="15" />
+  <rect x="275" y="15" width="10" height="15" />
+  <rect x="295" y="15" width="10" height="15" />
+  <rect x="315" y="15" width="10" height="15" />
+  <rect x="335" y="15" width="10" height="15" />
+
+  <!-- forward -->
+  <rect x="345" y="15" width="5" height="15" />
+  <rect x="350" y="15" width="5" height="15" />
+  <rect x="360" y="15" width="5" height="15" />
+  <rect x="370" y="15" width="5" height="15" />
+  <rect x="380" y="15" width="5" height="15" />
+  <rect x="390" y="15" width="5" height="15" />
+  <rect x="400" y="15" width="5" height="15" />
+  <rect x="410" y="15" width="5" height="15" />
+
+  <rect x="350" y="30" width="10" height="15" />
+  <rect x="360" y="30" width="10" height="15" />
+  <rect x="370" y="30" width="10" height="15" />
+  <rect x="380" y="30" width="10" height="15" />
+  <rect x="390" y="30" width="10" height="15" />
+  <rect x="400" y="30" width="10" height="15" />
+  <rect x="410" y="30" width="10" height="15" />
+  <rect x="420" y="30" width="10" height="15" />
+
+  <rect x="360" y="45" width="5" height="15" />
+  <rect x="370" y="45" width="5" height="15" />
+  <rect x="380" y="45" width="5" height="15" />
+  <rect x="390" y="45" width="5" height="15" />
+  <rect x="400" y="45" width="5" height="15" />
+  <rect x="410" y="45" width="5" height="15" />
+  <rect x="420" y="45" width="5" height="15" />
+  <rect x="430" y="45" width="5" height="15" />
+
+  <rect x="365" y="60" width="5" height="15" />
+  <rect x="375" y="60" width="5" height="15" />
+  <rect x="385" y="60" width="5" height="15" />
+  <rect x="395" y="60" width="5" height="15" />
+  <rect x="405" y="60" width="5" height="15" />
+  <rect x="415" y="60" width="5" height="15" />
+  <rect x="425" y="60" width="5" height="15" />
+  <rect x="435" y="60" width="5" height="15" />
+
+  <!-- backward -->
+  <rect x="440" y="60" width="10" height="15" />
+  <rect x="450" y="60" width="10" height="15" />
+  <rect x="470" y="60" width="10" height="15" />
+  <rect x="490" y="60" width="10" height="15" />
+  <rect x="510" y="60" width="10" height="15" />
+  <rect x="530" y="60" width="10" height="15" />
+  <rect x="550" y="60" width="10" height="15" />
+  <rect x="570" y="60" width="10" height="15" />
+
+  <rect x="450" y="45" width="10" height="15" />
+  <rect x="460" y="45" width="10" height="15" />
+  <rect x="480" y="45" width="10" height="15" />
+  <rect x="500" y="45" width="10" height="15" />
+  <rect x="520" y="45" width="10" height="15" />
+  <rect x="540" y="45" width="10" height="15" />
+  <rect x="560" y="45" width="10" height="15" />
+  <rect x="580" y="45" width="10" height="15" />
+
+  <rect x="460" y="30" width="20" height="15" />
+  <rect x="480" y="30" width="20" height="15" />
+  <rect x="500" y="30" width="20" height="15" />
+  <rect x="520" y="30" width="20" height="15" />
+  <rect x="540" y="30" width="20" height="15" />
+  <rect x="560" y="30" width="20" height="15" />
+  <rect x="580" y="30" width="20" height="15" />
+  <rect x="600" y="30" width="20" height="15" />
+
+  <rect x="480" y="15" width="10" height="15" />
+  <rect x="500" y="15" width="10" height="15" />
+  <rect x="520" y="15" width="10" height="15" />
+  <rect x="540" y="15" width="10" height="15" />
+  <rect x="560" y="15" width="10" height="15" />
+  <rect x="580" y="15" width="10" height="15" />
+  <rect x="600" y="15" width="10" height="15" />
+  <rect x="620" y="15" width="10" height="15" />
+</svg>

@@ -39,6 +39,9 @@ master_doc = 'index'
 extensions = [
     # We follow Google style docstrings just like PyTorch.
     'sphinx.ext.napoleon',
+
+    # Allow reference sections using its title.
+    'sphinx.ext.autosectionlabel',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -64,11 +67,18 @@ autodoc_mock_imports = ['torch']
 html_theme = 'alabaster'
 
 html_theme_options = {
+    'logo': 'not-pipe.svg',
+    'logo_name': True,
     'description': 'GPipe for PyTorch',
 
     'github_user': 'kakaobrain',
     'github_repo': 'torchgpipe',
     'github_type': 'star',
+
+    'extra_nav_links': {
+        'Source Code': 'https://github.com/kakaobrain/torchgpipe',
+        'Original Paper': 'https://arxiv.org/abs/1811.06965',
+    },
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

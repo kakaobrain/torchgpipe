@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg viewBox="0 0 550 110" xmlns="http://www.w3.org/2000/svg">
+  <!-- labels -->
+  <style>
+    text {
+      font: 15px Georgia, serif;
+      fill: #3e4349;
+    }
+  </style>
+  <text x="5" y="28">cuda:0</text>
+  <text x="5" y="43">cuda:1</text>
+  <text x="5" y="58">cuda:2</text>
+  <text x="5" y="73">cuda:3</text>
+
+  <text x="105" y="95">forward</text>
+  <text x="335" y="95">backward</text>
+
+  <!-- lines -->
+  <style>
+    line {
+      stroke: #ddd;
+    }
+  </style>
+  <line x1="60" y1="15" x2="100%" y2="15" />
+  <line x1="60" y1="30" x2="100%" y2="30" />
+  <line x1="60" y1="45" x2="100%" y2="45" />
+  <line x1="60" y1="60" x2="100%" y2="60" />
+  <line x1="60" y1="75" x2="100%" y2="75" />
+
+  <!-- forward -->
+  <style>
+    rect {
+      fill: #3e4349;
+      stroke: #fff;
+    }
+  </style>
+  <rect  x="60" y="15" width="40" height="15" />
+  <rect x="100" y="30" width="40" height="15" />
+  <rect x="140" y="45" width="40" height="15" />
+  <rect x="180" y="60" width="40" height="15" />
+
+  <!-- backward -->
+  <rect x="220" y="60" width="80" height="15" />
+  <rect x="300" y="45" width="80" height="15" />
+  <rect x="380" y="30" width="80" height="15" />
+  <rect x="460" y="15" width="80" height="15" />
+</svg>

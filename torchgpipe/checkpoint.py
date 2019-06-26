@@ -148,7 +148,14 @@ _local = threading.local()
 
 
 def is_recomputing() -> bool:
-    """Whether if the current thread is under checkpoint recomputation."""
+    """Whether if the current thread is under checkpoint recomputation.
+
+    Returns:
+        bool: ``True`` if it's under checkpoint recomputation.
+
+    .. seealso:: :ref:`Detecting Recomputation`
+
+    """
     # 'recompute_once' sets it as True jus for recompuation.
     return getattr(_local, 'is_recomputing', False)
 
