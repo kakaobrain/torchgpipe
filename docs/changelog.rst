@@ -1,8 +1,8 @@
 Changelog
 =========
 
-v0.0.1-alpha
-------------
+v0.0.1
+------
 
 Released on May 14, 2019 to evaluate usability and efficiency internally.
 
