@@ -1,18 +1,19 @@
 Changelog
 =========
 
-v0.0.2 (WIP)
+v0.0.2
 ~~~~~~
 
-Not released yet.
+Released on June 26, 2019.
 
 - Added support for PyTorch 1.1.
 - Refined public APIs.
+- Detailed documentation.
 - Proper exceptions for invalid usage.
-- Provided inspecting utilities: :func:`torchgpipe.current_microbatch` and
-  :func:`torchgpipe.is_recomputing`
+- Provided :ref:`automatic balancing <Automatic Balancing>`.
+- Provided inspecting utilities: :func:`~torchgpipe.current_microbatch` and
+  :func:`~torchgpipe.is_recomputing`
 - Reimplemented deferred batch normalization by subclassing.
-- Provided :mod:`torchgpipe_balancing` for automatic balancing.
 
 v0.0.1
 ~~~~~~
