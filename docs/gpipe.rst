@@ -49,10 +49,6 @@ A faster partition should wait for adjacent slower partition. Therefore,
 imbalance over partitions also may cause GPU underutilization. Note that the
 overall performance is determined by the slowest partition.
 
-.. image:: img/imbalance.svg
-   :align: center
-   :height: 110
-
 Checkpointing
 ~~~~~~~~~~~~~
 
