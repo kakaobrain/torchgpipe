@@ -108,6 +108,25 @@ Parallelism이 적용되지 않고 Checkpointing 오버헤드만 있어서 naive
 [examples/resnet101_performance_benchmark](examples/resnet101_performance_benchmark)에서
 실험 코드를 확인할 수 있습니다.
 
+### AmoebaNet-D 속도 벤치마크
+
+실험 | torchgpipe | GPipe (논문)
+---------- | -----: | -----:
+naive-2    |     1x |     1x
+pipeline-2 | 1.442x | 1.156x
+pipeline-4 | 2.094x | 2.483x
+pipeline-8 | 2.463x | 3.442x
+
+GPipe 논문의 그림3 (a)에 보고된 AmoebaNet-D 학습 속도 벤치마크 비교에선
+torchgpipe와 GPipe간 다소 차이가 있습니다. 이는 TensorFlow로 구현된
+AmoebaNet-D를 PyTorch 마이그레이션 과정에서 발생하는 것으로, torchgpipe에 의해
+발생한 차이는 아니라고 판단됩니다. 안정된 AmoebaNet-D 재현이 가능할 때 결과를
+업데이트 할 예정입니다.
+
+GPipe 없이 두 장치에서 AmoebaNet-D을 학습 시켰을 때 속도인 naive-2을 기준으로
+설정했습니다. pipeline-2에서는 논문보다 조금 더 빨랐지만 pipeline-4, 8에서는
+느렸습니다.
+
 ### AmoebaNet-D 메모리 벤치마크
 
 <table>
