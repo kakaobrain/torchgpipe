@@ -193,15 +193,14 @@ The reproducible code can be found in
   </tbody>
 </table>
 
-It shows the better memory utilization of AmoebaNet-D with GPipe,
-as stated in Table 1 of the paper. The size of an AmoebaNet-D
-model is determined by two hyperparameters L and F which are proportional
-to the number of layers and filters, respectively.
+It shows the better memory utilization of AmoebaNet-D with GPipe, as stated in
+Table 1 of the paper. The size of an AmoebaNet-D model is determined by two
+hyperparameters L and F which are proportional to the number of layers and
+filters, respectively.
 
-The difference between naive-1 and pipeline-1 indicates GPipe's
-capability to leverage training a larger model. With 8 GPUs,
-GPipe is capable of training a model which is 22 times larger compared
-to the naive-1 setting.
+The difference between naive-1 and pipeline-1 indicates GPipe's capability to
+leverage training a larger model. With 8 GPUs, GPipe is capable of training a
+model which is 22 times larger compared to the naive-1 setting.
 
 ## Notes
 

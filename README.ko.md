@@ -99,7 +99,7 @@ pipeline-8 | 3.114x | 2.891x
 GPipe 논문의 그림3 (b)에 보고된 ResNet-101 학습 속도 벤치마크를
 재현했습니다.
 
-GPipe 없이 한 장치에서 ResNet-101을 학습 시켰을 때 상대속도를 naive-1을 기준으로
+GPipe 없이 한 장치에서 ResNet-101을 학습 시켰을 때 속도인 naive-1을 기준으로
 설정했습니다. pipeline-1은 파티션 1개짜리, pipeline-8은 파티션 8개짜리 GPipe로
 학습시켰을 때 naive-1 대비 상대속도를 나타냅니다. pipeline-1의 경우 Pipeline
 Parallelism이 적용되지 않고 Checkpointing 오버헤드만 있어서 naive-1에 비해
@@ -184,9 +184,9 @@ Parallelism이 적용되지 않고 Checkpointing 오버헤드만 있어서 naive
   </tbody>
 </table>
 
-GPipe 논문의 테이블1에 보고된 AmoebaNet-D 메모리 효율 벤치마크를
-재현했습니다. AmoebaNet-D 모델은 레이어 수에 비례하는 파라미터 L과
-필터 개수에 비례하는 파라미터 F로 모델크기를 조절할 수 있습니다.
+GPipe 논문의 테이블1에 보고된 AmoebaNet-D 메모리 효율 벤치마크를 재현했습니다.
+AmoebaNet-D 모델은 레이어 수에 비례하는 파라미터 L과 필터 개수에 비례하는
+파라미터 F로 모델크기를 조절할 수 있습니다.
 
 한 개의 GPU에서 GPipe를 사용하지 않은 naive-1보다 GPipe를 사용한 pipeline-1에서
 더 큰 모델을 학습시킬 수 있는걸 볼 수 있습니다. GPU 개수를 늘린 pipeline-8에선
