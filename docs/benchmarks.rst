@@ -27,8 +27,17 @@ can be found in `examples/resnet101_performance_benchmark`_.
 AmoebaNet-D
 ~~~~~~~~~~~
 
-.. AmoebaNet-D Performance Benchmark
-.. ---------------------------------
+AmoebaNet-D Performance Benchmark
+---------------------------------
+
+==========  ===================  =======
+Experiment  Throughput           Speedup
+==========  ===================  =======
+naive-2     ___.___ samples/sec   1.000x
+pipeline-2  ___.___ samples/sec   1.442x
+pipeline-4  ___.___ samples/sec   2.094x
+pipeline-8  ___.___ samples/sec   2.463x
+==========  ===================  =======
 
 AmoebaNet-D Memory Benchmark
 ----------------------------
