@@ -289,6 +289,67 @@ def test_exception_early_stop():
     assert count_front.counter == count_front_counter
 
 
+def test_exception_early_stop_asap():
+    """Even the first partitions have finished to process, the partition before
+    the failed partition should be killed as soon as possible.
+    """
+    class ExpectedException(Exception):
+        pass
+
+    class Pass(nn.Module):
+        def forward(self, x):
+            return x
+
+    counter = 0
+
+    class Counter(nn.Module):
+        def forward(self, x):
+            time.sleep(0.1)
+
+            nonlocal counter
+            counter += 1
+
+            return x
+
+    class Raise(nn.Module):
+        def forward(self, x):
+            raise ExpectedException()
+
+    model = nn.Sequential(Pass(), Pass(), Counter(), Raise())
+    model = GPipe(model, [1, 1, 1, 1], devices=['cpu', 'cpu', 'cpu', 'cpu'], chunks=3)
+
+    with pytest.raises(ExpectedException):
+        model(torch.rand(3))
+
+    # If the early stop doesn't work, it would be 3 instead.
+    assert counter == 2
+
+
+def test_exception_no_hang():
+    """In v0.0.2, once a failed partition receives a normal message
+    (non-closing) for the next micro-batch, a hang occured. The reason was that
+    a failed partition didn't call in_queue.task_done() on a normal message. So
+    the former partition was blocked at out_queue.join() for the next of next
+    micro-batch.
+    """
+    class ExpectedException(Exception):
+        pass
+
+    class Pass(nn.Module):
+        def forward(self, x):
+            return x
+
+    class Raise(nn.Module):
+        def forward(self, x):
+            raise ExpectedException()
+
+    model = nn.Sequential(Pass(), Pass(), Raise())
+    model = GPipe(model, [1, 1, 1], devices=['cpu', 'cpu', 'cpu'], chunks=3)
+
+    with pytest.raises(ExpectedException):
+        model(torch.rand(3))
+
+
 def test_input_pair():
     class Two(nn.Module):
         def __init__(self):

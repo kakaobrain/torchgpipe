@@ -343,7 +343,7 @@ class GPipe(nn.Module):
             # Block until getting a micro-batch.
             msg = in_queue.get()
 
-            # None means end-of-mini-batch.
+            # None means closing.
             if msg.payload is None:
                 out_queue.put(msg)
                 break
@@ -355,6 +355,9 @@ class GPipe(nn.Module):
 
             # Ignore every input after an error.
             if failed:
+                # Former partitions still might process non-closing messages.
+                # To prevent a hang, in_queue.task_done() should be called here.
+                in_queue.task_done()
                 continue
 
             input, leaf, checkpoint = msg.payload
@@ -422,9 +425,6 @@ class GPipe(nn.Module):
             msg = Message(i, (_input, leaf, checkpoint))
             in_queue.put(msg)
 
-        close = Message(num_inputs, None)
-        in_queue.put(close)
-
         return num_inputs
 
     def _pull_output(self,
@@ -441,6 +441,9 @@ class GPipe(nn.Module):
             Exception: any exception from a partition
 
         """
+        # All worker threads will be closed when receiving this message.
+        close = Message(-1, None)
+
         outputs = []
         for _ in range(num_inputs):
             msg = out_queue.get()
@@ -448,7 +451,6 @@ class GPipe(nn.Module):
 
             if msg.i == -1:
                 # Close worker threads immediately.
-                close = Message(-1, None)
                 in_queue.put(close)
                 out_queue.get()
 
@@ -459,8 +461,14 @@ class GPipe(nn.Module):
             output, _, _ = msg.payload
             outputs.append(output)
 
+        # Indicate the end of micro-batches.
+        in_queue.put(close)
+
+        # Merge the micro-batches into one mini-batch.
         out_device = self.devices[-1]
         output = gather(outputs, device=out_device)
+
+        # Wait until the last worker thread closes.
         out_queue.get()
 
         return output
