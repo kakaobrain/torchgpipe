@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v0.0.3 (WIP)
+~~~~~~
+
+Not released yet.
+
+- Fixed hang at a once failed partition.
+
 v0.0.2
 ~~~~~~
 
