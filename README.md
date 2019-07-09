@@ -117,6 +117,26 @@ overhead.
 The reproducible code can be found in
 [examples/resnet101_performance_benchmark](examples/resnet101_performance_benchmark).
 
+### AmoebaNet-D Performance Benchmark
+
+Experiment | torchgpipe | GPipe (original)
+---------- | -----: | -----:
+naive-2    |     1x |     1x
+pipeline-2 | 1.442x | 1.156x
+pipeline-4 | 2.094x | 2.483x
+pipeline-8 | 2.463x | 3.442x
+
+The table shows the reproduced performance benchmark on AmoebaNet-D, as
+reported in Figure 3(a) of the paper. But there is some difference between
+torchgpipe and GPipe. We believe that this difference is not caused by the
+difference of torchgpipe and GPipe, rather by reimplementing the AmoebaNet-D
+model in TensorFlow for PyTorch. Results will be updated whenever a stable and
+reproducible AmoebaNet-D in PyTorch is available.
+
+Naive-2 indicates the baseline setting that AmoebaNet-D on two devices is
+trained without GPipe. Pipeline-2 is a little faster than the paper, but
+pipeline-4 and pipeline-8 are slower.
+
 ### AmoebaNet-D Memory Benchmark
 
 <table>
