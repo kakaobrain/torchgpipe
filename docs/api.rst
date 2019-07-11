@@ -14,8 +14,6 @@ GPipe Module
 Inspecting GPipe Timeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: torchgpipe.current_microbatch()
-
 .. autofunction:: torchgpipe.is_recomputing()
 
 Automatic Balancing

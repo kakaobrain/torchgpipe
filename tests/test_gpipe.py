@@ -6,7 +6,7 @@ import pytest
 import torch
 import torch.nn as nn
 
-from torchgpipe import GPipe, current_microbatch
+from torchgpipe import GPipe
 from torchgpipe.partition import Partition
 
 
@@ -509,31 +509,6 @@ def test_deferred_batch_norm_params(checkpoint):
 
     assert torch.allclose(gpipe[0].weight.grad, bn.weight.grad, atol=1e-4)
     assert torch.allclose(gpipe[0].bias.grad, bn.bias.grad, atol=1e-4)
-
-
-def test_current_microbatch():
-    class Twice(nn.Module):
-        def forward(self, x):
-            return x * 2
-
-    class CurrentMicrobatch(nn.Module):
-        def forward(self, _):
-            return current_microbatch()
-
-    # Not in a partition.
-    assert current_microbatch() is None
-
-    input = torch.tensor([1., 2., 3.])
-
-    model = nn.Sequential(Twice(), CurrentMicrobatch())
-    model = GPipe(model, balance=[1, 1], devices=['cpu', 'cpu'], chunks=3)
-
-    output = model(input)
-
-    assert torch.allclose(output, torch.tensor([1., 2., 3.]))
-
-    # Not in a partition.
-    assert current_microbatch() is None
 
 
 def test_devices():

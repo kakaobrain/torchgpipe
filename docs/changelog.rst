@@ -7,6 +7,7 @@ v0.0.3 (WIP)
 Not released yet.
 
 - Fixed hang at a once failed partition.
+- Removed ``current_microbatch`` which actually didn't work.
 
 v0.0.2
 ~~~~~~
@@ -18,8 +19,8 @@ Released on June 26, 2019.
 - Detailed documentation.
 - Proper exceptions for invalid usage.
 - Provided :ref:`automatic balancing <Automatic Balancing>`.
-- Provided inspecting utilities: :func:`~torchgpipe.current_microbatch` and
-  :func:`~torchgpipe.is_recomputing`
+- Provided inspecting utilities: ``current_microbatch`` (deprecated since
+  v0.0.3) and :func:`~torchgpipe.is_recomputing`
 - Reimplemented deferred batch normalization by subclassing.
 
 v0.0.1
