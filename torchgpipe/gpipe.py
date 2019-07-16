@@ -24,7 +24,6 @@ Devices = Union[Iterable[Device], List[Device]]
 
 Tensors = Tuple[Tensor, ...]
 TensorOrTensors = Union[Tensor, Tensors]
-ChunkedTensorOrTensors = Union[List[Tensor], List[Tensors]]
 
 
 class Message(NamedTuple):
