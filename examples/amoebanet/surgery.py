@@ -22,7 +22,7 @@ class Twin(nn.Module):
 
     """
 
-    def forward(self, tensor: torch.Tensor) -> Tensors:
+    def forward(self, tensor: torch.Tensor) -> Tensors:  # type: ignore
         return tensor, tensor
 
 
@@ -36,7 +36,7 @@ class TwinLast(nn.Module):
 
     """
 
-    def forward(self, tensors: Tensors) -> Tensors:
+    def forward(self, tensors: Tensors) -> Tensors:  # type: ignore
         return tensors + (tensors[-1],)
 
 
@@ -55,7 +55,7 @@ class InputOne(nn.Module):
         self.i = i
         self.insert = insert
 
-    def forward(self, tensors: Tensors) -> Tensors:
+    def forward(self, tensors: Tensors) -> Tensors:  # type: ignore
         i = self.i
 
         input = tensors[i]
@@ -81,7 +81,7 @@ class Shift(nn.Module):
 
     """
 
-    def forward(self, tensors: Tensors) -> Tensors:
+    def forward(self, tensors: Tensors) -> Tensors:  # type: ignore
         return (tensors[-1],) + tensors[:-1]
 
 
@@ -99,10 +99,15 @@ class MergeTwo(nn.Module):
         self.i = i
         self.j = j
 
-    def forward(self, tensors: Tensors) -> Tensors:
+    def forward(self, tensors: Tensors) -> Tensors:  # type: ignore
         i = self.i
         j = self.j
-        return tensors[:i] + (sum(tensors[i:j+1]),) + tensors[j+1:]
+
+        # Set the initial value as the first tensor
+        # to type as 'Tensor' instead of 'Union[Tensor, int]'.
+        merged = sum(tensors[i+1:j+1], tensors[i])
+
+        return tensors[:i] + (merged,) + tensors[j+1:]
 
 
 class FirstAnd(nn.Module):
@@ -119,7 +124,7 @@ class FirstAnd(nn.Module):
         super().__init__()
         self.module = module
 
-    def forward(self, tensors: Tensors) -> Tensors:
+    def forward(self, tensors: Tensors) -> Tensors:  # type: ignore
         output = self.module(tensors[1:])
         if not isinstance(output, tuple):
             output = (output,)
@@ -139,5 +144,5 @@ class Concat(nn.Module):
         super().__init__()
         self.indices = indices
 
-    def forward(self, tensors: Tensors) -> torch.Tensor:
+    def forward(self, tensors: Tensors) -> torch.Tensor:  # type: ignore
         return torch.cat([tensors[i] for i in self.indices], dim=1)

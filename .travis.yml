@@ -28,6 +28,7 @@ jobs:
         - lint .
         - lint examples/resnet
         - lint examples/resnet101_performance_benchmark
+        - lint examples/amoebanet
 
 # Test with various Python and PyTorch versions.
 install:

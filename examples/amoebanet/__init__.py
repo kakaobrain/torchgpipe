@@ -9,7 +9,7 @@ import torch
 from torch import nn
 
 from amoebanet.flatten_sequential import flatten_sequential
-from amoebanet.genotype import amoebanetd_genotype
+from amoebanet.genotype import Genotype, amoebanetd_genotype
 from amoebanet.surgery import Concat, FirstAnd, InputOne, MergeTwo, Shift, Twin, TwinLast
 
 __all__ = ['amoebanetd']
@@ -22,7 +22,7 @@ class Identity(nn.Module):
 
     """
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:  # type: ignore
         return x
 
 
@@ -39,7 +39,7 @@ class ReLUConvBN(nn.Module):
             nn.BatchNorm2d(out_planes, affine=affine)
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:  # type: ignore
         return self.op(x)
 
 
@@ -53,7 +53,7 @@ class FactorizedReduce(nn.Module):
         self.conv_2 = nn.Conv2d(in_planes, out_planes // 2, 1, stride=2, padding=0, bias=False)
         self.bn = nn.BatchNorm2d(out_planes, affine=affine)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:  # type: ignore
         x = self.relu(x)
         out = torch.cat([self.conv_1(x), self.conv_2(x[:, :, 1:, 1:])], dim=1)
         out = self.bn(out)
@@ -145,7 +145,7 @@ class Classifier(nn.Module):
         self.global_pooling = nn.AvgPool2d(7)
         self.classifier = nn.Linear(channel_prev, num_classes)
 
-    def forward(self, x: torch.Tensor) -> nn.Linear:
+    def forward(self, x: torch.Tensor) -> nn.Linear:  # type: ignore
         s1 = self.global_pooling(x[1])
         y = self.classifier(s1.view(s1.size(0), -1))
 
@@ -161,7 +161,7 @@ def make_stem(channel: int) -> nn.Sequential:
     )
 
 
-def make_cell(genotype: amoebanetd_genotype,
+def make_cell(genotype: Genotype,
               channel_prev_prev: int, channel_prev: int, channel: int,
               reduction: bool, reduction_prev: bool
               ) -> Tuple[nn.Sequential, int]:
@@ -238,7 +238,7 @@ def amoebanetd(num_classes: int = 10,
 
     def make_layer(channel: int,
                    num_layers: int,
-                   genotype: amoebanetd_genotype
+                   genotype: Genotype,
                    ) -> Tuple[nn.Sequential, int]:
         n = num_layers
         channel_prev_prev, channel_prev, channel_curr = channel, channel, channel
