@@ -101,9 +101,9 @@ class Conv2d(Module):
                  in_channels: int,
                  out_channels: int,
                  kernel_size: Union[int, Tuple[int, ...]],
-                 stride: int = 1,
-                 padding: int = 0,
-                 dilation: int = 1,
+                 stride: Union[int, Tuple[int, ...]] = 1,
+                 padding: Union[int, Tuple[int, ...]] = 0,
+                 dilation: Union[int, Tuple[int, ...]] = 1,
                  groups: int = 1,
                  bias: bool = True,
                  padding_mode: str = 'zeros',
@@ -121,6 +121,15 @@ class BatchNorm2d(Module):
                  affine: bool = True,
                  track_running_stats: bool = True,
                  ) -> None: ...
+
+
+class AvgPool2d(Module):
+    def __init__(self,
+                 kernel_size: Union[int, Tuple[int, ...]],
+                 stride: Optional[int] = None,
+                 padding: int = 0,
+                 ceil_mode: bool = False,
+                 count_include_pad: bool = True) -> None: ...
 
 
 class MaxPool2d(Module):
