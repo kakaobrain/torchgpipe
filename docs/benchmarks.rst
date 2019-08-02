@@ -17,12 +17,11 @@ pipeline-4  230.216 samples/sec   2.291x
 pipeline-8  312.945 samples/sec   3.114x
 ==========  ===================  =======
 
-The code which is reproducible on Tesla P40 GPUs, and the experiment details
+The code is reproducible on Tesla P40 GPUs, and the experiment details
 can be found in `examples/resnet101_performance_benchmark`_.
 
 .. _examples/resnet101_performance_benchmark:
-   https://github.com/kakaobrain/torchgpipe/
-   tree/master/examples/resnet101_performance_benchmark
+   https://github.com/kakaobrain/torchgpipe/tree/master/examples/resnet101_performance_benchmark
 
 AmoebaNet-D
 ~~~~~~~~~~~
@@ -33,11 +32,17 @@ AmoebaNet-D Performance Benchmark
 ==========  ===================  =======
 Experiment  Throughput           Speedup
 ==========  ===================  =======
-naive-2     ___.___ samples/sec   1.000x
-pipeline-2  ___.___ samples/sec   1.442x
-pipeline-4  ___.___ samples/sec   2.094x
-pipeline-8  ___.___ samples/sec   2.463x
+naive-2      14.188 samples/sec   1.000x
+pipeline-2   20.346 samples/sec   1.434x
+pipeline-4   29.074 samples/sec   2.049x
+pipeline-8   34.392 samples/sec   2.424x
 ==========  ===================  =======
+
+The code is reproducible on Tesla P40 GPUs, and the experiment details
+can be found in `examples/amoebanetd_performance_benchmark`_.
+
+.. _examples/amoebanetd_performance_benchmark:
+   https://github.com/kakaobrain/torchgpipe/tree/master/examples/amoebanetd_performance_benchmark
 
 AmoebaNet-D Memory Benchmark
 ----------------------------
