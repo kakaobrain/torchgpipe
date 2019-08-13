@@ -8,6 +8,11 @@ Not released yet.
 
 - Fixed hang at a once failed partition.
 - Removed ``current_microbatch`` which actually didn't work.
+- Fixed the size cumulation (`issue #3`_ by `Shiyan Deng`_) of
+  :func:`~torchgpipe_balancing.balance_by_size`.
+
+.. _issue #3: https://github.com/kakaobrain/torchgpipe/issues/3
+.. _Shiyan Deng: https://github.com/842974287
 
 v0.0.2
 ~~~~~~
