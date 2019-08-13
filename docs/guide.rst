@@ -84,7 +84,8 @@ Automatic Balancing
 It could be hard to determine the optimal balance of a model. In particular, if
 you are still designing a model, probably the model architecture may change
 over time. In this case, we highly recommend :mod:`torchgpipe_balancing` for
-automatic balancing. This library is also a part of `torchgpipe` package but
+automatic balancing. This library doesn't determine the optimal balance, but
+could be a handy tool. Note that it is also a part of `torchgpipe` package but
 not a part of the GPipe paper.
 
 There are two balancing tools, :func:`~torchgpipe_balancing.balance_by_time`

@@ -3,13 +3,12 @@
 Paper: https://arxiv.org/pdf/1308.2452.pdf
 
 """
-import sys
 from typing import List
 
 __all__ = ['solve']
 
 
-def solve(sequence: List[float], partitions: int = 1) -> List[List[float]]:
+def solve(sequence: List[int], partitions: int = 1) -> List[List[int]]:
     """Splits a sequence into several partitions to minimize variance for each
     partition.
 
@@ -26,10 +25,14 @@ def solve(sequence: List[float], partitions: int = 1) -> List[List[float]]:
                          '' % (n, partitions))
 
     # Normalize the sequence in [0, 1].
-    maximum = max(sequence)
+    minimum = min(sequence)
+    maximum = max(sequence) - minimum
+
+    normal_sequence: List[float]
     if maximum == 0:
-        maximum = sys.float_info.epsilon
-    normal_sequence = [x / maximum for x in sequence]
+        normal_sequence = [0 for _ in sequence]
+    else:
+        normal_sequence = [(x-minimum)/maximum for x in sequence]
 
     splits = [n//partitions * (x+1) for x in range(partitions-1)] + [n]
 

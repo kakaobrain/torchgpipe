@@ -58,10 +58,15 @@ def test_balance_by_size():
                 x = x + torch.rand_like(x, requires_grad=True)
             return x
 
-    model = nn.Sequential(*[Expand(i) for i in [1, 2, 3, 4, 5, 6]])
     sample = torch.rand(10, 100, 100)
+
+    model = nn.Sequential(*[Expand(i) for i in [1, 2, 3, 4, 5, 6]])
     balance = balance_by_size(model, sample, partitions=2, device='cuda')
     assert balance == [4, 2]
+
+    model = nn.Sequential(*[Expand(i) for i in [6, 5, 4, 3, 2, 1]])
+    balance = balance_by_size(model, sample, partitions=2, device='cuda')
+    assert balance == [2, 4]
 
 
 def test_sandbox():

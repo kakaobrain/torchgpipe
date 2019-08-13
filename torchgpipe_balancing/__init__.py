@@ -12,7 +12,6 @@ Usage::
     gpipe = GPipe(model, balance, chunks=8)
 
 """
-import time
 from typing import List, Optional, Union
 
 import torch
@@ -20,6 +19,7 @@ from torch import Tensor
 import torch.nn as nn
 
 from torchgpipe_balancing import utils
+from torchgpipe_balancing.profile import profile_sizes, profile_times
 
 __all__ = ['balance_by_time', 'balance_by_size']
 
@@ -57,27 +57,8 @@ def balance_by_time(module: nn.Sequential,
         ``balance`` parameter of :class:`~torchgpipe.GPipe`.
 
     """
-    sample, device = utils.concentrate_on_device(module, sample, device)
-
-    times: List[List[float]] = [[] for _ in module]
-
-    begun_at = time.time()
-    while time.time() - begun_at < timeout:
-
-        x = sample
-        with utils.training_sandbox(module):
-            for i, layer in enumerate(module):
-                utils.synchronize_device(device)
-                tick = time.time()
-
-                x = layer(x)
-
-                utils.synchronize_device(device)
-                tock = time.time()
-
-                times[i].append(tock - tick)
-
-    return utils.balance_cost(map(sum, times), partitions)
+    times = profile_times(module, sample, device, timeout)
+    return utils.balance_cost(times, partitions)
 
 
 def balance_by_size(module: nn.Sequential,
@@ -111,21 +92,5 @@ def balance_by_size(module: nn.Sequential,
         ``balance`` parameter of :class:`~torchgpipe.GPipe`.
 
     """
-    if not hasattr(torch.cuda, 'reset_max_memory_allocated'):
-        raise NotImplementedError('balance_by_size requires PyTorch>=1.1')
-
-    sample, device = utils.concentrate_on_device(module, sample, device)
-
-    if device.type != 'cuda':
-        raise ValueError('balance_by_size supports only CUDA device')
-
-    sizes: List[int] = []
-
-    x = sample
-    with utils.training_sandbox(module):
-        for i, layer in enumerate(module):
-            torch.cuda.reset_max_memory_allocated(device)
-            x = layer(x)
-            sizes.append(torch.cuda.max_memory_allocated(device))
-
+    sizes = profile_sizes(module, sample, device)
     return utils.balance_cost(sizes, partitions)

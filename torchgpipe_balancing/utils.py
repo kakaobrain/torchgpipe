@@ -1,6 +1,6 @@
 """Internal utilities."""
 from contextlib import contextmanager
-from typing import Generator, Iterable, List, Optional, Tuple, Union
+from typing import Generator, List, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -67,6 +67,6 @@ def synchronize_device(device: torch.device):
         torch.cuda.synchronize()
 
 
-def balance_cost(cost: Iterable[float], partitions: int) -> List[int]:
-    partitioned = blockpartition.solve(list(cost), partitions)
+def balance_cost(cost: List[int], partitions: int) -> List[int]:
+    partitioned = blockpartition.solve(cost, partitions)
     return [len(p) for p in partitioned]
