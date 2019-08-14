@@ -63,8 +63,7 @@ def training_sandbox(module: nn.Sequential) -> Generator[None, None, None]:
 def synchronize_device(device: torch.device):
     if device.type == 'cpu':
         return
-    with torch.cuda.device(device):
-        torch.cuda.synchronize()
+    torch.cuda.synchronize(device)
 
 
 def balance_cost(cost: List[int], partitions: int) -> List[int]:

@@ -14,6 +14,10 @@ class _BatchNorm(Module):
     bias: Parameter = ...
 
 #MODIFIED BY TORCHGPIPE
+    running_mean: Tensor
+    running_var: Tensor
+    num_batches_tracked: Tensor
+
     def __init__(self, num_features: int, eps: float = ..., momentum: Optional[float] = ..., affine: bool = ...,
                  track_running_stats: bool = ...) -> None: ...
 #END
@@ -25,12 +29,6 @@ class _BatchNorm(Module):
     def forward(self, input: Tensor) -> Tensor: ...  # type: ignore
 
     def __call__(self, input: Tensor) -> Tensor: ...  # type: ignore
-
-#MODIFIED BY TORCHGPIPE
-    running_mean: Tensor
-    running_var: Tensor
-    num_batches_tracked: Tensor
-#END
 
 
 class BatchNorm1d(_BatchNorm): ...
