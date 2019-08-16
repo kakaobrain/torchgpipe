@@ -26,6 +26,11 @@ from . import cuda as cuda
 from . import optim as optim
 from . import nn as nn
 
+#MODIFIED BY TORCHGPIPE
+from . import backends
+from . import version
+#END
+
 class dtype: ...
 
 class layout: ...
