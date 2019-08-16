@@ -1,6 +1,5 @@
 """An AmoebaNet-D implementation but using :class:`nn.Sequential`. :func:`amoebanetd`
 returns a :class:`nn.Sequential`.
-
 """
 from collections import OrderedDict
 from typing import Tuple
@@ -32,15 +31,16 @@ class ReLUConvBN(nn.Module):
     def __init__(self, in_planes: int, out_planes: int, kernel_size: int, stride: int,
                  padding: int, affine: bool = True):
         super().__init__()
-        self.op = nn.Sequential(
-            nn.ReLU(inplace=False),
-            nn.Conv2d(in_planes, out_planes, kernel_size,
-                      stride=stride, padding=padding, bias=False),
-            nn.BatchNorm2d(out_planes, affine=affine)
-        )
+        self.relu = nn.ReLU(inplace=False)
+        self.conv = nn.Conv2d(in_planes, out_planes, kernel_size,
+                              stride=stride, padding=padding, bias=False)
+        self.bn = nn.BatchNorm2d(out_planes, affine=affine)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:  # type: ignore
-        return self.op(x)
+        x = self.relu(x)
+        x = self.conv(x)
+        x = self.bn(x)
+        return x
 
 
 class FactorizedReduce(nn.Module):
@@ -141,14 +141,12 @@ class Classifier(nn.Module):
 
     def __init__(self, channel_prev: int, num_classes: int):
         super().__init__()
-
         self.global_pooling = nn.AvgPool2d(7)
         self.classifier = nn.Linear(channel_prev, num_classes)
 
-    def forward(self, x: torch.Tensor) -> nn.Linear:  # type: ignore
+    def forward(self, x: torch.Tensor) -> torch.Tensor:  # type: ignore
         s1 = self.global_pooling(x[1])
         y = self.classifier(s1.view(s1.size(0), -1))
-
         return y
 
 

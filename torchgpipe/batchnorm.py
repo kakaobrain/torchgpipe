@@ -85,7 +85,7 @@ class DeferredBatchNorm(_BatchNorm):
         self.counter = 0
         self.tracked = 0
 
-    def forward(self, input: Tensor) -> Tensor:
+    def forward(self, input: Tensor) -> Tensor:  # type: ignore
         if not self.training:
             # Don't train parameters on the evaluation mode.
             return F.batch_norm(

@@ -3,7 +3,7 @@ from collections import OrderedDict
 from queue import PriorityQueue
 import sys
 import threading
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Iterable, List, NamedTuple, Optional, Tuple, Union, cast
 
 import torch
 from torch import Tensor
@@ -24,6 +24,13 @@ Devices = Union[Iterable[Device], List[Device]]
 
 Tensors = Tuple[Tensor, ...]
 TensorOrTensors = Union[Tensor, Tensors]
+
+if TYPE_CHECKING:
+    Module = nn.Module[TensorOrTensors]
+    NamedModules = OrderedDict[str, Module]
+else:
+    Module = nn.Module
+    NamedModules = OrderedDict
 
 
 class Message(NamedTuple):
@@ -64,7 +71,7 @@ MOVING_DENIED = TypeError('denied to move parameters and buffers, '
                           'because GPipe should manage device placement')
 
 
-class GPipe(nn.Module):
+class GPipe(Module):
     """Wraps an arbitrary :class:`~torch.nn.Sequential` module to train on
     GPipe_. If the module requires lots of memory, GPipe will be very
     efficient::
@@ -198,10 +205,11 @@ class GPipe(nn.Module):
 
     # GPipe should manage the device of each partition.
     # Deny cuda(), cpu(), and to() with device, by TypeError.
-    def cuda(self, device: Any = None) -> nn.Module:
+
+    def cuda(self, device: Device) -> 'GPipe':
         raise MOVING_DENIED
 
-    def cpu(self) -> nn.Module:
+    def cpu(self) -> 'GPipe':
         raise MOVING_DENIED
 
     def to(self, *args: Any, **kwargs: Any) -> 'GPipe':
@@ -259,7 +267,7 @@ class GPipe(nn.Module):
 
         i = 0
         partitions = []
-        layers_buffer: Dict[str, nn.Module] = OrderedDict()
+        layers_buffer: NamedModules = OrderedDict()
 
         for name, layer in module.named_children():
             layers_buffer[name] = layer
@@ -441,7 +449,7 @@ class GPipe(nn.Module):
 
         return output
 
-    def forward(self, input: TensorOrTensors) -> TensorOrTensors:
+    def forward(self, input: TensorOrTensors) -> TensorOrTensors:  # type: ignore
         """:class:`GPipe` is a fairly transparent module wrapper. It doesn't
         modify the input and output signature of the underlying module. But
         there's type restriction. Input and output have to be a

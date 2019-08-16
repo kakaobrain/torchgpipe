@@ -1,6 +1,6 @@
 """A ResNet bottleneck implementation but using :class:`nn.Sequential`."""
 from collections import OrderedDict
-from typing import Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 from torch import Tensor
 import torch.nn as nn
@@ -9,6 +9,11 @@ __all__ = ['bottleneck']
 
 Tensors = Tuple[Tensor, ...]
 TensorOrTensors = Union[Tensor, Tensors]
+
+if TYPE_CHECKING:
+    NamedModules = OrderedDict[str, nn.Module]
+else:
+    NamedModules = OrderedDict
 
 
 def conv3x3(in_planes: int, out_planes: int, stride: int = 1) -> nn.Conv2d:
@@ -72,7 +77,7 @@ def bottleneck(inplanes: int,
                downsample: Optional[nn.Module] = None,
                ) -> nn.Sequential:
     """Creates a bottlenect block in ResNet as a :class:`nn.Sequential`."""
-    layers: Dict[str, nn.Module] = OrderedDict()
+    layers: NamedModules = OrderedDict()
     layers['twin'] = Twin()
 
     layers['conv1'] = Gutter(conv1x1(inplanes, planes))

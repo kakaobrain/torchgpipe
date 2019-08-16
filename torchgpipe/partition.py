@@ -1,4 +1,4 @@
-from typing import Iterator, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Iterator, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -10,6 +10,11 @@ __all__ = ['Partition']
 
 Tensors = Tuple[Tensor, ...]
 TensorOrTensors = Union[Tensor, Tensors]
+
+if TYPE_CHECKING:
+    Module = nn.Module[Tuple[TensorOrTensors, Optional[Tensor]]]
+else:
+    Module = nn.Module
 
 
 class Partition(nn.Module):
@@ -50,7 +55,7 @@ class Partition(nn.Module):
             return tuple(x.to(self.device).requires_grad_() for x in input)
         return input.to(self.device).requires_grad_()
 
-    def forward(self,
+    def forward(self,  # type: ignore
                 input: TensorOrTensors,
                 checkpoint: bool = True,
                 ) -> Tuple[TensorOrTensors, Optional[Tensor]]:
