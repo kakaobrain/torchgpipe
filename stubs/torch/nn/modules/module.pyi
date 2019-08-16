@@ -95,6 +95,10 @@ class Module(Generic[T_co]):
     def named_modules(self, memo: Optional[Set['Module']] = ..., prefix: str = ...) -> Iterator[
         Tuple[str, 'Module']]: ...
 
+#MODIFIED BY TORCHGPIPE
+    training: bool
+#END
+
     def train(self: T, mode: bool = ...) -> T: ...
 
     def eval(self: T) -> T: ...
