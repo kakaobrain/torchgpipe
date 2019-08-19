@@ -99,10 +99,10 @@ references.
 Experiment | torchgpipe | GPipe (original)
 ---------- | -----: | -----:
 naive-1    |     1x |     1x
-pipeline-1 | 0.736x |   0.8x
-pipeline-2 | 1.350x | 1.418x
-pipeline-4 | 2.291x | 2.182x
-pipeline-8 | 3.114x | 2.891x
+pipeline-1 | 0.735x |   0.8x
+pipeline-2 | 1.357x | 1.418x
+pipeline-4 | 2.359x | 2.182x
+pipeline-8 | 3.256x | 2.891x
 
 The table shows the reproduced performance benchmark on ResNet-101, as stated
 by reported in Figure 3(b) of the paper.

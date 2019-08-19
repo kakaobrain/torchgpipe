@@ -91,10 +91,10 @@ API 문서를 비롯한 자세한 문서는 [torchgpipe.readthedocs.io][rtd]에�
 실험 | torchgpipe | GPipe (논문)
 ---------- | -----: | -----:
 naive-1    |     1x |     1x
-pipeline-1 | 0.736x |   0.8x
-pipeline-2 | 1.350x | 1.418x
-pipeline-4 | 2.291x | 2.182x
-pipeline-8 | 3.114x | 2.891x
+pipeline-1 | 0.735x |   0.8x
+pipeline-2 | 1.357x | 1.418x
+pipeline-4 | 2.359x | 2.182x
+pipeline-8 | 3.256x | 2.891x
 
 GPipe 논문의 그림3 (b)에 보고된 ResNet-101 학습 속도 벤치마크를
 재현했습니다.
