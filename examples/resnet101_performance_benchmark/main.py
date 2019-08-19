@@ -1,6 +1,5 @@
 """ResNet-101 Performance Benchmark"""
 import platform
-import random
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
@@ -9,7 +8,6 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 from torch.optim import SGD
-from torch.utils.data import DataLoader
 
 from resnet import resnet101
 from torchgpipe import GPipe
@@ -75,14 +73,6 @@ EXPERIMENTS: Dict[str, Experiment] = {
     'pipeline-4': Experiments.pipeline4,
     'pipeline-8': Experiments.pipeline8,
 }
-
-
-class RandomDataset(torch.utils.data.Dataset):
-    def __len__(self) -> int:
-        return 50000
-
-    def __getitem__(self, i: int) -> Tuple[torch.Tensor, int]:
-        return torch.rand(3, 224, 224), random.randrange(10)
 
 
 BASE_TIME: float = 0
@@ -170,17 +160,10 @@ def cli(ctx: click.Context,
     out_device = _devices[-1]
 
     # This experiment cares about only training performance, rather than
-    # accuracy. To eliminate any overhead due to data loading, we use a fake
-    # dataset with random 224x224 images over 10 labels.
-    dataset = RandomDataset()
-    loader = DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=1,
-        pin_memory=True,
-        drop_last=False,
-    )
+    # accuracy. To eliminate any overhead due to data loading, we use fake
+    # random 224x224 images over 10 labels.
+    input = torch.rand(batch_size, 3, 224, 224, device=in_device)
+    target = torch.randint(10, (batch_size,), device=out_device)
 
     # HEADER ======================================================================================
 
@@ -203,11 +186,9 @@ def cli(ctx: click.Context,
         tick = time.time()
 
         data_trained = 0
-        for i, (input, target) in enumerate(loader):
-            data_trained += len(input)
-
-            input = input.to(in_device, non_blocking=True)
-            target = target.to(out_device, non_blocking=True)
+        steps = 50000 // batch_size
+        for i in range(steps):
+            data_trained += batch_size
 
             output = model(input)
             loss = F.cross_entropy(output, target)
@@ -217,7 +198,7 @@ def cli(ctx: click.Context,
             optimizer.zero_grad()
 
             # 00:01:02 | 1/20 epoch (42%) | 200.000 samples/sec (estimated)
-            percent = i / len(loader) * 100
+            percent = i / steps * 100
             throughput = data_trained / (time.time()-tick)
             log('%d/%d epoch (%d%%) | %.3f samples/sec (estimated)'
                 '' % (epoch+1, epochs, percent, throughput), clear=True, nl=False)
@@ -227,7 +208,7 @@ def cli(ctx: click.Context,
 
         # 00:02:03 | 1/20 epoch | 200.000 samples/sec, 123.456 sec/epoch
         elapsed_time = tock - tick
-        throughput = len(dataset) / elapsed_time
+        throughput = batch_size * steps / elapsed_time
         log('%d/%d epoch | %.3f samples/sec, %.3f sec/epoch'
             '' % (epoch+1, epochs, throughput, elapsed_time), clear=True)
 

@@ -6,8 +6,8 @@ reported in Figure 3(b) of the GPipe paper.
 The benchmark cares of only training performance rather than the model's
 accuracy. The batch size is adjusted to achieve higher throughput without any
 large batch training tricks. This example also doesn't feed actual dataset like
-ImageNet or CIFAR-100. Instead, a fake dataset with 50k 3×224×224 tensors is
-used to eliminate data loading overhead.
+ImageNet or CIFAR-100. Instead, fake 3×224×224 tensors over 10 labels are used
+to eliminate data loading overhead.
 
 Every experiment setting is optimized for Tesla P40 GPUs.
 
@@ -15,16 +15,16 @@ Every experiment setting is optimized for Tesla P40 GPUs.
 
 Experiment | Throughput          | Speed up
 ---------- | ------------------: | -------:
-naive-1    | 100.506 samples/sec |   1.000x
-pipeline-1 |  73.925 samples/sec |   0.736x
-pipeline-2 | 135.691 samples/sec |   1.350x
-pipeline-4 | 230.216 samples/sec |   2.291x
-pipeline-8 | 312.945 samples/sec |   3.114x
+naive-1    | 100.922 samples/sec |   1.000x
+pipeline-1 |  74.128 samples/sec |   0.735x
+pipeline-2 | 136.929 samples/sec |   1.357x
+pipeline-4 | 238.058 samples/sec |   2.359x
+pipeline-8 | 328.563 samples/sec |   3.256x
 
 ## Optimized Environment
 
 - Python 3.6.7
-- PyTorch 1.1.0
+- PyTorch 1.2.0
 - CUDA 9.0.176
 - 8 Tesla P40 GPUs
 - 8+ Intel E5-2650 v4 CPUs

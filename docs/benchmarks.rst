@@ -10,11 +10,11 @@ ResNet-101 Performance Benchmark
 ==========  ===================  =======
 Experiment  Throughput           Speedup
 ==========  ===================  =======
-naive-1     100.506 samples/sec   1.000x
-pipeline-1   73.925 samples/sec   0.736x
-pipeline-2  135.691 samples/sec   1.350x
-pipeline-4  230.216 samples/sec   2.291x
-pipeline-8  312.945 samples/sec   3.114x
+naive-1     100.922 samples/sec   1.000x
+pipeline-1   74.128 samples/sec   0.735x
+pipeline-2  136.929 samples/sec   1.357x
+pipeline-4  238.058 samples/sec   2.359x
+pipeline-8  328.563 samples/sec   3.256x
 ==========  ===================  =======
 
 The code is reproducible on Tesla P40 GPUs, and the experiment details
