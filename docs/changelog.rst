@@ -6,6 +6,7 @@ v0.0.3 (WIP)
 
 Not released yet.
 
+- Added support for PyTorch 1.2.
 - Fixed hang at a once failed partition.
 - Removed ``current_microbatch`` which actually didn't work.
 - Fixed the size cumulation (`issue #3`_ by `Shiyan Deng`_) of
