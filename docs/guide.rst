@@ -46,10 +46,10 @@ devices. By default, available GPUs starting from ``cuda:0`` are selected in
 order for each partition. You can also specify GPUs to select by `devices`
 parameter::
 
-   mode = GPipe(model,
-                balance=[1, 1, 1, 1],
-                devices=[4, 5, 6, 7],  # Specify GPUs.
-                chunks=8)
+   model = GPipe(model,
+                 balance=[1, 1, 1, 1],
+                 devices=[4, 5, 6, 7],  # Specify GPUs.
+                 chunks=8)
 
 Input and Output Device
 ~~~~~~~~~~~~~~~~~~~~~~~
