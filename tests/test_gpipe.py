@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 
 from torchgpipe import GPipe
-from torchgpipe.partition import Partition
 
 
 def test_parameters():
@@ -218,11 +217,9 @@ def test_no_grad():
 
     latent = None
 
-    def hook(module, input, outputs):
+    def hook(module, input, output):
         _ = module
         _ = input
-
-        output, _ = outputs
 
         nonlocal latent
         latent = output
@@ -535,10 +532,10 @@ def test_partitions():
     model = GPipe(model, [1, 1], devices=['cpu', 'cpu'])
 
     assert isinstance(model.partitions, nn.ModuleList)
-    assert isinstance(model.partitions[0], Partition)
-    assert isinstance(model.partitions[1], Partition)
+    assert isinstance(model.partitions[0], nn.Sequential)
+    assert isinstance(model.partitions[1], nn.Sequential)
 
-    assert 'partitions.0.module.0.weight' in model.state_dict()
+    assert 'partitions.0.0.weight' in model.state_dict()
 
 
 def test_deny_moving():
@@ -600,8 +597,8 @@ def test_named_children():
     model = GPipe(model, [1, 1], devices=['cpu', 'cpu'])
 
     names = set(n for n, _ in model.named_modules())
-    assert 'partitions.0.module.a' in names
-    assert 'partitions.1.module.b' in names
+    assert 'partitions.0.a' in names
+    assert 'partitions.1.b' in names
 
     # GPipe doesn't support __getattr__. Unlike nn.Sequential, GPipe requires
     # several methods in its namespace.
@@ -621,3 +618,35 @@ def test_recommend_torchgpipe_balancing():
     with pytest.raises(ValueError, match='torchgpipe_balancing'):
         # module and sum of balance have different length (module: 2, sum of balance: 1)
         GPipe(nn.Sequential(nn.Linear(1, 1), nn.Linear(1, 1)), [1])
+
+
+def test_python_autograd_function():
+    # A Python autograd function might fail with this error:
+    #
+    #   RuntimeError: Returning Variables sharing storage with other Variables
+    #   that require grad is not supported in Python functions. Please submit a
+    #   feature request if you hit this error.
+    #
+    # It doesn't look like an essential restriction. But it happens on the
+    # current PyTorch version. To avoid it, we should detach the tensor before
+    # returning by identity autograd functions, such as Wait, Fork, and Join.
+    #
+    class Identity(torch.autograd.Function):
+        @staticmethod
+        def forward(ctx, input):
+            return input
+
+        @staticmethod
+        def backward(ctx, grad):
+            return grad
+
+    class M(torch.nn.Module):
+        def forward(self, input):
+            return Identity.apply(input)
+
+    model = nn.Sequential(M(), M())
+    model = GPipe(model, [1, 1], devices=['cpu', 'cpu'], checkpoint='always')
+
+    x = torch.rand(42)
+    y = model(x)
+    assert torch.allclose(x, y)

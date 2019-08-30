@@ -1,10 +1,34 @@
-"""Checkpointing with preceding recomputaiton."""
+"""Checkpointing with preceding recomputation.
+
+PyTorch already provides the official checkpointing utilities in
+:mod:`torch.utils.checkpoint`. The official checkpointing combines
+recomputation and recursive backpropagation into one autograd function named
+``Checkpoint``. Hence, the recomputation can be started only when the gradients
+arrive to the function. In GPipe, the recomputation should be preceding with
+the gradient to minimize GPU idle time.
+
+We solve this problem by introducing separate autograd functions named
+:class:`Recompute` and :class:`Checkpoint`. Each function represents
+recomputation and recursive backpropagation, respectively. We can manipulate
+the control flow in aspect of both the autograd engine and CUDA with a pair of
+the functions.
+
+Specifically, we place CUDA stream synchronization between :class:`Recompute`
+and :class:`Checkpoint` to delay only :class:`Checkpoint` until the gradient is
+copied entirely.
+
+"""
+from collections import deque
+from contextlib import contextmanager
 import threading
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Deque, Generator, List, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
 import torch.autograd
+
+from torchgpipe.dependency import Fork, Join, Phonies
+from torchgpipe.microbatch import Batch
 
 __all__ = ['is_recomputing']
 
@@ -14,134 +38,34 @@ TensorOrTensors = Union[Tensor, Tensors]
 Function = Callable[[TensorOrTensors], TensorOrTensors]
 
 
-def checkpoint(module: Function, input: TensorOrTensors) -> Tuple[TensorOrTensors, Tensor]:
-    """Makes a checkpoint at the given module.
+class Checkpointing:
+    """Generates a pair of :class:`Checkpoint` and :class:`Recompute`."""
+    phonies = Phonies()
 
-    It is very similar to :func:`torch.utils.checkpoint.checkpoint` but it
-    provides a recomputation autograd edge together to allow recomputing before
-    the checkpoint.
+    def __init__(self, function: Function, batch: Batch) -> None:
+        self.function = function
+        self.batch = batch
+        self.recomputed: Deque[Tuple[TensorOrTensors, Tensors]] = deque(maxlen=1)
 
-    The recomputation edge is represented as a dummy output. If you make the
-    output depend on the recomputation dummy output, the recomputation can
-    precede the checkpoint::
+    def checkpoint(self) -> Batch:
+        """Returns a batch applied by :class:`Checkpoint`."""
+        input_atomic = self.batch.atomic
+        input = tuple(self.batch)
 
-        output1, recompute = checkpoint(model, input1)
+        phony = Checkpointing.phonies[self.batch[0].device]
+        output = Checkpoint.apply(phony, self.recomputed, self.function, input_atomic, *input)
+        return Batch(output)
 
-        input2 = first(input2, recompute)
-        output2 = model(input2)
+    def recompute(self, batch: Batch) -> None:
+        """Applies :class:`Recompute` to the batch in place."""
+        input_atomic = self.batch.atomic
+        input = tuple(self.batch)
 
-        output = torch.cat((output1, output2))
-
-    Returns:
-        A tuple of (output, recompute).
-
-    """
-    result = Result()
-
-    if isinstance(input, tuple):
-        unwrap_input = False
-    else:
-        input = (input,)
-        unwrap_input = True
-
-    output = Checkpoint.apply(result, module, unwrap_input, *input)
-    dummy = output[0] if isinstance(output, tuple) else output
-    recompute = Recompute.apply(dummy, result, module, unwrap_input, *input)
-
-    return output, recompute
-
-
-class Result:
-    """A shared memory between :class:`Checkpoint` and :class:`Recompute`."""
-    __slots__ = ('value',)
-
-    def __init__(self) -> None:
-        self.value: Any = None
-
-    def set(self, value: Any) -> None:  # pragma: no cover
-        self.value = value
-
-    def get(self) -> Any:  # pragma: no cover
-        return self.value
-
-
-class Context:
-    """A common interface between the :class:`Checkpoint` and
-    :class:`Recompute` context.
-    """
-    result: Result
-
-    # NOTE(sublee): 'module' cannot be annotated with 'Function' because mypy
-    # infers this attribute as an instance method. That's why this is annotated
-    # with 'Any' instead.
-    # See: https://github.com/python/mypy/issues/708.
-    module: Any
-
-    unwrap_input: bool
-
-    saved_tensors: Tuple[Tensor, ...]
-
-    def save_for_backward(self, *tensors: Tensor) -> None:  # pragma: no cover
-        pass
-
-
-class Checkpoint(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx: Context,  # type: ignore
-                result: Result,
-                module: Function,
-                unwrap_input: bool,
-                *input: Tensor,
-                ) -> TensorOrTensors:
-        ctx.result = result
-
-        ctx.module = module
-        ctx.unwrap_input = unwrap_input
-        ctx.save_for_backward(*input)
-
-        with torch.no_grad():
-            output = module(input[0] if unwrap_input else input)
-
-        return output
-
-    @staticmethod
-    def backward(ctx: Context,
-                 *grad_output: Tensor,
-                 ) -> Tuple[Optional[Tensor], ...]:  # pragma: no cover
-        output, input_leaf = recompute_once(ctx)
-
-        if isinstance(output, tuple):
-            torch.autograd.backward(output, grad_output)
-        else:
-            output.backward(grad_output[0])
-
-        grad_input: List[Optional[Tensor]] = [None, None, None]
-        grad_input.extend(x.grad for x in input_leaf)
-        return tuple(grad_input)
-
-
-class Recompute(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx: Context,  # type: ignore
-                dummy: Tensor,
-                result: Result,
-                module: Function,
-                unwrap_input: bool,
-                *input: Tensor,
-                ) -> Tensor:
-        ctx.result = result
-
-        ctx.module = module
-        ctx.unwrap_input = unwrap_input
-        ctx.save_for_backward(*input)
-
-        return dummy
-
-    @staticmethod
-    def backward(ctx: Context, *grad_output: Tensor) -> Tuple[None, ...]:  # pragma: no cover
-        _ = grad_output
-        recompute_once(ctx)
-        return (None,) * (len(ctx.saved_tensors) + 4)
+        # batch[0] is always requiring grad, because it has been passed
+        # checkpoint with a phony requiring grad.
+        batch[0], phony = Fork.apply(batch[0])
+        phony = Recompute.apply(phony, self.recomputed, self.function, input_atomic, *input)
+        batch[0] = Join.apply(batch[0], phony)
 
 
 _local = threading.local()
@@ -156,54 +80,101 @@ def is_recomputing() -> bool:
     .. seealso:: :ref:`Detecting Recomputation`
 
     """
-    # 'recompute_once' sets it as True jus for recompuation.
     return getattr(_local, 'is_recomputing', False)
 
 
-def recompute_once(ctx: Context) -> Tuple[TensorOrTensors, Tensors]:  # pragma: no cover
-    """Ensures the recomputation only once."""
-    already_recomputed = ctx.result.get()
-    if already_recomputed:
-        return already_recomputed
-
-    input = ctx.saved_tensors
-    input_leaf = tuple(x.detach().requires_grad_() for x in input)
-
+@contextmanager
+def enable_recomputing() -> Generator[None, None, None]:
+    """Makes :func:`is_recomputing` return ``True`` within a context."""
+    orig = is_recomputing()
     _local.is_recomputing = True
     try:
-        with torch.enable_grad():
-            output = ctx.module(input_leaf[0] if ctx.unwrap_input else input_leaf)
+        yield
     finally:
-        _local.is_recomputing = False
-
-    ctx.result.set((output, input_leaf))
-
-    return output, input_leaf
+        _local.is_recomputing = orig
 
 
-def first(input: TensorOrTensors, dummy: Optional[Tensor]) -> TensorOrTensors:
-    """Makes the input depend on the dummy. It injects a phony dependency
-    between them.
+class Context:
+    """The common interface between the :class:`Checkpoint` and
+    :class:`Recompute` context.
     """
-    if dummy is None:
-        # Just pass.
-        return input
+    recomputed: Deque[Tuple[TensorOrTensors, Tensors]]
 
-    if isinstance(input, tuple):
-        head = First.apply(input[0], dummy)
-        return (head,) + input[1:]
+    # NOTE(sublee): 'function' cannot be annotated with 'Function' because mypy
+    # infers this attribute as an instance method. That's why this is annotated
+    # with 'Any' instead.
+    # See: https://github.com/python/mypy/issues/708.
+    function: Any
 
-    return First.apply(input, dummy)
+    input_atomic: bool
+
+    saved_tensors: Tuple[Tensor, ...]
+
+    def save_for_backward(self, *tensors: Tensor) -> None:  # pragma: no cover
+        pass
 
 
-class First(torch.autograd.Function):
+class Checkpoint(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: Context, tensor1: Tensor, tensor2: Tensor) -> Tensor:  # type: ignore
-        _ = tensor2
-        return tensor1
+    def forward(ctx: Context,  # type: ignore
+                phony: Tensor,
+                recomputed: Deque[Tuple[TensorOrTensors, Tensors]],
+                function: Function,
+                input_atomic: bool,
+                *input: Tensor,
+                ) -> TensorOrTensors:
+        ctx.recomputed = recomputed
+
+        ctx.function = function
+        ctx.input_atomic = input_atomic
+        ctx.save_for_backward(*input)
+
+        with torch.no_grad():
+            output = function(input[0] if input_atomic else input)
+
+        return output
 
     @staticmethod
-    def backward(ctx: Context,              # type: ignore
-                 grad_output: Tensor,
-                 ) -> Tuple[Tensor, None]:  # pragma: no cover
-        return grad_output, None
+    def backward(ctx: Context,
+                 *grad_output: Tensor,
+                 ) -> Tuple[Optional[Tensor], ...]:  # pragma: no cover
+        output, input_leaf = ctx.recomputed.pop()
+
+        if isinstance(output, tuple):
+            torch.autograd.backward(output, grad_output)
+        else:
+            output.backward(grad_output[0])
+
+        grad_input: List[Optional[Tensor]] = [None, None, None, None]
+        grad_input.extend(x.grad for x in input_leaf)
+        return tuple(grad_input)
+
+
+class Recompute(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Context,  # type: ignore
+                phony: Tensor,
+                recomputed: Deque[Tuple[TensorOrTensors, Tensors]],
+                function: Function,
+                input_atomic: bool,
+                *input: Tensor,
+                ) -> Tensor:
+        ctx.recomputed = recomputed
+
+        ctx.function = function
+        ctx.input_atomic = input_atomic
+        ctx.save_for_backward(*input)
+
+        return phony
+
+    @staticmethod
+    def backward(ctx: Context, *grad_output: Tensor) -> Tuple[None, ...]:  # pragma: no cover
+        input = ctx.saved_tensors
+        input_leaf = tuple(x.detach().requires_grad_(x.requires_grad) for x in input)
+
+        with torch.enable_grad(), enable_recomputing():
+            output = ctx.function(input_leaf[0] if ctx.input_atomic else input_leaf)
+
+        ctx.recomputed.append((output, input_leaf))
+
+        return (None,) * (len(ctx.saved_tensors) + 4)

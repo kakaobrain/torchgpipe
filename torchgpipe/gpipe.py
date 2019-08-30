@@ -1,9 +1,6 @@
-"""The GPipe implemtation."""
+"""The GPipe implementation."""
 from collections import OrderedDict
-from queue import PriorityQueue
-import sys
-import threading
-from typing import TYPE_CHECKING, Any, Iterable, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union, cast
 
 import torch
 from torch import Tensor
@@ -12,9 +9,9 @@ import torch.cuda
 import torch.nn as nn
 
 from torchgpipe.batchnorm import DeferredBatchNorm
-from torchgpipe.checkpoint import first
 from torchgpipe.microbatch import check, gather, scatter
-from torchgpipe.partition import Partition
+from torchgpipe.pipeline import pipeline
+from torchgpipe.stream import AbstractStream, new_stream
 
 __all__ = ['GPipe']
 
@@ -31,20 +28,6 @@ if TYPE_CHECKING:
 else:
     Module = nn.Module
     NamedModules = OrderedDict
-
-
-class Message(NamedTuple):
-    """Workers communicate with this message."""
-    i: int
-    payload: Any
-
-    def __lt__(self, other: tuple) -> bool:
-        # A message is enqueued in a priority queue. Only ``i`` is used to
-        # determine a message priority. Therefore, we can store any object
-        # including uncomparable user object into ``payload``. That's why we
-        # need this class instead of a built-in tuple.
-        other_i, _ = other
-        return self.i < other_i
 
 
 def recommend_torchgpipe_balancing(title: str) -> ValueError:
@@ -173,72 +156,19 @@ class GPipe(Module):
         devices = [torch.device(d) for d in devices]
 
         try:
-            self.partitions, self.balance, self.devices = self._partition(module, balance, devices)
+            self.partitions, self.balance, self.devices = \
+                self._split_module(module, balance, devices)
         except ValueError as exc:
             raise recommend_torchgpipe_balancing(str(exc))
 
-    def __len__(self) -> int:
-        """Counts the length of the underlying sequential module."""
-        partitions = cast(List[Partition], self.partitions)
-        return sum(len(p) for p in partitions)
-
-    def __getitem__(self, index: int) -> nn.Module:
-        """Gets a layer in the underlying sequential module."""
-        partitions = cast(List[Partition], self.partitions)
-        if index < 0:
-            partitions = cast(List[Partition], reversed(partitions))
-
-        for partition in partitions:
-            try:
-                return partition[index]
-            except IndexError:
-                pass
-
-            shift = len(partition)
-
-            if index < 0:
-                index += shift
-            else:
-                index -= shift
-
-        raise IndexError
-
-    # GPipe should manage the device of each partition.
-    # Deny cuda(), cpu(), and to() with device, by TypeError.
-
-    def cuda(self, device: Device) -> 'GPipe':
-        raise MOVING_DENIED
-
-    def cpu(self) -> 'GPipe':
-        raise MOVING_DENIED
-
-    def to(self, *args: Any, **kwargs: Any) -> 'GPipe':
-        # Deny these usages:
-        #
-        # - to(device[, dtype, non_blocking])
-        # - to(tensor[, non_blocking])
-        #
-        # But allow this:
-        #
-        # - to(dtype[, non_blocking])
-        #
-        if 'device' in kwargs or 'tensor' in kwargs:
-            raise MOVING_DENIED
-
-        if args:
-            if isinstance(args[0], (torch.device, int, str)):
-                raise MOVING_DENIED
-            if isinstance(args[0], Tensor):
-                raise MOVING_DENIED
-
-        return super().to(*args, **kwargs)
+        self._copy_streams: Tuple[Tuple[AbstractStream, ...], ...] = ()
 
     @staticmethod
-    def _partition(module: nn.Sequential,
-                   balance: List[int],
-                   devices: List[torch.device],
-                   ) -> Tuple[nn.ModuleList, Tuple[int, ...], Tuple[torch.device, ...]]:
-        """Partitions the given sequential module onto the devices.
+    def _split_module(module: nn.Sequential,
+                      balance: List[int],
+                      devices: List[torch.device],
+                      ) -> Tuple[List[nn.Sequential], Tuple[int, ...], Tuple[torch.device, ...]]:
+        """Splits a module into multiple partitions.
 
         Returns:
             A tuple of (partitions, balance, devices).
@@ -267,187 +197,93 @@ class GPipe(Module):
 
         i = 0
         partitions = []
-        layers_buffer: NamedModules = OrderedDict()
+        layers: NamedModules = OrderedDict()
 
         for name, layer in module.named_children():
-            layers_buffer[name] = layer
+            layers[name] = layer
 
-            if len(layers_buffer) == balance[i]:
+            if len(layers) == balance[i]:
                 # Group buffered layers as a partition.
-                partition_module = nn.Sequential(layers_buffer)
+                partition = nn.Sequential(layers)
 
                 device = devices[i]
-                partition = Partition(partition_module, device)
                 partition.to(device)
 
                 partitions.append(partition)
 
                 # Prepare for the next partition.
-                layers_buffer.clear()
+                layers.clear()
                 i += 1
 
+        partitions = cast(List[nn.Sequential], nn.ModuleList(partitions))
         del devices[i:]
 
-        return nn.ModuleList(partitions), tuple(balance), tuple(devices)
+        return partitions, tuple(balance), tuple(devices)
 
-    def _spawn_workers(self) -> Tuple[PriorityQueue, PriorityQueue]:
-        """Creates worker threads."""
-        partitions = cast(List[Partition], self.partitions)
+    def __len__(self) -> int:
+        """Counts the length of the underlying sequential module."""
+        return sum(len(p) for p in self.partitions)
 
-        n = len(partitions)
-        queues: List[PriorityQueue] = [PriorityQueue() for _ in range(n+1)]
-        grad_enabled = torch.is_grad_enabled()
+    def __getitem__(self, index: int) -> nn.Module:
+        """Gets a layer in the underlying sequential module."""
+        partitions = self.partitions
+        if index < 0:
+            partitions = partitions[::-1]
 
-        for i, partition in enumerate(partitions):
-            in_queue = queues[i]
-            out_queue = queues[i+1]
-
-            args = (partition, in_queue, out_queue, grad_enabled)
-            t = threading.Thread(target=GPipe._worker, args=args)
-            t.daemon = True
-            t.start()
-
-        return queues[0], queues[-1]
-
-    @staticmethod
-    def _worker(partition: Partition,
-                in_queue: PriorityQueue,
-                out_queue: PriorityQueue,
-                grad_enabled: bool,
-                ) -> None:
-        """Run by worker threads."""
-        torch.set_grad_enabled(grad_enabled)
-
-        input: TensorOrTensors
-        checkpoint: bool
-        recompute: Optional[Tensor] = None
-        failed = False
-
-        while True:
-            # Block until getting a micro-batch.
-            msg = in_queue.get()
-
-            # None means closing.
-            if msg.payload is None:
-                out_queue.put(msg)
-                break
-
-            # The previous partition sent an exception (msg = exc_info.)
-            if msg.i == -1:
-                out_queue.put(msg)
-                continue
-
-            # Ignore every input after an error.
-            if failed:
-                # Former partitions still might process non-closing messages.
-                # To prevent a hang, in_queue.task_done() should be called here.
-                in_queue.task_done()
-                continue
-
-            input, checkpoint = msg.payload
-
-            # Linearize micro-batches by dependency between nth micro-batch
-            # input and n-1th micro-batch output. It prevents unexpected
-            # recursive backward from checkpoints.
-            input = first(input, recompute)
-
+        for partition in partitions:
             try:
-                output, recompute = partition(input, checkpoint)
-            except BaseException:
-                # A user-exception occurred. Pass it to the next partition to
-                # make the main thread detect it as soon as possible.
-                exc_info = sys.exc_info()
-                error = Message(-1, exc_info)
-                out_queue.put(error)
-                del error
+                return partition[index]
+            except IndexError:
+                pass
 
-                # The main thread will close this worker soon.
-                failed = True
-                continue
-            finally:
-                # Let the former partition detect that
-                # it's ready to receive a new micro-batch or message.
-                in_queue.task_done()
+            shift = len(partition)
 
-            # Micro-batch lockstep: During this partition is executing a micro-batch, to copy
-            # a micro-batch by the next partition would be blocked. To prevent the blocking,
-            # don't send the current micro-batch until the next partition is ready to receive it.
-            out_queue.join()
+            if index < 0:
+                index += shift
+            else:
+                index -= shift
 
-            msg = Message(msg.i, (output, checkpoint))
-            out_queue.put(msg)
+        raise IndexError
 
-    def _push_input(self,
-                    input: TensorOrTensors,
-                    in_queue: PriorityQueue,
-                    ) -> int:
-        """Pushes chunked inputs to the first partition."""
-        # Divide a mini-batch into micro-batches.
-        in_device = self.devices[0]
-        inputs = scatter(input, chunks=self.chunks, device=in_device)
+    # GPipe should manage the device of each partition.
+    # Deny cuda(), cpu(), and to() with device, by TypeError.
+    def cuda(self, device: Optional[Device] = None) -> 'GPipe':
+        raise MOVING_DENIED
 
-        # The number of inputs might be smaller than the number of chunks.
-        num_inputs = len(inputs)
+    def cpu(self) -> 'GPipe':
+        raise MOVING_DENIED
 
-        for i, _input in enumerate(inputs):
-            # NOTE(sublee): 'except_last' is the defualt option. Compare it first.
-            if self.checkpoint == 'except_last':
-                checkpoint = (i < self.chunks-1)
-            elif self.checkpoint == 'always':
-                checkpoint = True
-            elif self.checkpoint == 'never':
-                checkpoint = False
+    def to(self, *args: Any, **kwargs: Any) -> 'GPipe':
+        # Deny these usages:
+        #
+        # - to(device[, dtype, non_blocking])
+        # - to(tensor[, non_blocking])
+        #
+        # But allow this:
+        #
+        # - to(dtype[, non_blocking])
+        #
+        if 'device' in kwargs or 'tensor' in kwargs:
+            raise MOVING_DENIED
 
-            msg = Message(i, (_input, checkpoint))
-            in_queue.put(msg)
+        if args:
+            if isinstance(args[0], (torch.device, int, str)):
+                raise MOVING_DENIED
+            if torch.is_tensor(args[0]):
+                raise MOVING_DENIED
 
-        return num_inputs
+        return super().to(*args, **kwargs)
 
-    def _pull_output(self,
-                     num_inputs: int,
-                     in_queue: PriorityQueue,
-                     out_queue: PriorityQueue,
-                     ) -> Tensor:
-        """Collects and concatenates chunked outputs from the last partition.
+    def _ensure_copy_streams(self) -> Tuple[Tuple[AbstractStream, ...], ...]:
+        if not self._copy_streams:
+            copy_streams = []
 
-        If an exception from a parititon is detected, all workers are closed
-        and the exception is re-raised.
+            for device in self.devices:
+                copy_streams.append(tuple([new_stream(device) for _ in range(self.chunks)]))
 
-        Raises:
-            Exception: any exception from a partition
+            self._copy_streams = tuple(copy_streams)
 
-        """
-        # All worker threads will be closed when receiving this message.
-        close = Message(-1, None)
-
-        outputs = []
-        for _ in range(num_inputs):
-            msg = out_queue.get()
-            out_queue.task_done()
-
-            if msg.i == -1:
-                # Close worker threads immediately.
-                in_queue.put(close)
-                out_queue.get()
-
-                # Raise the exception from a partition.
-                exc_info = msg.payload
-                raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
-
-            output, _ = msg.payload
-            outputs.append(output)
-
-        # Indicate the end of micro-batches.
-        in_queue.put(close)
-
-        # Merge the micro-batches into one mini-batch.
-        out_device = self.devices[-1]
-        output = gather(outputs, device=out_device)
-
-        # Wait until the last worker thread closes.
-        out_queue.get()
-
-        return output
+        return self._copy_streams
 
     def forward(self, input: TensorOrTensors) -> TensorOrTensors:  # type: ignore
         """:class:`GPipe` is a fairly transparent module wrapper. It doesn't
@@ -466,12 +302,33 @@ class GPipe(Module):
             TypeError: input is not a tensor or tensors.
 
         """
+        check(input)
+
         if not self.devices:
-            # An empty sequential module is wrapped. Empty sequential module is
-            # not illegal. Just check the input type.
-            check(input)
+            # Empty sequential module is not illegal.
             return input
 
-        in_queue, out_queue = self._spawn_workers()
-        num_inputs = self._push_input(input, in_queue)
-        return self._pull_output(num_inputs, in_queue, out_queue)
+        # Prepare separate CUDA streams only for copy.
+        copy_streams = self._ensure_copy_streams()
+
+        # Divide a mini-batch into micro-batches.
+        batches = scatter(input, self.chunks)
+
+        # The micro-batch index where the checkpointing stops.
+        if self.training:
+            checkpoint_stop = {'always': self.chunks,
+                               'except_last': self.chunks-1,
+                               'never': 0}[self.checkpoint]
+        else:
+            checkpoint_stop = 0
+
+        # Run pipeline parallelism.
+        pipeline(batches,
+                 self.partitions,
+                 self.devices,
+                 copy_streams,
+                 checkpoint_stop)
+
+        # Merge the micro-batches into one mini-batch.
+        output = gather(batches)
+        return output
