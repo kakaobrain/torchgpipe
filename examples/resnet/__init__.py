@@ -7,20 +7,12 @@ This code is transformed :mod:`torchvision.models.resnet`.
 from collections import OrderedDict
 from typing import Any, List
 
-from torch import Tensor
 import torch.nn as nn
 
 from resnet.bottleneck import bottleneck
 from resnet.flatten_sequential import flatten_sequential
 
 __all__ = ['resnet101']
-
-
-class Flat(nn.Module):
-    """Flattens any input tensor into an 1-d tensor."""
-
-    def forward(self, x: Tensor):  # type: ignore
-        return x.view(x.size(0), -1)
 
 
 def build_resnet(layers: List[int],
@@ -66,7 +58,7 @@ def build_resnet(layers: List[int],
         ('layer4', make_layer(512, layers[3], stride=2)),
 
         ('avgpool', nn.AdaptiveAvgPool2d((1, 1))),
-        ('flat', Flat()),
+        ('flat', nn.Flatten()),
         ('fc', nn.Linear(512 * 4, num_classes)),
     ]))
 
@@ -74,23 +66,16 @@ def build_resnet(layers: List[int],
     model = flatten_sequential(model)
 
     # Initialize weights for Conv2d and BatchNorm2d layers.
+    # Stolen from torchvision-0.4.0.
     def init_weight(m: nn.Module) -> None:
         if isinstance(m, nn.Conv2d):
-            assert isinstance(m.kernel_size, tuple)
-            n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            return
 
-            m.weight.requires_grad = False
-            m.weight.normal_(0, 2. / n**0.5)
-            m.weight.requires_grad = True
-
-        elif isinstance(m, nn.BatchNorm2d):
-            m.weight.requires_grad = False
-            m.weight.fill_(1)
-            m.weight.requires_grad = True
-
-            m.bias.requires_grad = False
-            m.bias.zero_()
-            m.bias.requires_grad = True
+        if isinstance(m, nn.BatchNorm2d):
+            nn.init.constant_(m.weight, 1)
+            nn.init.constant_(m.bias, 0)
+            return
 
     model.apply(init_weight)
 

@@ -20,16 +20,16 @@ class Experiments:
 
     @staticmethod
     def naive1(model: nn.Module, devices: List[int]) -> Stuffs:
-        batch_size = 128
+        batch_size = 96
         device = devices[0]
         model.to(device)
         return model, batch_size, [torch.device(device)]
 
     @staticmethod
     def pipeline1(model: nn.Module, devices: List[int]) -> Stuffs:
-        batch_size = 128
+        batch_size = 96
         chunks = 1
-        balance = [304]
+        balance = [370]
 
         model = cast(nn.Sequential, model)
         model = GPipe(model, balance, devices=devices, chunks=chunks, checkpoint='always')
@@ -39,7 +39,7 @@ class Experiments:
     def pipeline2(model: nn.Module, devices: List[int]) -> Stuffs:
         batch_size = 256
         chunks = 16
-        balance = [115, 189]
+        balance = [140, 230]
 
         model = cast(nn.Sequential, model)
         model = GPipe(model, balance, devices=devices, chunks=chunks)
@@ -49,7 +49,7 @@ class Experiments:
     def pipeline4(model: nn.Module, devices: List[int]) -> Stuffs:
         batch_size = 1024
         chunks = 64
-        balance = [39, 78, 97, 90]
+        balance = [47, 96, 118, 109]
 
         model = cast(nn.Sequential, model)
         model = GPipe(model, balance, devices=devices, chunks=chunks)
@@ -59,7 +59,7 @@ class Experiments:
     def pipeline8(model: nn.Module, devices: List[int]) -> Stuffs:
         batch_size = 1792
         chunks = 64
-        balance = [22, 18, 27, 36, 36, 54, 54, 57]
+        balance = [26, 22, 33, 44, 44, 66, 66, 69]
 
         model = cast(nn.Sequential, model)
         model = GPipe(model, balance, devices=devices, chunks=chunks)

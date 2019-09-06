@@ -82,11 +82,15 @@ def bottleneck(inplanes: int,
 
     layers['conv1'] = Gutter(conv1x1(inplanes, planes))
     layers['bn1'] = Gutter(nn.BatchNorm2d(planes))
+    layers['relu1'] = Gutter(nn.ReLU())
+
     layers['conv2'] = Gutter(conv3x3(planes, planes, stride))
     layers['bn2'] = Gutter(nn.BatchNorm2d(planes))
+    layers['relu2'] = Gutter(nn.ReLU())
+
     layers['conv3'] = Gutter(conv1x1(planes, planes * 4))
     layers['bn3'] = Gutter(nn.BatchNorm2d(planes * 4))
     layers['residual'] = Residual(downsample)
-    layers['relu'] = nn.ReLU()
+    layers['relu3'] = nn.ReLU()
 
     return nn.Sequential(layers)
