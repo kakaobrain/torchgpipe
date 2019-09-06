@@ -115,9 +115,9 @@ class GPipe(Module):
     #:         output = gpipe(input)
     #:         loss = F.cross_entropy(output, target)
     #:
-    devices: Tuple[torch.device, ...] = ()
-    #                                 ^^^^
-    # The default value () required for Sphinx's autoattribute.
+    devices: List[torch.device] = []
+    #                             ^^
+    # The default value [] required for Sphinx's autoattribute.
 
     def __init__(self,
                  module: nn.Sequential,
@@ -161,13 +161,13 @@ class GPipe(Module):
         except ValueError as exc:
             raise recommend_torchgpipe_balancing(str(exc))
 
-        self._copy_streams: Tuple[Tuple[AbstractStream, ...], ...] = ()
+        self._copy_streams: List[List[AbstractStream]] = []
 
     @staticmethod
     def _split_module(module: nn.Sequential,
                       balance: List[int],
                       devices: List[torch.device],
-                      ) -> Tuple[List[nn.Sequential], Tuple[int, ...], Tuple[torch.device, ...]]:
+                      ) -> Tuple[List[nn.Sequential], List[int], List[torch.device]]:
         """Splits a module into multiple partitions.
 
         Returns:
@@ -218,7 +218,7 @@ class GPipe(Module):
         partitions = cast(List[nn.Sequential], nn.ModuleList(partitions))
         del devices[i:]
 
-        return partitions, tuple(balance), tuple(devices)
+        return partitions, balance, devices
 
     def __len__(self) -> int:
         """Counts the length of the underlying sequential module."""
@@ -274,14 +274,10 @@ class GPipe(Module):
 
         return super().to(*args, **kwargs)
 
-    def _ensure_copy_streams(self) -> Tuple[Tuple[AbstractStream, ...], ...]:
+    def _ensure_copy_streams(self) -> List[List[AbstractStream]]:
         if not self._copy_streams:
-            copy_streams = []
-
             for device in self.devices:
-                copy_streams.append(tuple([new_stream(device) for _ in range(self.chunks)]))
-
-            self._copy_streams = tuple(copy_streams)
+                self._copy_streams.append([new_stream(device) for _ in range(self.chunks)])
 
         return self._copy_streams
 

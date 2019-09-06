@@ -62,8 +62,8 @@ def clock_cycles(n: int, m: int) -> Generator[List[Tuple[int, int]], None, None]
 
 def pipeline(batches: List[Batch],
              partitions: List[nn.Sequential],
-             devices: Tuple[torch.device, ...],
-             copy_streams: Tuple[Tuple[AbstractStream, ...], ...],
+             devices: List[torch.device],
+             copy_streams: List[List[AbstractStream]],
              checkpoint_stop: int,
              ) -> None:
     """Runs pipeline parallelism.

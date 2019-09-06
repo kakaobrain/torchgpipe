@@ -521,7 +521,7 @@ def test_devices():
 
     cpu = torch.device('cpu')
     # Extra devices must be discarded.
-    assert model.devices == (cpu, cpu, cpu)
+    assert model.devices == [cpu, cpu, cpu]
 
 
 def test_partitions():
