@@ -32,13 +32,13 @@ def test_serial_checkpoints(device):
             timeline.append('%s:backward' % name)
             return None, grad_output
 
-    a = torch.rand(1, requires_grad=True, device=device)
-    b = torch.rand(1, requires_grad=True, device=device)
+    a = torch.rand(1, device=device)
+    b = torch.rand(1, device=device)
 
     # Increase the next function sequence number.
     _ = a + 1 + 2 + 3 + 4 + 5
 
-    phony = torch.zeros(0, device=device)
+    phony = torch.zeros(0, device=device, requires_grad=True)
 
     a_recomputed = deque(maxlen=1)
     a_function = partial(Log.apply, 'a')
@@ -69,7 +69,7 @@ def test_serial_checkpoints(device):
 
 
 def test_not_requires_grad():
-    x = Batch(torch.rand(1))
+    x = Batch(torch.rand(1, requires_grad=False))
     assert not x[0].requires_grad
 
     def f(x):
@@ -81,3 +81,23 @@ def test_not_requires_grad():
 
     chk.recompute(x)
     assert x[0].requires_grad
+
+    x.tensor.backward()
+
+
+def test_not_requires_grad_with_parameter():
+    x = Batch(torch.rand(1, requires_grad=False))
+    assert not x[0].requires_grad
+
+    a = torch.rand(1, requires_grad=True)
+    assert a.requires_grad
+
+    def f(x):
+        return x * a
+
+    chk = Checkpointing(f, x)
+    x = chk.checkpoint()
+    chk.recompute(x)
+
+    x.tensor.backward()
+    assert a.grad is not None

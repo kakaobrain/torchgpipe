@@ -141,9 +141,11 @@ class Checkpoint(torch.autograd.Function):
         output, input_leaf = ctx.recomputed.pop()
 
         if isinstance(output, tuple):
-            torch.autograd.backward(output, grad_output)
+            tensors = output
         else:
-            output.backward(grad_output[0])
+            tensors = (output,)
+        if any(y.requires_grad for y in tensors):
+            torch.autograd.backward(tensors, grad_output)
 
         grad_input: List[Optional[Tensor]] = [None, None, None, None]
         grad_input.extend(x.grad for x in input_leaf)
