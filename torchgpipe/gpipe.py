@@ -10,7 +10,7 @@ import torch.nn as nn
 
 from torchgpipe.batchnorm import DeferredBatchNorm
 from torchgpipe.microbatch import check, gather, scatter
-from torchgpipe.pipeline import pipeline
+from torchgpipe.pipeline import Pipeline
 from torchgpipe.stream import AbstractStream, new_stream
 
 __all__ = ['GPipe']
@@ -319,11 +319,8 @@ class GPipe(Module):
             checkpoint_stop = 0
 
         # Run pipeline parallelism.
-        pipeline(batches,
-                 self.partitions,
-                 self.devices,
-                 copy_streams,
-                 checkpoint_stop)
+        pipeline = Pipeline(batches, self.partitions, self.devices, copy_streams, checkpoint_stop)
+        pipeline.run()
 
         # Merge the micro-batches into one mini-batch.
         output = gather(batches)
