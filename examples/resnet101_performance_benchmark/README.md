@@ -15,17 +15,17 @@ Every experiment setting is optimized for Tesla P40 GPUs.
 
 Experiment | Throughput          | Speed up
 ---------- | ------------------: | -------:
-naive-1    | 100.922 samples/sec |   1.000x
-pipeline-1 |  74.128 samples/sec |   0.735x
-pipeline-2 | 136.929 samples/sec |   1.357x
-pipeline-4 | 238.058 samples/sec |   2.359x
-pipeline-8 | 328.563 samples/sec |   3.256x
+naive-1    |  92.539 samples/sec |   1.000x
+pipeline-1 |  69.960 samples/sec |   0.756x
+pipeline-2 | 137.788 samples/sec |   1.489x
+pipeline-4 | 243.322 samples/sec |   2.629x
+pipeline-8 | 404.084 samples/sec |   4.367x
 
 ## Optimized Environment
 
-- Python 3.6.7
+- Python 3.6.9
 - PyTorch 1.2.0
-- CUDA 9.0.176
+- CUDA 10.0.130
 - 8 Tesla P40 GPUs
 - 8+ Intel E5-2650 v4 CPUs
 
