@@ -43,7 +43,7 @@ partitions each having a single layer. This code also splits a mini-batch into
 GPipe optimizes training using CUDA. You should not move the module to a GPU
 yourself, because GPipe automatically moves each partition over different
 devices. By default, available GPUs starting from ``cuda:0`` are selected in
-order for each partition. You can also specify GPUs to select by `devices`
+order for each partition. You can also specify GPUs to use with `devices`
 parameter::
 
    model = GPipe(model,
@@ -55,10 +55,10 @@ Input and Output Device
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Unlike a typical module, with GPipe, the input device is different from the
-output device except there is only one partition. This is because the first
-partition and last partition should be placed in different devices.
+output device except for when there is only one partition. This is because the
+first partition and last partition are placed in different devices.
 
-Therefore, you should move the input and target to the corresponding devices.
+Therefore, you have to move the input and target to the corresponding devices.
 It can be done with :attr:`GPipe.devices <torchgpipe.GPipe.devices>`, which
 holds the list of devices for each partition::
 
@@ -82,18 +82,18 @@ Automatic Balancing
 ~~~~~~~~~~~~~~~~~~~
 
 It could be hard to determine the optimal balance of a model. In particular, if
-you are still designing a model, probably the model architecture may change
-over time. In this case, we highly recommend :mod:`torchgpipe_balancing` for
-automatic balancing. This library doesn't determine the optimal balance, but
-could be a handy tool. Note that it is also a part of `torchgpipe` package but
-not a part of the GPipe paper.
+you are still designing a model, the model architecture may change over time.
+In this case, we highly recommend :mod:`torchgpipe_balancing` for automatic
+balancing. This won't give you the optimal balance, but a good-enough balance.
+Note that this is provided by `torchgpipe` package, and is not from the GPipe
+paper.
 
 There are two balancing tools, :func:`~torchgpipe_balancing.balance_by_time`
 and :func:`~torchgpipe_balancing.balance_by_size`. Both are based on per-layer
 profiling. Just like `PyTorch JIT`_, you need to feed a sample input into the
 model. :func:`~torchgpipe_balancing.balance_by_time` traces elapsed time of
 each layer, while :func:`~torchgpipe_balancing.balance_by_size` detects the
-CUDA memory usage of each layer. Choose a balancing tool for your needs::
+CUDA memory usage of each layer. Choose the balancing tool for your needs::
 
    from torchgpipe import GPipe
    from torchgpipe_balancing import balance_by_time
@@ -181,7 +181,7 @@ have to implement a skip connection like this::
    latent = layer2(latent)
    output = layer3(latent) + input  # skip connection
 
-To make this module sequential, we will define modules for each layer. Simply,
+To make this module sequential, we define modules for each layer. Simply,
 a skip connection can be implemented by making underlying layers with
 ``Tuple[Tensor, Tensor]`` parameter and return type::
 
@@ -219,22 +219,23 @@ can move the tensors from partition to partition::
    model = GPipe(model, balance=[1, 1, 1], chunks=8)
 
 It is the most straightforward approach to implement skip connections. But
-there is a disadvantage. In the above example, the skipping input tensor is
-copied to the second device, but it is never used at the device. Unnecessarily
-copied tensor wastes time and memory.
+there is a disadvantage. In the above example, the skip tensor is copied to the
+second device, but it is never used on the second device. Unnecessarily copying
+tensor wastes time and memory.
 
 Detecting Recomputation
 -----------------------
 
-Checkpointing in GPipe performs forward propagations twice. The second
-forward propagation is called `recomputation`. This may cause a problem when a
-module such as :class:`nn.BatchNorm2d <torch.nn.BatchNorm2d>` updates its
-buffers on each forward propagation. It should not update the buffers again
-during the recomputation. To achieve it, modules' ``forward`` method should be
-able to detect that is the recomputation or the first forward progagation.
+Checkpointing in GPipe performs forward propagations twice. The second forward
+propagation is called `recomputation`. This may cause a problem when a module
+such as :class:`nn.BatchNorm2d <torch.nn.BatchNorm2d>` updates its running
+estimates of batch statistics on each forward propagation. It should not update
+the running estimates again during the recomputation. To avoid updating the
+running estimates twice, modules' ``forward`` method needs be able to detect
+that this is the recomputation.
 
 It can be done by :func:`~torchgpipe.is_recomputing`. This function returns
-``True`` if the code is running on the recomputation::
+``True`` if called during the recomputation::
 
    class Counter(nn.Module):
        def __init__(self):
