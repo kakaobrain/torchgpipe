@@ -75,7 +75,6 @@ def worker(in_queue: InQueue,
         task = in_queue.get()
 
         if task is None:
-            out_queue.put((False, None))
             break
 
         try:
@@ -87,6 +86,9 @@ def worker(in_queue: InQueue,
 
         out_queue.put((True, (task, batch)))
 
+    done = (False, None)
+    out_queue.put(done)
+
 
 @contextmanager
 def spawn_workers(count: int) -> Generator[Tuple[List[InQueue], List[OutQueue]], None, None]:
@@ -96,7 +98,7 @@ def spawn_workers(count: int) -> Generator[Tuple[List[InQueue], List[OutQueue]],
 
     grad_enabled = torch.is_grad_enabled()
 
-    # Spwan workers.
+    # Spawn workers.
     for _ in range(count):
         in_queue: InQueue = Queue(1)
         out_queue: OutQueue = Queue(1)
@@ -114,7 +116,15 @@ def spawn_workers(count: int) -> Generator[Tuple[List[InQueue], List[OutQueue]],
         # Close workers.
         for in_queue in in_queues:
             in_queue.put(None)
-        for out_queue in out_queues:
+
+        # Join running workers.
+        running = set(out_queues)
+        while running:
+            out_queue = running.pop()
             ok, payload = out_queue.get()
-            assert not ok
-            assert payload is None
+
+            done = (False, None)
+            if (ok, payload) == done:
+                continue
+
+            running.add(out_queue)

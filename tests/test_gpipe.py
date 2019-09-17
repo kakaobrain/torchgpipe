@@ -248,44 +248,6 @@ def test_exception():
         model(torch.rand(1))
 
 
-def test_exception_early_stop():
-    class ExpectedException(Exception):
-        pass
-
-    class Counter(nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.counter = 0
-
-        def forward(self, x):
-            self.counter += 1
-            time.sleep(0.01)
-            return x
-
-    class Raise(nn.Module):
-        def forward(self, x):
-            raise ExpectedException()
-
-    count_front = Counter()
-    count_back = Counter()
-    model = nn.Sequential(count_front, Raise(), count_back)
-    model = GPipe(model, balance=[1, 1, 1], devices=['cpu', 'cpu', 'cpu'], chunks=1000)
-
-    with pytest.raises(ExpectedException):
-        model(torch.rand(1000, 1))
-
-    # This test is flaky because it relies on different speed among two partitions.
-    # But to fail this test, the time to get an exception should be later than
-    # 10 seconds (0.01 * 1000.) This situation doesn't seem to happen.
-    count_front_counter = count_front.counter
-    assert 1 <= count_front_counter < 1000
-    assert count_back.counter == 0
-
-    # The first partition should be already stopped.
-    time.sleep(0.1)
-    assert count_front.counter == count_front_counter
-
-
 def test_exception_early_stop_asap():
     """Even the first partitions have finished to process, the partition before
     the failed partition should be killed as soon as possible.
