@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Callable, Generator, List, Optional, Tuple, Ty
 import torch
 
 from torchgpipe.microbatch import Batch
-from torchgpipe.stream import current_stream, use_device, use_stream
+from torchgpipe.stream import AbstractStream, use_device, use_stream
 
 __all__: List[str] = []
 
@@ -43,11 +43,13 @@ class Task:
 
     def __init__(self,
                  device: torch.device,
+                 stream: AbstractStream,
+                 *,
                  compute: Callable[[], Batch],
                  finalize: Optional[Callable[[Batch], None]],
                  ) -> None:
         self.device = device
-        self.stream = current_stream(device)
+        self.stream = stream
         self._compute = compute
         self._finalize = finalize
 

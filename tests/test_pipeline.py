@@ -4,6 +4,7 @@ import torch
 
 from torchgpipe.microbatch import Batch
 from torchgpipe.pipeline import Task, spawn_workers
+from torchgpipe.stream import CPUStream
 
 
 def test_compute_multithreading():
@@ -16,7 +17,7 @@ def test_compute_multithreading():
         return Batch(())
 
     with spawn_workers(2) as (in_queues, out_queues):
-        t = Task(torch.device('cpu'), compute=log_thread_id, finalize=None)
+        t = Task(torch.device('cpu'), CPUStream, compute=log_thread_id, finalize=None)
         for i in range(2):
             in_queues[i].put(t)
         for i in range(2):
@@ -31,7 +32,7 @@ def test_compute_success():
         return Batch(torch.tensor(42))
 
     with spawn_workers(1) as (in_queues, out_queues):
-        t = Task(torch.device('cpu'), compute=_42, finalize=None)
+        t = Task(torch.device('cpu'), CPUStream, compute=_42, finalize=None)
         in_queues[0].put(t)
         ok, (task, batch) = out_queues[0].get()
 
@@ -47,7 +48,7 @@ def test_compute_exception():
         0/0
 
     with spawn_workers(1) as (in_queues, out_queues):
-        t = Task(torch.device('cpu'), compute=zero_div, finalize=None)
+        t = Task(torch.device('cpu'), CPUStream, compute=zero_div, finalize=None)
         in_queues[0].put(t)
         ok, exc_info = out_queues[0].get()
 

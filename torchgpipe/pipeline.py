@@ -140,13 +140,13 @@ class Pipeline:
             checkpoint = (j < checkpoint_stop)
             if checkpoint:
                 chk = Checkpointing(partition, batch)
-                task = Task(device, compute=chk.checkpoint, finalize=chk.recompute)
+                task = Task(device, streams[i], compute=chk.checkpoint, finalize=chk.recompute)
                 del chk
 
             else:
                 def compute(batch: Batch = batch, partition: nn.Sequential = partition) -> Batch:
                     return batch.call(partition)
-                task = Task(device, compute=compute, finalize=None)
+                task = Task(device, streams[i], compute=compute, finalize=None)
                 del compute
 
             # 3. Compute tasks in parallel.
