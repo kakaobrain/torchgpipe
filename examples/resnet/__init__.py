@@ -17,6 +17,7 @@ __all__ = ['resnet101']
 
 def build_resnet(layers: List[int],
                  num_classes: int = 1000,
+                 inplace: bool = False
                  ) -> nn.Sequential:
     """Builds a ResNet as a simple sequential model.
 
@@ -26,7 +27,7 @@ def build_resnet(layers: List[int],
     """
     inplanes = 64
 
-    def make_layer(planes: int, blocks: int, stride: int = 1) -> nn.Sequential:
+    def make_layer(planes: int, blocks: int, stride: int = 1, inplace: bool = False) -> nn.Sequential:
         nonlocal inplanes
 
         downsample = None
@@ -38,10 +39,10 @@ def build_resnet(layers: List[int],
             )
 
         layers = []
-        layers.append(bottleneck(inplanes, planes, stride, downsample))
+        layers.append(bottleneck(inplanes, planes, stride, downsample, inplace))
         inplanes = planes * 4
         for _ in range(1, blocks):
-            layers.append(bottleneck(inplanes, planes))
+            layers.append(bottleneck(inplanes, planes, inplace=inplace))
 
         return nn.Sequential(*layers)
 
@@ -52,10 +53,10 @@ def build_resnet(layers: List[int],
         ('relu', nn.ReLU()),
         ('maxpool', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
 
-        ('layer1', make_layer(64, layers[0])),
-        ('layer2', make_layer(128, layers[1], stride=2)),
-        ('layer3', make_layer(256, layers[2], stride=2)),
-        ('layer4', make_layer(512, layers[3], stride=2)),
+        ('layer1', make_layer(64, layers[0], inplace=inplace)),
+        ('layer2', make_layer(128, layers[1], stride=2, inplace=inplace)),
+        ('layer3', make_layer(256, layers[2], stride=2, inplace=inplace)),
+        ('layer4', make_layer(512, layers[3], stride=2, inplace=inplace)),
 
         ('avgpool', nn.AdaptiveAvgPool2d((1, 1))),
         ('flat', nn.Flatten()),

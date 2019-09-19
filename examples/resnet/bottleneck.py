@@ -75,22 +75,24 @@ def bottleneck(inplanes: int,
                planes: int,
                stride: int = 1,
                downsample: Optional[nn.Module] = None,
+               inplace: bool = False,
                ) -> nn.Sequential:
-    """Creates a bottlenect block in ResNet as a :class:`nn.Sequential`."""
+    """Creates a bottleneck block in ResNet as a :class:`nn.Sequential`."""
+
     layers: NamedModules = OrderedDict()
     layers['twin'] = Twin()
 
     layers['conv1'] = Gutter(conv1x1(inplanes, planes))
     layers['bn1'] = Gutter(nn.BatchNorm2d(planes))
-    layers['relu1'] = Gutter(nn.ReLU())
+    layers['relu1'] = Gutter(nn.ReLU(inplace=inplace))
 
     layers['conv2'] = Gutter(conv3x3(planes, planes, stride))
     layers['bn2'] = Gutter(nn.BatchNorm2d(planes))
-    layers['relu2'] = Gutter(nn.ReLU())
+    layers['relu2'] = Gutter(nn.ReLU(inplace=inplace))
 
     layers['conv3'] = Gutter(conv1x1(planes, planes * 4))
     layers['bn3'] = Gutter(nn.BatchNorm2d(planes * 4))
     layers['residual'] = Residual(downsample)
-    layers['relu3'] = nn.ReLU()
+    layers['relu3'] = nn.ReLU(inplace=inplace)
 
     return nn.Sequential(layers)

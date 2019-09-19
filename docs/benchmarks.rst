@@ -23,6 +23,25 @@ can be found in `examples/resnet101_performance_benchmark`_.
 .. _examples/resnet101_performance_benchmark:
    https://github.com/kakaobrain/torchgpipe/tree/master/examples/resnet101_performance_benchmark
 
+ResNet-101 Accuracy Benchmark
+-----------------------------
+
+================  ===============
+Experiment        top-1 error (%)
+================  ===============
+dataparallel-256  22.02&pm;0.11
+dataparallel-1k   22.04&pm;0.24
+pipeline-256      21.99&pm;0.13
+pipeline-1k       22.24&pm;0.19
+pipeline-4k       22.13&pm;0.09
+================  ===============
+
+The code is reproducible on Tesla P40 GPUs, and the experiment details
+can be found in `examples/resnet101_accuracy_benchmark`_.
+
+.. _examples/resnet101_accuracy_benchmark:
+   https://github.com/kakaobrain/torchgpipe/tree/master/examples/resnet101_accuracy_benchmark
+
 AmoebaNet-D
 ~~~~~~~~~~~
 
