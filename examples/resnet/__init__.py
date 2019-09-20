@@ -27,7 +27,11 @@ def build_resnet(layers: List[int],
     """
     inplanes = 64
 
-    def make_layer(planes: int, blocks: int, stride: int = 1, inplace: bool = False) -> nn.Sequential:
+    def make_layer(planes: int,
+                   blocks: int,
+                   stride: int = 1,
+                   inplace: bool = False,
+                   ) -> nn.Sequential:
         nonlocal inplanes
 
         downsample = None
