@@ -46,11 +46,11 @@ Then, run each benchmark:
 
 ```sh
 $ python main.py naive-128
-$ python main.py --devices 0,1 dataparallel  # 256
-$ python main.py dataparallel  # 1k
-$ python main.py gpipe-2-256   # gpipie 256
-$ python main.py gpipe-8       # gpipie 1k
-$ python main.py gpipe-8-4k    # gpipie 4k
+$ python main.py dataparallel-256  # 2 GPUs required
+$ python main.py dataparallel-1k   # 4 GPUs required
+$ python main.py gpipe-256         # 2 GPUs required
+$ python main.py gpipe-1k          # 8 GPUs required
+$ python main.py gpipe-4k          # 8 GPUs required
 ```
 
 [paper]: https://arxiv.org/abs/1706.02677

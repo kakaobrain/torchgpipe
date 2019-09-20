@@ -29,51 +29,66 @@ class Experiments:
         return model, batch_size, [torch.device(device)]
 
     @staticmethod
-    def dataparallel(model: nn.Module, devices: List[int]) -> Stuffs:
-        batch_size = 128 * len(devices)
-        device = devices[0]
-        model.to(device)
+    def dataparallel256(model: nn.Module, devices: List[int]) -> Stuffs:
+        batch_size = 256
 
+        devices = [devices[0], devices[1]]
+        model.to(devices[0])
         model = torch.nn.DataParallel(model, device_ids=devices, output_device=devices[-1])
+
         return model, batch_size, [torch.device(device) for device in devices]
 
     @staticmethod
-    def pipeline2_256(model: nn.Module, devices: List[int]) -> Stuffs:
-        batch_size = 128 * 2  # 256
+    def dataparallel1k(model: nn.Module, devices: List[int]) -> Stuffs:
+        batch_size = 1024
+
+        devices = [devices[0], devices[1], devices[2], devices[3]]
+        model.to(devices[0])
+        model = torch.nn.DataParallel(model, device_ids=devices, output_device=devices[-1])
+
+        return model, batch_size, [torch.device(device) for device in devices]
+
+    @staticmethod
+    def gpipe256(model: nn.Module, devices: List[int]) -> Stuffs:
+        batch_size = 256
         chunks = 4
         balance = [140, 230]
 
         model = cast(nn.Sequential, model)
         model = GPipe(model, balance, devices=devices, chunks=chunks)
+
         return model, batch_size, list(model.devices)
 
     @staticmethod
-    def pipeline8_1k(model: nn.Module, devices: List[int]) -> Stuffs:
-        batch_size = 128 * 8  # 1k
+    def gpipe1k(model: nn.Module, devices: List[int]) -> Stuffs:
+        batch_size = 1024
         chunks = 64
         balance = [26, 22, 33, 44, 44, 66, 66, 69]
 
         model = cast(nn.Sequential, model)
         model = GPipe(model, balance, devices=devices, chunks=chunks)
+
         return model, batch_size, list(model.devices)
 
     @staticmethod
-    def pipeline8_4k(model: nn.Module, devices: List[int]) -> Stuffs:
-        batch_size = 128 * 8 * 4  # 4k
+    def gpipe4k(model: nn.Module, devices: List[int]) -> Stuffs:
+        batch_size = 4096
         chunks = 64
         balance = [26, 22, 33, 44, 44, 66, 66, 69]
 
         model = cast(nn.Sequential, model)
         model = GPipe(model, balance, devices=devices, chunks=chunks)
+
         return model, batch_size, list(model.devices)
 
 
 EXPERIMENTS: Dict[str, Experiment] = {
     'naive-128': Experiments.naive128,
-    'dataparallel': Experiments.dataparallel,
-    'gpipe-2-256': Experiments.pipeline2_256,
-    'gpipe-8-1k': Experiments.pipeline8_1k,
-    'gpipe-8-4k': Experiments.pipeline8_4k,
+    'dataparallel-256': Experiments.dataparallel256,
+    'dataparallel-1k': Experiments.dataparallel1k,
+    'gpipe-256': Experiments.gpipe256,
+    'gpipe-1k': Experiments.gpipe1k,
+    'gpipe-4k': Experiments.gpipe4k,
 }
 
 
