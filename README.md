@@ -119,7 +119,7 @@ The reproducible code can be found in
 
 ### ResNet-101 Accuracy Benchmark
 
-Batch size | torchgpipe | nn.DataParallel | ImageNet in 1 Hour
+Batch size | torchgpipe | nn.DataParallel | Goyal et al.
 --: | ---------: | ---------: | ---------:
 256 | 21.99±0.13 | 22.02±0.11 | 22.08±0.06
  1k | 22.24±0.19 | 22.04±0.24 |        N/A
@@ -127,7 +127,7 @@ Batch size | torchgpipe | nn.DataParallel | ImageNet in 1 Hour
 
 The table shows the reproduced accuracy(top-1 error rate) benchmark on
 ResNet-101, as stated by reported in Table 2(c) of [Accurate, Large Minibatch
-SGD paper](https://arxiv.org/abs/1706.02677).
+SGD](https://arxiv.org/abs/1706.02677) paper.
 
 The reproducible code can be found in
 [examples/resnet101_accuracy_benchmark](examples/resnet101_accuracy_benchmark).
