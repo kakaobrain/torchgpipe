@@ -111,13 +111,13 @@ Parallelism이 적용되지 않고 Checkpointing 오버헤드만 있어서 naive
 ### ResNet-101 정확도 벤치마크
 
 배치크기 | torchgpipe | nn.DataParalle | 논문
----- | -----: | -----: | -----:
-256 | 21.99&pm;0.13 | 22.02&pm;0.11 | 22.08&pm;0.06
-1k  | 22.24&pm;0.19 | 22.04&pm;0.24 | N/A
-4k  | 22.13&pm;0.09 | N/A           | N/A
+--: | ---------: | ---------: | ---------:
+256 | 21.99±0.13 | 22.02±0.11 | 22.08±0.06
+ 1k | 22.24±0.19 | 22.04±0.24 |        N/A
+ 4k | 22.13±0.09 |        N/A |        N/A
 
-[Accurate, Large Minibatch SGD 논문](https://arxiv.org/abs/1706.02677)의 테이블 2(c)에
-보고된 ResNet-101 정확도(오답률) 벤치마크를 재현했습니다.
+[Accurate, Large Minibatch SGD 논문](https://arxiv.org/abs/1706.02677)의 테이블
+2(c)에 보고된 ResNet-101 정확도(오답률) 벤치마크를 재현했습니다.
 
 [examples/resnet101_accuracy_benchmark](examples/resnet101_accuracy_benchmark)에서
 실험 코드를 확인할 수 있습니다.
