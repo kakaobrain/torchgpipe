@@ -8,7 +8,7 @@ from torch import nn
 
 from torchgpipe.checkpoint import Checkpointing
 from torchgpipe.copy import Copy, Wait
-from torchgpipe.dependency import Fork, Join
+from torchgpipe.dependency import fork, join
 from torchgpipe.microbatch import Batch
 from torchgpipe.stream import AbstractStream, current_stream, new_stream
 from torchgpipe.worker import Task, spawn_workers
@@ -29,8 +29,8 @@ else:
 
 
 def depend(fork_from: Batch, join_to: Batch) -> None:
-    fork_from[0], phony = Fork.apply(fork_from[0])
-    join_to[0] = Join.apply(join_to[0], phony)
+    fork_from[0], phony = fork(fork_from[0])
+    join_to[0] = join(join_to[0], phony)
 
 
 def copy(batch: Batch, prev_stream: AbstractStream, next_stream: AbstractStream) -> None:

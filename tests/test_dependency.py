@@ -3,26 +3,7 @@ import weakref
 import pytest
 import torch
 
-from torchgpipe.dependency import Fork, Join
-
-
-def test_phony():
-    x = torch.zeros(0, requires_grad=True)
-
-    y, phony = Fork.apply(x)
-    z, phony2 = Fork.apply(y)
-
-    # Fork doesn't modify the given tensor.
-    assert y.data_ptr() == x.data_ptr()
-
-    # Phony tensors have no space.
-    assert phony.size() == (0,)
-
-    # Phony storages should be cached.
-    assert phony2.data_ptr() == phony.data_ptr()
-
-    # Phony tensors should not be cached.
-    assert phony2 is not phony
+from torchgpipe.dependency import fork, join
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='cuda required')
@@ -45,8 +26,8 @@ def test_fork_join():
 
     a = Log.apply(1, a)
 
-    a, phony = Fork.apply(a)
-    b = Join.apply(a, phony)
+    a, phony = fork(a)
+    b = join(a, phony)
 
     b = Log.apply(2, b)
     b = b.to('cpu')
@@ -54,6 +35,52 @@ def test_fork_join():
     (a+b).backward()
 
     assert logs == [2, 1]
+
+
+def test_fork_join_enable_grad():
+    x = torch.rand(1, requires_grad=True)
+
+    with torch.enable_grad():
+        x2, p = fork(x)
+
+    assert p.requires_grad
+    assert x2 is not x
+    x = x2
+
+    assert x.requires_grad
+    assert p.requires_grad
+    assert x.grad_fn.__class__.__name__ == 'ForkBackward'
+    assert p.grad_fn.__class__.__name__ == 'ForkBackward'
+
+    with torch.enable_grad():
+        x2 = join(x, p)
+
+    assert x2 is not x
+    x = x2
+
+    assert x.requires_grad
+    assert x.grad_fn.__class__.__name__ == 'JoinBackward'
+
+
+def test_fork_join_no_grad(monkeypatch):
+    def do_not_apply(*args):
+        raise AssertionError('Function.apply called')
+    monkeypatch.setattr('torch.autograd.Function.apply', do_not_apply)
+
+    x = torch.rand(1, requires_grad=True)
+
+    with torch.no_grad():
+        x2, p = fork(x)
+
+    assert not p.requires_grad
+    assert x2 is x
+    x = x2
+
+    with torch.no_grad():
+        x2 = join(x, p)
+
+    assert x2 is x
+    x = x2
 
 
 def test_fork_leak():
@@ -72,8 +99,8 @@ def test_fork_leak():
 
     x = torch.rand(1, requires_grad=True)
     x = F.apply(x)
-    x, phony = Fork.apply(x)
-    x = Join.apply(x, phony)
+    x, phony = fork(x)
+    x = join(x, phony)
 
     x.backward()
     del x, phony

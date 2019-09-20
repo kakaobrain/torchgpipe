@@ -27,8 +27,9 @@ import torch
 from torch import Tensor
 import torch.autograd
 
-from torchgpipe.dependency import Fork, Join, Phonies
+from torchgpipe.dependency import fork, join
 from torchgpipe.microbatch import Batch
+from torchgpipe.phony import get_phony
 
 __all__ = ['is_recomputing']
 
@@ -40,7 +41,6 @@ Function = Callable[[TensorOrTensors], TensorOrTensors]
 
 class Checkpointing:
     """Generates a pair of :class:`Checkpoint` and :class:`Recompute`."""
-    phonies = Phonies()
 
     def __init__(self, function: Function, batch: Batch) -> None:
         self.function = function
@@ -52,7 +52,11 @@ class Checkpointing:
         input_atomic = self.batch.atomic
         input = tuple(self.batch)
 
-        phony = Checkpointing.phonies[self.batch[0].device]
+        # Use a phony which requires grad to ensure that Checkpoint can be
+        # tracked by the autograd engine even when none of the input tensors
+        # require grad.
+        phony = get_phony(self.batch[0].device, requires_grad=True)
+
         output = Checkpoint.apply(phony, self.recomputed, self.function, input_atomic, *input)
         return Batch(output)
 
@@ -63,9 +67,9 @@ class Checkpointing:
 
         # batch[0] is always requiring grad, because it has been passed
         # checkpoint with a phony requiring grad.
-        batch[0], phony = Fork.apply(batch[0])
+        batch[0], phony = fork(batch[0])
         phony = Recompute.apply(phony, self.recomputed, self.function, input_atomic, *input)
-        batch[0] = Join.apply(batch[0], phony)
+        batch[0] = join(batch[0], phony)
 
 
 _local = threading.local()

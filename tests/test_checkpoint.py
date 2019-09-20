@@ -6,7 +6,7 @@ import torch
 import torch.cuda
 
 from torchgpipe.checkpoint import Checkpoint, Checkpointing, Recompute
-from torchgpipe.dependency import Fork, Join
+from torchgpipe.dependency import fork, join
 from torchgpipe.microbatch import Batch
 
 devices = ['cpu']
@@ -45,8 +45,8 @@ def test_serial_checkpoints(device):
     a = Checkpoint.apply(phony, a_recomputed, a_function, True, a)
     a = Recompute.apply(phony, a_recomputed, a_function, True, a)
 
-    a, a_phony = Fork.apply(a)
-    b = Join.apply(b, a_phony)
+    a, a_phony = fork(a)
+    b = join(b, a_phony)
 
     b_recomputed = deque(maxlen=1)
     b_function = partial(Log.apply, 'b')
