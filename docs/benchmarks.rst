@@ -27,13 +27,13 @@ ResNet-101 Accuracy Benchmark
 -----------------------------
 
 ================  ===============
-Experiment        top-1 error (%)
+Experiment        Top-1 error (%)
 ================  ===============
-dataparallel-256  22.02&pm;0.11
-dataparallel-1k   22.04&pm;0.24
-pipeline-256      21.99&pm;0.13
-pipeline-1k       22.24&pm;0.19
-pipeline-4k       22.13&pm;0.09
+dataparallel-256       22.02±0.11
+dataparallel-1k        22.04±0.24
+pipeline-256           21.99±0.13
+pipeline-1k            22.24±0.19
+pipeline-4k            22.13±0.09
 ================  ===============
 
 The code is reproducible on Tesla P40 GPUs, and the experiment details
