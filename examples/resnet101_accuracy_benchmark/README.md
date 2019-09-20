@@ -37,10 +37,10 @@ environment only for this benchmark:
 $ pip install -r requirements.txt
 ```
 
-Prepare ImageNet dataset at `./data/imagenet`:
+Prepare ImageNet dataset at `./imagenet`:
 ```sh
-$ python -c "import torchvision; torchvision.datasets.ImageNet('./data/imagenet', split='train', download=True)"
-$ python -c "import torchvision; torchvision.datasets.ImageNet('./data/imagenet', split='val', download=True)"
+$ python -c "import torchvision; torchvision.datasets.ImageNet('./imagenet', split='train', download=True)"
+$ python -c "import torchvision; torchvision.datasets.ImageNet('./imagenet', split='val', download=True)"
 ```
 
 Then, run each benchmark:

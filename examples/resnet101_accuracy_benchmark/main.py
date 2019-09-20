@@ -1,5 +1,4 @@
 """ResNet-101 Accuracy Benchmark"""
-import os
 import platform
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
@@ -78,10 +77,7 @@ EXPERIMENTS: Dict[str, Experiment] = {
 }
 
 
-def dataloaders(base: str,
-                batch_size: int,
-                num_workers: int = 32,
-                ) -> Tuple[DataLoader, DataLoader]:
+def dataloaders(batch_size: int, num_workers: int = 32) -> Tuple[DataLoader, DataLoader]:
     num_workers = num_workers if batch_size <= 4096 else num_workers // 2
 
     post_transforms = torchvision.transforms.Compose([
@@ -90,7 +86,7 @@ def dataloaders(base: str,
     ])
 
     train_dataset = torchvision.datasets.ImageNet(
-        root=os.path.join(base, 'imagenet'),
+        root='imagenet',
         split='train',
         transform=torchvision.transforms.Compose([
             torchvision.transforms.RandomResizedCrop(224, scale=(0.08, 1.0)),
@@ -99,7 +95,7 @@ def dataloaders(base: str,
         ])
     )
     test_dataset = torchvision.datasets.ImageNet(
-        root=os.path.join(base, 'imagenet'),
+        root='imagenet',
         split='val',
         transform=torchvision.transforms.Compose([
             torchvision.transforms.Resize(256),
@@ -209,7 +205,7 @@ def cli(ctx: click.Context,
         ctx.fail(str(exc))
 
     # Prepare dataloaders.
-    train_dataloader, valid_dataloader = dataloaders('data', batch_size)
+    train_dataloader, valid_dataloader = dataloaders(batch_size)
 
     # Optimizer with LR scheduler
     steps = len(train_dataloader)
