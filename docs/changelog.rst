@@ -7,8 +7,8 @@ v0.0.3 (WIP)
 Not released yet.
 
 - Added support for PyTorch 1.2.
-- Redesigned the internal pipeline parallelism for bidirectional deterministic
-  lockstep.
+- Redesigned the internal pipeline parallelism to represent dependencies
+  transparently.
 - Optimized by using separate CUDA streams for device-to-device copies.
 - Fixed hang at a once failed partition.
 - Removed ``current_microbatch`` which actually didn't work.
