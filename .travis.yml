@@ -29,6 +29,7 @@ jobs:
         - lint .
         - lint examples/resnet
         - lint examples/resnet101_performance_benchmark
+        - lint examples/resnet101_accuracy_benchmark
         - lint examples/amoebanet
         - lint examples/amoebanetd_performance_benchmark
 
