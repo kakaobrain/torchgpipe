@@ -3,7 +3,7 @@ import weakref
 import pytest
 import torch
 
-from torchgpipe.dependency import fork, join
+from torchgpipe.dependency import Fork, Join, fork, join
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='cuda required')
@@ -49,8 +49,8 @@ def test_fork_join_enable_grad():
 
     assert x.requires_grad
     assert p.requires_grad
-    assert x.grad_fn.__class__.__name__ == 'ForkBackward'
-    assert p.grad_fn.__class__.__name__ == 'ForkBackward'
+    assert x.grad_fn.__class__ is Fork._backward_cls
+    assert p.grad_fn.__class__ is Fork._backward_cls
 
     with torch.enable_grad():
         x2 = join(x, p)
@@ -59,7 +59,7 @@ def test_fork_join_enable_grad():
     x = x2
 
     assert x.requires_grad
-    assert x.grad_fn.__class__.__name__ == 'JoinBackward'
+    assert x.grad_fn.__class__ is Join._backward_cls
 
 
 def test_fork_join_no_grad(monkeypatch):
