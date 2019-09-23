@@ -101,10 +101,9 @@ class Pipeline:
             if j != 0:
                 depend(batches[j-1], batches[j])
 
-            next_stream = copy_streams[i][j]
-
             if i != 0:
                 prev_stream = copy_streams[i-1][j]
+                next_stream = copy_streams[i][j]
                 copy(batches[j], prev_stream, next_stream)
 
     def compute(self,
