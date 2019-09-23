@@ -52,6 +52,11 @@ class Batch:
             raise AttributeError('batch is atomic')
         return cast(Tensors, self.value)
 
+    @property
+    def tensor_or_tensors(self) -> TensorOrTensors:
+        """Retrieves the underlying tensor or tensors."""
+        return self.value
+
     def call(self, function: Function) -> 'Batch':
         """Calls a function by the underlying tensor or tensors. It also wraps
         the output with :class:`Batch`.

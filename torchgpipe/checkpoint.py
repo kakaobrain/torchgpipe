@@ -39,6 +39,20 @@ TensorOrTensors = Union[Tensor, Tensors]
 Function = Callable[[TensorOrTensors], TensorOrTensors]
 
 
+def checkpoint(function: Function, input: TensorOrTensors) -> TensorOrTensors:
+    """Makes a checkpoint with a simple interface like
+    :func:`torch.utils.checkpoint.checkpoint`. It's only used to test or debug
+    :class:`Checkpoint` and :class:`Recompute` without boilerplate.
+    """
+    batch = Batch(input)
+
+    chk = Checkpointing(function, batch)
+    batch = chk.checkpoint()
+    chk.recompute(batch)
+
+    return batch.tensor_or_tensors
+
+
 class Checkpointing:
     """Generates a pair of :class:`Checkpoint` and :class:`Recompute`."""
 

@@ -1,11 +1,10 @@
-from collections import deque
 from functools import partial
 
 import pytest
 import torch
 import torch.cuda
 
-from torchgpipe.checkpoint import Checkpoint, Checkpointing, Recompute
+from torchgpipe.checkpoint import Checkpointing, checkpoint
 from torchgpipe.dependency import fork, join
 from torchgpipe.microbatch import Batch
 
@@ -32,26 +31,18 @@ def test_serial_checkpoints(device):
             timeline.append('%s:backward' % name)
             return None, grad_output
 
-    a = torch.rand(1, device=device)
-    b = torch.rand(1, device=device)
+    a = torch.rand(1, device=device, requires_grad=True)
+    b = torch.rand(1, device=device, requires_grad=True)
 
     # Increase the next function sequence number.
     _ = a + 1 + 2 + 3 + 4 + 5
 
-    phony = torch.zeros(0, device=device, requires_grad=True)
+    a = checkpoint(partial(Log.apply, 'a'), a)
 
-    a_recomputed = deque(maxlen=1)
-    a_function = partial(Log.apply, 'a')
-    a = Checkpoint.apply(phony, a_recomputed, a_function, True, a)
-    a = Recompute.apply(phony, a_recomputed, a_function, True, a)
+    a, phony = fork(a)
+    b = join(b, phony)
 
-    a, a_phony = fork(a)
-    b = join(b, a_phony)
-
-    b_recomputed = deque(maxlen=1)
-    b_function = partial(Log.apply, 'b')
-    b = Checkpoint.apply(phony, b_recomputed, b_function, True, b)
-    b = Recompute.apply(phony, b_recomputed, b_function, True, b)
+    b = checkpoint(partial(Log.apply, 'b'), b)
 
     c = torch.cat((a, b))
 
@@ -86,18 +77,13 @@ def test_not_requires_grad():
 
 
 def test_not_requires_grad_with_parameter():
-    x = Batch(torch.rand(1, requires_grad=False))
-    assert not x[0].requires_grad
-
+    x = torch.rand(1, requires_grad=False)
     a = torch.rand(1, requires_grad=True)
-    assert a.requires_grad
 
     def f(x):
         return x * a
 
-    chk = Checkpointing(f, x)
-    x = chk.checkpoint()
-    chk.recompute(x)
+    y = checkpoint(f, x)
+    y.backward()
 
-    x.tensor.backward()
     assert a.grad is not None
