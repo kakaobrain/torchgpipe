@@ -85,44 +85,6 @@ def test_too_few_devices():
         model = GPipe(model, balance=[1, 1, 1, 1], devices=['cpu'])
 
 
-def test_identicalness():
-    def sum_grad(parameters):
-        return sum([p.grad.sum() for p in parameters if p.grad is not None])
-
-    def zero_grad(parameters):
-        for p in parameters:
-            p.grad = None
-
-    inputs = torch.rand(8, 1)
-    model = nn.Sequential(
-        nn.Linear(1, 2),
-        nn.Linear(2, 4),
-        nn.Linear(4, 2),
-        nn.Linear(2, 1),
-    )
-
-    # Without GPipe
-    outputs = model(inputs)
-    loss = outputs.mean()
-    loss.backward()
-
-    grad_without_gpipe = sum_grad(model.parameters())
-
-    zero_grad(model.parameters())
-
-    # With GPipe
-    model = GPipe(model, [2, 2], devices=['cpu', 'cpu'], chunks=4)
-
-    outputs = model(inputs)
-    loss = outputs.mean()
-    loss.backward()
-
-    grad_with_gpipe = sum_grad(model.parameters())
-
-    # Both grads should be identical.
-    assert torch.allclose(grad_with_gpipe, grad_without_gpipe)
-
-
 def test_batch_size_indivisible():
     model = nn.Sequential(nn.Linear(1, 1))
     model = GPipe(model, balance=[1], devices=['cpu'], chunks=4)
@@ -284,31 +246,6 @@ def test_exception_early_stop_asap():
     assert counter == 2
 
 
-def test_exception_no_hang():
-    """In v0.0.2, once a failed partition receives a normal message
-    (non-closing) for the next micro-batch, a hang occured. The reason was that
-    a failed partition didn't call in_queue.task_done() on a normal message. So
-    the former partition was blocked at out_queue.join() for the next of next
-    micro-batch.
-    """
-    class ExpectedException(Exception):
-        pass
-
-    class Pass(nn.Module):
-        def forward(self, x):
-            return x
-
-    class Raise(nn.Module):
-        def forward(self, x):
-            raise ExpectedException()
-
-    model = nn.Sequential(Pass(), Pass(), Raise())
-    model = GPipe(model, [1, 1, 1], devices=['cpu', 'cpu', 'cpu'], chunks=3)
-
-    with pytest.raises(ExpectedException):
-        model(torch.rand(3))
-
-
 def test_input_pair():
     class Two(nn.Module):
         def __init__(self):
@@ -403,38 +340,6 @@ def test_non_tensor_tuple():
     # TypeError: expected Tensor to scatter, but got str
     with pytest.raises(TypeError):
         model((x, 'hello'))
-
-
-def test_lockstep():
-    timeline = []
-
-    class DelayedLog(nn.Module):
-        def __init__(self, i, seconds):
-            super().__init__()
-            self.i = i
-            self.j = 0
-            self.seconds = seconds
-
-        def forward(self, x):
-            time.sleep(self.seconds)
-
-            timeline.append((self.i, self.j))
-            self.j += 1
-
-            return x
-
-    model = nn.Sequential(DelayedLog(0, seconds=0), DelayedLog(1, seconds=0.1))
-    model = GPipe(model, balance=[1, 1], devices=['cpu', 'cpu'], chunks=3)
-
-    x = torch.rand(3, 1)
-    model(x)
-
-    # Expected timeline: (Logs are recorded at !)
-    #
-    # Partition #0: 0! 1!   2!
-    # Partition #1:    000! 111! 222!
-    #
-    assert timeline == [(0, 0), (0, 1), (1, 0), (0, 2), (1, 1), (1, 2)]
 
 
 @pytest.mark.parametrize('checkpoint', ['never', 'always', 'except_last'])
@@ -580,35 +485,3 @@ def test_recommend_torchgpipe_balancing():
     with pytest.raises(ValueError, match='torchgpipe_balancing'):
         # module and sum of balance have different length (module: 2, sum of balance: 1)
         GPipe(nn.Sequential(nn.Linear(1, 1), nn.Linear(1, 1)), [1])
-
-
-def test_python_autograd_function():
-    # A Python autograd function might fail with this error:
-    #
-    #   RuntimeError: Returning Variables sharing storage with other Variables
-    #   that require grad is not supported in Python functions. Please submit a
-    #   feature request if you hit this error.
-    #
-    # It doesn't look like an essential restriction. But it happens on the
-    # current PyTorch version. To avoid it, we should detach the tensor before
-    # returning by identity autograd functions, such as Wait, Fork, and Join.
-    #
-    class Identity(torch.autograd.Function):
-        @staticmethod
-        def forward(ctx, input):
-            return input
-
-        @staticmethod
-        def backward(ctx, grad):
-            return grad
-
-    class M(torch.nn.Module):
-        def forward(self, input):
-            return Identity.apply(input)
-
-    model = nn.Sequential(M(), M())
-    model = GPipe(model, [1, 1], devices=['cpu', 'cpu'], checkpoint='always')
-
-    x = torch.rand(42)
-    y = model(x)
-    assert torch.allclose(x, y)

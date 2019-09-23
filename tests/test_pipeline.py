@@ -1,57 +1,40 @@
-import threading
+import time
 
 import torch
+import torch.nn as nn
 
 from torchgpipe.microbatch import Batch
-from torchgpipe.pipeline import Task, spawn_workers
-from torchgpipe.stream import CPUStream
+from torchgpipe.pipeline import Pipeline
 
 
-def test_compute_multithreading():
-    """Task.compute should be executed on multiple threads."""
-    thread_ids = set()
+def test_forward_lockstep():
+    timeline = []
 
-    def log_thread_id():
-        thread_id = threading.current_thread().ident
-        thread_ids.add(thread_id)
-        return Batch(())
+    class DelayedLog(nn.Module):
+        def __init__(self, i, seconds):
+            super().__init__()
+            self.i = i
+            self.j = 0
+            self.seconds = seconds
 
-    with spawn_workers(2) as (in_queues, out_queues):
-        t = Task(torch.device('cpu'), CPUStream, compute=log_thread_id, finalize=None)
-        for i in range(2):
-            in_queues[i].put(t)
-        for i in range(2):
-            out_queues[i].get()
+        def forward(self, x):
+            time.sleep(self.seconds)
 
-    assert len(thread_ids) == 2
+            timeline.append((self.i, self.j))
+            self.j += 1
 
+            return x
 
-def test_compute_success():
-    """Task.compute returns (True, (task, batch)) on success."""
-    def _42():
-        return Batch(torch.tensor(42))
+    batches = [Batch(torch.rand(1, 1)) for _ in range(3)]
+    partitions = [nn.Sequential(DelayedLog(0, seconds=0)),
+                  nn.Sequential(DelayedLog(1, seconds=0.1))]
 
-    with spawn_workers(1) as (in_queues, out_queues):
-        t = Task(torch.device('cpu'), CPUStream, compute=_42, finalize=None)
-        in_queues[0].put(t)
-        ok, (task, batch) = out_queues[0].get()
+    pipeline = Pipeline(batches, partitions)
+    pipeline.run()
 
-        assert ok
-        assert task is t
-        assert isinstance(batch, Batch)
-        assert batch[0].item() == 42
-
-
-def test_compute_exception():
-    """Task.compute returns (False, exc_info) on failure."""
-    def zero_div():
-        0/0
-
-    with spawn_workers(1) as (in_queues, out_queues):
-        t = Task(torch.device('cpu'), CPUStream, compute=zero_div, finalize=None)
-        in_queues[0].put(t)
-        ok, exc_info = out_queues[0].get()
-
-        assert not ok
-        assert isinstance(exc_info, tuple)
-        assert issubclass(exc_info[0], ZeroDivisionError)
+    # Expected timeline: (Logs are recorded at !)
+    #
+    # Partition #0: 0! 1!   2!
+    # Partition #1:    000! 111! 222!
+    #
+    assert timeline == [(0, 0), (0, 1), (1, 0), (0, 2), (1, 1), (1, 2)]

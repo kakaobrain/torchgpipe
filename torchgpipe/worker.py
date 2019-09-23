@@ -66,10 +66,10 @@ class Task:
 
 def worker(in_queue: InQueue,
            out_queue: OutQueue,
-           grad_enabled: bool,
+           grad_mode: bool,
            ) -> None:
     """The main loop of a worker thread."""
-    torch.set_grad_enabled(grad_enabled)
+    torch.set_grad_enabled(grad_mode)
 
     while True:
         task = in_queue.get()
@@ -96,14 +96,14 @@ def spawn_workers(count: int) -> Generator[Tuple[List[InQueue], List[OutQueue]],
     in_queues: List[InQueue] = []
     out_queues: List[OutQueue] = []
 
-    grad_enabled = torch.is_grad_enabled()
+    grad_mode = torch.is_grad_enabled()
 
     # Spawn workers.
     for _ in range(count):
         in_queue: InQueue = Queue(1)
         out_queue: OutQueue = Queue(1)
 
-        t = Thread(target=worker, args=(in_queue, out_queue, grad_enabled))
+        t = Thread(target=worker, args=(in_queue, out_queue, grad_mode))
         t.daemon = True
         t.start()
 

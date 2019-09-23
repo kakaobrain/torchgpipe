@@ -10,7 +10,7 @@ from torchgpipe.checkpoint import Checkpointing
 from torchgpipe.copy import Copy, Wait
 from torchgpipe.dependency import Fork, Join
 from torchgpipe.microbatch import Batch
-from torchgpipe.stream import AbstractStream, current_stream
+from torchgpipe.stream import AbstractStream, CPUStream, current_stream
 from torchgpipe.worker import Task, spawn_workers
 
 __all__: List[str] = []
@@ -63,14 +63,21 @@ class Pipeline:
     def __init__(self,
                  batches: List[Batch],
                  partitions: List[nn.Sequential],
-                 devices: List[torch.device],
-                 copy_streams: List[List[AbstractStream]],
-                 checkpoint_stop: int,
+                 devices: Optional[List[torch.device]] = None,
+                 copy_streams: Optional[List[List[AbstractStream]]] = None,
+                 checkpoint_stop: int = 0,
                  ) -> None:
         self.batches = batches
         self.partitions = partitions
+
+        if devices is None:
+            devices = [torch.device('cpu') for _ in partitions]
         self.devices = devices
+
+        if copy_streams is None:
+            copy_streams = [[CPUStream] * len(batches) for _ in partitions]
         self.copy_streams = copy_streams
+
         self.checkpoint_stop = checkpoint_stop
 
     def run(self) -> None:
