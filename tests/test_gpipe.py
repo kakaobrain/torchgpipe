@@ -405,38 +405,6 @@ def test_non_tensor_tuple():
         model((x, 'hello'))
 
 
-def test_lockstep():
-    timeline = []
-
-    class DelayedLog(nn.Module):
-        def __init__(self, i, seconds):
-            super().__init__()
-            self.i = i
-            self.j = 0
-            self.seconds = seconds
-
-        def forward(self, x):
-            time.sleep(self.seconds)
-
-            timeline.append((self.i, self.j))
-            self.j += 1
-
-            return x
-
-    model = nn.Sequential(DelayedLog(0, seconds=0), DelayedLog(1, seconds=0.1))
-    model = GPipe(model, balance=[1, 1], devices=['cpu', 'cpu'], chunks=3)
-
-    x = torch.rand(3, 1)
-    model(x)
-
-    # Expected timeline: (Logs are recorded at !)
-    #
-    # Partition #0: 0! 1!   2!
-    # Partition #1:    000! 111! 222!
-    #
-    assert timeline == [(0, 0), (0, 1), (1, 0), (0, 2), (1, 1), (1, 2)]
-
-
 @pytest.mark.parametrize('checkpoint', ['never', 'always', 'except_last'])
 def test_deferred_batch_norm(checkpoint):
     bn = nn.BatchNorm2d(3)
