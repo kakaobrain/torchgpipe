@@ -17,7 +17,7 @@ stages:
   - lint
   - test
 
-# Run Lint first with Python 3.6 and PyTorch 1.0.0.
+# Run Lint first with Python 3.7 and PyTorch 1.2.0.
 jobs:
   include:
     - stage: lint
