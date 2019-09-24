@@ -7,17 +7,13 @@ import torch
 import torch.nn as nn
 
 from torchgpipe import GPipe
+from torchgpipe.gpipe import verify_module
 
 
 def test_parameters():
     model = nn.Sequential(nn.Linear(1, 1))
     gpipe = GPipe(model, balance=[1], devices=['cpu'], chunks=1)
     assert list(gpipe.parameters()) != []
-
-
-def test_non_sequential():
-    with pytest.raises(TypeError):
-        GPipe(nn.Module(), balance=[1], devices=['cpu'])
 
 
 @pytest.mark.parametrize('balance', [[2], [1, 1]])
@@ -77,8 +73,7 @@ def test_chunks_less_than_1():
 
 
 def test_too_few_devices():
-    x = nn.Linear(1, 1)
-    model = nn.Sequential(x, x, x, x)
+    model = nn.Sequential(nn.Linear(1, 1), nn.Linear(1, 1), nn.Linear(1, 1), nn.Linear(1, 1))
 
     with pytest.raises(IndexError):
         # len(balance) > len(devices)
@@ -485,3 +480,30 @@ def test_recommend_torchgpipe_balancing():
     with pytest.raises(ValueError, match='torchgpipe_balancing'):
         # module and sum of balance have different length (module: 2, sum of balance: 1)
         GPipe(nn.Sequential(nn.Linear(1, 1), nn.Linear(1, 1)), [1])
+
+
+def test_verify_module_non_sequential():
+    with pytest.raises(TypeError, match='module must be nn.Sequential to be partitioned'):
+        verify_module(nn.Module())
+
+
+def test_verify_module_duplicate_children():
+    conv = nn.Conv2d(3, 3, 1)
+    model = nn.Sequential(conv, conv)
+
+    with pytest.raises(ValueError, match='module with duplicate children is not supported'):
+        verify_module(model)
+
+
+def test_verify_module_duplicate_parameters_in_distinct_children():
+    class Surrogate(nn.Module):
+        def __init__(self, module):
+            super().__init__()
+            self.module = module
+
+    conv = nn.Conv2d(3, 3, 1)
+    model = nn.Sequential(Surrogate(conv), Surrogate(conv))
+
+    with pytest.raises(ValueError, match='module with duplicate parameters in '
+                                         'distinct children is not supported'):
+        verify_module(model)
