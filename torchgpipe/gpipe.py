@@ -11,7 +11,6 @@ import torch.nn as nn
 from torchgpipe.batchnorm import DeferredBatchNorm
 from torchgpipe.microbatch import check, gather, scatter
 from torchgpipe.pipeline import Pipeline
-from torchgpipe.stream import AbstractStream, new_stream
 
 __all__ = ['GPipe']
 
@@ -229,8 +228,6 @@ class GPipe(Module):
         except BalanceError as exc:
             raise ValueError(recommend_torchgpipe_balancing(str(exc)))
 
-        self._copy_streams: List[List[AbstractStream]] = []
-
     def __len__(self) -> int:
         """Counts the length of the underlying sequential module."""
         return sum(len(p) for p in self.partitions)
@@ -285,13 +282,6 @@ class GPipe(Module):
 
         return super().to(*args, **kwargs)
 
-    def _ensure_copy_streams(self) -> List[List[AbstractStream]]:
-        if not self._copy_streams:
-            for device in self.devices:
-                self._copy_streams.append([new_stream(device) for _ in range(self.chunks)])
-
-        return self._copy_streams
-
     def forward(self, input: TensorOrTensors) -> TensorOrTensors:  # type: ignore
         """:class:`GPipe` is a fairly transparent module wrapper. It doesn't
         modify the input and output signature of the underlying module. But
@@ -315,9 +305,6 @@ class GPipe(Module):
             # Empty sequential module is not illegal.
             return input
 
-        # Prepare separate CUDA streams only for copy.
-        copy_streams = self._ensure_copy_streams()
-
         # Divide a mini-batch into micro-batches.
         batches = scatter(input, self.chunks)
 
@@ -330,7 +317,7 @@ class GPipe(Module):
             checkpoint_stop = 0
 
         # Run pipeline parallelism.
-        pipeline = Pipeline(batches, self.partitions, self.devices, copy_streams, checkpoint_stop)
+        pipeline = Pipeline(batches, self.partitions, self.devices, checkpoint_stop)
         pipeline.run()
 
         # Merge the micro-batches into one mini-batch.
