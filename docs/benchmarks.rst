@@ -1,11 +1,8 @@
 Benchmarks
 ==========
 
-ResNet-101
-~~~~~~~~~~
-
-ResNet-101 Performance Benchmark
---------------------------------
+ResNet-101 Speed Benchmark
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ==========  ===================  =======
 Experiment  Throughput           Speedup
@@ -18,13 +15,13 @@ pipeline-8  404.084 samples/sec   4.367x
 ==========  ===================  =======
 
 The code is reproducible on Tesla P40 GPUs, and the experiment details
-can be found in `examples/resnet101_performance_benchmark`_.
+can be found in `examples/resnet101_speed_benchmark`_.
 
-.. _examples/resnet101_performance_benchmark:
-   https://github.com/kakaobrain/torchgpipe/tree/master/examples/resnet101_performance_benchmark
+.. _examples/resnet101_speed_benchmark:
+   https://github.com/kakaobrain/torchgpipe/tree/master/examples/resnet101_speed_benchmark
 
 ResNet-101 Accuracy Benchmark
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ================  ===============
 Experiment        Top-1 error (%)
@@ -42,11 +39,8 @@ can be found in `examples/resnet101_accuracy_benchmark`_.
 .. _examples/resnet101_accuracy_benchmark:
    https://github.com/kakaobrain/torchgpipe/tree/master/examples/resnet101_accuracy_benchmark
 
-AmoebaNet-D
-~~~~~~~~~~~
-
-AmoebaNet-D Performance Benchmark
----------------------------------
+AmoebaNet-D Speed Benchmark
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ==========  ===================  =======
 Experiment  Throughput           Speedup
@@ -58,13 +52,13 @@ pipeline-8   34.392 samples/sec   2.424x
 ==========  ===================  =======
 
 The code is reproducible on Tesla P40 GPUs, and the experiment details
-can be found in `examples/amoebanetd_performance_benchmark`_.
+can be found in `examples/amoebanetd_speed_benchmark`_.
 
-.. _examples/amoebanetd_performance_benchmark:
-   https://github.com/kakaobrain/torchgpipe/tree/master/examples/amoebanetd_performance_benchmark
+.. _examples/amoebanetd_speed_benchmark:
+   https://github.com/kakaobrain/torchgpipe/tree/master/examples/amoebanetd_speed_benchmark
 
 AmoebaNet-D Memory Benchmark
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ==========  ===========  ==========  ================  =================
 Experiment  AmoebaNet-D  # of Model  Total Model       Total Peak

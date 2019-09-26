@@ -1,13 +1,13 @@
-# ResNet-101 Performance Benchmark
+# ResNet-101 Speed Benchmark
 
-This example reproduces performance benchmark on ResNet-101, as stated by
-reported in Figure 3(b) of the GPipe paper.
+This example reproduces speed benchmark on ResNet-101, as stated by reported in
+Figure 3(b) of the GPipe paper.
 
-The benchmark cares of only training performance rather than the model's
-accuracy. The batch size is adjusted to achieve higher throughput without any
-large batch training tricks. This example also doesn't feed actual dataset like
-ImageNet or CIFAR-100. Instead, fake 3×224×224 tensors over 10 labels are used
-to eliminate data loading overhead.
+The benchmark cares of only training speed rather than the model's accuracy.
+The batch size is adjusted to achieve higher throughput without any large batch
+training tricks. This example also doesn't feed actual dataset like ImageNet or
+CIFAR-100. Instead, fake 3×224×224 tensors over 10 labels are used to eliminate
+data loading overhead.
 
 Every experiment setting is optimized for Tesla P40 GPUs.
 

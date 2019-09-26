@@ -1,4 +1,4 @@
-"""AmoebaNet-D Performance Benchmark"""
+"""AmoebaNet-D Speed Benchmark"""
 import platform
 import random
 import time
@@ -142,7 +142,7 @@ def cli(ctx: click.Context,
         skip_epochs: int,
         devices: List[int],
         ) -> None:
-    """AmoebaNet-D Performance Benchmark"""
+    """AmoebaNet-D Speed Benchmark"""
     if skip_epochs >= epochs:
         ctx.fail('--skip-epochs=%d must be less than --epochs=%d' % (skip_epochs, epochs))
 
@@ -161,9 +161,9 @@ def cli(ctx: click.Context,
     in_device = _devices[0]
     out_device = _devices[-1]
 
-    # This experiment cares about only training performance, rather than
-    # accuracy. To eliminate any overhead due to data loading, we use a fake
-    # dataset with random 224x224 images over 10 labels.
+    # This experiment cares about only training speed, rather than accuracy. To
+    # eliminate any overhead due to data loading, we use a fake dataset with
+    # random 224x224 images over 10 labels.
     dataset = RandomDataset()
     loader = DataLoader(
         dataset,

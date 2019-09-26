@@ -1,4 +1,4 @@
-"""ResNet-101 Performance Benchmark"""
+"""ResNet-101 Speed Benchmark"""
 import platform
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
@@ -140,7 +140,7 @@ def cli(ctx: click.Context,
         skip_epochs: int,
         devices: List[int],
         ) -> None:
-    """ResNet-101 Performance Benchmark"""
+    """ResNet-101 Speed Benchmark"""
     if skip_epochs >= epochs:
         ctx.fail('--skip-epochs=%d must be less than --epochs=%d' % (skip_epochs, epochs))
 
@@ -159,9 +159,9 @@ def cli(ctx: click.Context,
     in_device = _devices[0]
     out_device = _devices[-1]
 
-    # This experiment cares about only training performance, rather than
-    # accuracy. To eliminate any overhead due to data loading, we use fake
-    # random 224x224 images over 10 labels.
+    # This experiment cares about only training speed, rather than accuracy. To
+    # eliminate any overhead due to data loading, we use fake random 224x224
+    # images over 10 labels.
     input = torch.rand(batch_size, 3, 224, 224, device=in_device)
     target = torch.randint(10, (batch_size,), device=out_device)
 

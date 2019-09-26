@@ -94,7 +94,7 @@ references.
 
 ## Benchmarking
 
-### ResNet-101 Performance Benchmark
+### ResNet-101 Speed Benchmark
 
 Experiment | torchgpipe | GPipe (original)
 ---------- | -----: | -----:
@@ -104,8 +104,8 @@ pipeline-2 | 1.489x | 1.418x
 pipeline-4 | 2.629x | 2.182x
 pipeline-8 | 4.367x | 2.891x
 
-The table shows the reproduced performance benchmark on ResNet-101, as stated
-by reported in Figure 3(b) of the paper.
+The table shows the reproduced speed benchmark on ResNet-101, as stated by
+reported in Figure 3(b) of the paper.
 
 Naive-1 indicates the baseline setting that ResNet-101 on a single device is
 trained without GPipe. The speeds under other settings are measured relative to
@@ -115,7 +115,7 @@ since it does not benefit from pipeline parallelism but has checkpointing
 overhead.
 
 The reproducible code can be found in
-[examples/resnet101_performance_benchmark](examples/resnet101_performance_benchmark).
+[examples/resnet101_speed_benchmark](examples/resnet101_speed_benchmark).
 
 ### ResNet-101 Accuracy Benchmark
 
@@ -132,7 +132,7 @@ SGD](https://arxiv.org/abs/1706.02677) paper.
 The reproducible code can be found in
 [examples/resnet101_accuracy_benchmark](examples/resnet101_accuracy_benchmark).
 
-### AmoebaNet-D Performance Benchmark
+### AmoebaNet-D Speed Benchmark
 
 Experiment | torchgpipe | GPipe (original)
 ---------- | -----: | -----:
@@ -141,11 +141,11 @@ pipeline-2 | 1.434x | 1.156x
 pipeline-4 | 2.049x | 2.483x
 pipeline-8 | 2.424x | 3.442x
 
-The table shows the reproduced performance benchmark on AmoebaNet-D, as
-reported in Figure 3(a) of the paper. But there is some difference between
-torchgpipe and GPipe. We believe that this difference is not caused by the
-difference of torchgpipe and GPipe, rather by reimplementing the AmoebaNet-D
-model in TensorFlow for PyTorch. Results will be updated whenever a stable and
+The table shows the reproduced speed benchmark on AmoebaNet-D, as reported in
+Figure 3(a) of the paper. But there is some difference between torchgpipe and
+GPipe. We believe that this difference is not caused by the difference of
+torchgpipe and GPipe, rather by reimplementing the AmoebaNet-D model in
+TensorFlow for PyTorch. Results will be updated whenever a stable and
 reproducible AmoebaNet-D in PyTorch is available.
 
 Naive-2 indicates the baseline setting that AmoebaNet-D on two devices is

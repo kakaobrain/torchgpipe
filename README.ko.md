@@ -105,7 +105,7 @@ GPipe 없이 한 장치에서 ResNet-101을 학습 시켰을 때 속도인 naive
 Parallelism이 적용되지 않고 Checkpointing 오버헤드만 있어서 naive-1에 비해
 오히려 더 느립니다.
 
-[examples/resnet101_performance_benchmark](examples/resnet101_performance_benchmark)에서
+[examples/resnet101_speed_benchmark](examples/resnet101_speed_benchmark)에서
 실험 코드를 확인할 수 있습니다.
 
 ### ResNet-101 정확도 벤치마크
