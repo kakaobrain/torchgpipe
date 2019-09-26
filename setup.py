@@ -58,7 +58,7 @@ setup(
     license='Apache License 2.0',
     url='https://github.com/kakaobrain/torchgpipe',
     author='Kakao Brain',
-    maintainer='Heungsub Lee, Myungryong Jeong',
+    maintainer='Heungsub Lee, Myungryong Jeong, Chiheon Kim',
 
     description='GPipe for PyTorch',
     long_description=__doc__,

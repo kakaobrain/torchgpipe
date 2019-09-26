@@ -46,14 +46,14 @@ Documentations
 Authors and Licensing
 ~~~~~~~~~~~~~~~~~~~~~
 
-This project is developed by `Heungsub Lee`_ and `Myungryong Jeong`_ at `Kakao
-Brain`_, with `Sungbin Lim`_, `Chiheon Kim`_, `Ildoo Kim`_, and `Woonhyuk
+This project is developed by `Heungsub Lee`_, `Myungryong Jeong`_, and `Chiheon
+Kim`_ at `Kakao Brain`_, with `Sungbin Lim`_, `Ildoo Kim`_, and `Woonhyuk
 Baek`_'s help. It is distributed under Apache License 2.0.
 
 .. _Heungsub Lee: https://subl.ee/
 .. _Myungryong Jeong: https://github.com/mrJeong
-.. _Sungbin Lim: https://github.com/sungbinlim
 .. _Chiheon Kim: https://github.com/chiheonk
+.. _Sungbin Lim: https://github.com/sungbinlim
 .. _Ildoo Kim: https://github.com/ildoonet
 .. _Woonhyuk Baek: https://github.com/wbaek
 .. _Kakao Brain: https://kakaobrain.com/

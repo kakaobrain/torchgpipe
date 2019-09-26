@@ -232,15 +232,15 @@ naive-1 대비 22배 이상 큰 모델도 학습시킬 수 있었습니다.
 
 ## 개발진 및 사용권
 
-torchgpipe 프로젝트는 [카카오브레인][]의 [이흥섭][], [정명룡][]이 개발하고
-[임성빈][], [김치헌][], [김일두][], [백운혁][]의 도움을 받았습니다. [Apache
+torchgpipe 프로젝트는 [카카오브레인][]의 [이흥섭][], [정명룡][], [김치헌][]이
+개발하고 [임성빈][], [김일두][], [백운혁][]의 도움을 받았습니다. [Apache
 License 2.0 사용권](LICENSE)으로 배포됩니다.
 
 [카카오브레인]: https://kakaobrain.com/
 [이흥섭]: https://subl.ee/
 [정명룡]: https://github.com/mrJeong
-[임성빈]: https://github.com/sungbinlim
 [김치헌]: https://github.com/chiheonk
+[임성빈]: https://github.com/sungbinlim
 [김일두]: https://github.com/ildoonet
 [백운혁]: https://github.com/wbaek
 

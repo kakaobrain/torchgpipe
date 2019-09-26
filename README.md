@@ -244,16 +244,16 @@ APIs are subject to change without warning until v0.1.0.
 
 ## Authors and Licensing
 
-torchgpipe project is developed by [Heungsub Lee][] and [Myungryong Jeong][] at
-[Kakao Brain][], with [Sungbin Lim][], [Chiheon Kim][], [Ildoo Kim][], and
+torchgpipe project is developed by [Heungsub Lee][], [Myungryong Jeong][], and
+[Chiheon Kim][] at [Kakao Brain][], with [Sungbin Lim][], [Ildoo Kim][], and
 [Woonhyuk Baek][]'s help. It is distributed under [Apache License
 2.0](LICENSE).
 
 [Kakao Brain]: https://kakaobrain.com/
 [Heungsub Lee]: https://subl.ee/
 [Myungryong Jeong]: https://github.com/mrJeong
-[Sungbin Lim]: https://github.com/sungbinlim
 [Chiheon Kim]: https://github.com/chiheonk
+[Sungbin Lim]: https://github.com/sungbinlim
 [Ildoo Kim]: https://github.com/ildoonet
 [Woonhyuk Baek]: https://github.com/wbaek
 
