@@ -56,7 +56,7 @@ terminology in PyTorch community.
 Currently, torchgpipe requires the following environments:
 
 - Python 3.6+
-- PyTorch 1.0+
+- PyTorch 1.1+
 
 To use torchgpipe, install it via PyPI:
 

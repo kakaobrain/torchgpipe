@@ -69,7 +69,7 @@ setup(
     packages=['torchgpipe', 'torchgpipe_balancing'],
     package_data={'torchgpipe': ['py.typed']},
 
-    install_requires=['torch>=1'],
+    install_requires=['torch>=1.1'],
     setup_requires=['pytest-runner'],
     tests_require=['pytest>=4'],
 

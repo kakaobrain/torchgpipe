@@ -51,7 +51,7 @@ GPipe는 Pipeline Parallelism과 Checkpointing, 두 가지 방법으로 가능�
 현재 torchgpipe는 다음 환경을 지원합니다:
 
 - Python 3.6 이상
-- PyTorch 1.0 이상
+- PyTorch 1.1 이상
 
 우선 `torchgpipe`를 PyPI에서 설치합니다:
 

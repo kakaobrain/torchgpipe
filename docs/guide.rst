@@ -14,7 +14,7 @@ Installation
 
 Python 3.6+ (CPython) is required.
 
-PyTorch 1.0+ will be installed automatically if you don't have a satisfied one.
+PyTorch 1.1+ will be installed automatically if you don't have a satisfied one.
 However, we highly recommend you to use the latest version of PyTorch.
 
 Applying GPipe

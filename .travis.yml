@@ -10,8 +10,6 @@ python:
 env:
   - PYTORCH=1.2.0
   - PYTORCH=1.1.0
-  - PYTORCH=1.0.1
-  - PYTORCH=1.0.0
 
 stages:
   - lint
