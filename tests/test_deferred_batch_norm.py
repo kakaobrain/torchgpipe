@@ -3,8 +3,7 @@ from itertools import chain
 
 import pytest
 import torch
-import torch.nn as nn
-import torch.optim as optim
+from torch import nn, optim
 
 from torchgpipe.batchnorm import DeferredBatchNorm
 

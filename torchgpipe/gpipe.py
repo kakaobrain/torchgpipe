@@ -3,10 +3,9 @@ from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union, cast
 
 import torch
-from torch import Tensor
+from torch import Tensor, nn
 import torch.autograd
 import torch.cuda
-import torch.nn as nn
 
 from torchgpipe.batchnorm import DeferredBatchNorm
 from torchgpipe.microbatch import check, gather, scatter

@@ -4,7 +4,7 @@ import time
 
 import pytest
 import torch
-import torch.nn as nn
+from torch import nn
 
 from torchgpipe import GPipe
 from torchgpipe.gpipe import verify_module

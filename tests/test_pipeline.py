@@ -1,7 +1,7 @@
 import time
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 from torchgpipe.microbatch import Batch
 from torchgpipe.pipeline import Pipeline

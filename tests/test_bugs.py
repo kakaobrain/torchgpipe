@@ -1,6 +1,6 @@
 import pytest
 import torch
-import torch.nn as nn
+from torch import nn
 
 from torchgpipe import GPipe
 
@@ -25,7 +25,7 @@ def test_python_autograd_function():
         def backward(ctx, grad):
             return grad
 
-    class M(torch.nn.Module):
+    class M(nn.Module):
         def forward(self, input):
             return Identity.apply(input)
 

@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import click
 import torch
-import torch.nn as nn
-from torch.nn import functional as F
+from torch import nn
+import torch.nn.functional as F
 from torch.optim import SGD
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
@@ -34,7 +34,7 @@ class Experiments:
 
         devices = [devices[0], devices[1]]
         model.to(devices[0])
-        model = torch.nn.DataParallel(model, device_ids=devices, output_device=devices[-1])
+        model = nn.DataParallel(model, device_ids=devices, output_device=devices[-1])
 
         return model, batch_size, [torch.device(device) for device in devices]
 
@@ -44,7 +44,7 @@ class Experiments:
 
         devices = [devices[0], devices[1], devices[2], devices[3]]
         model.to(devices[0])
-        model = torch.nn.DataParallel(model, device_ids=devices, output_device=devices[-1])
+        model = nn.DataParallel(model, device_ids=devices, output_device=devices[-1])
 
         return model, batch_size, [torch.device(device) for device in devices]
 

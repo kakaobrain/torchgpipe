@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import click
 import torch
-import torch.nn as nn
-from torch.nn import functional as F
+from torch import nn
+import torch.nn.functional as F
 from torch.optim import SGD
 
 from resnet import resnet101

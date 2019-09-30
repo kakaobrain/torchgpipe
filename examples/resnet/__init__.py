@@ -7,7 +7,7 @@ This code is transformed :mod:`torchvision.models.resnet`.
 from collections import OrderedDict
 from typing import Any, List
 
-import torch.nn as nn
+from torch import nn
 
 from resnet.bottleneck import bottleneck
 from resnet.flatten_sequential import flatten_sequential

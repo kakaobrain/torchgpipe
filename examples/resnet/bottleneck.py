@@ -2,8 +2,7 @@
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Optional, Tuple, Union
 
-from torch import Tensor
-import torch.nn as nn
+from torch import Tensor, nn
 
 __all__ = ['bottleneck']
 
