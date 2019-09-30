@@ -1,5 +1,5 @@
-"""Autograd functions for stream-aware copy. It can be used to overlap copy and
-computation on the same GPU.
+"""Autograd functions for stream-aware CUDA copy. It is used to overlap copy
+and computation on the same GPU.
 """
 from collections import deque
 from typing import Deque, List, Optional, Tuple
@@ -23,7 +23,7 @@ class Context:
 
 
 class Copy(torch.autograd.Function):
-    """Copies a tensor on specific streams."""
+    """Copies tensors on specific streams."""
     @staticmethod
     def forward(ctx: Context,  # type: ignore
                 prev_stream: AbstractStream,
@@ -75,7 +75,12 @@ class Copy(torch.autograd.Function):
 
 
 class Wait(torch.autograd.Function):
-    """Synchronizes a stream to another stream."""
+    """Synchronizes a stream to another stream.
+
+    Place it just before you want to start an operation on the next stream,
+    provided that all operations on the previous stream are done.
+
+    """
     @staticmethod
     def forward(ctx: Context,  # type: ignore
                 prev_stream: AbstractStream,
