@@ -105,6 +105,8 @@ class Pipeline:
         copy_streams = self.copy_streams
 
         for i, j in schedule:
+            # Ensure that batches[j-1] is executed after batches[j] in
+            # backpropagation by an explicit dependency.
             if j != 0:
                 depend(batches[j-1], batches[j])
 
@@ -118,11 +120,7 @@ class Pipeline:
                 in_queues: List[InQueue],
                 out_queues: List[OutQueue],
                 ) -> None:
-        """Run tasks with synchronization to copy streams. A task consists of
-        "compute" and "finalize". "compute" is executed on worker threads
-        parallelly. "finalize" is executed when all worker threads complete to
-        execute "compute".
-        """
+        """Runs tasks with synchronization to copy streams."""
         batches = self.batches
         partitions = self.partitions
         devices = self.devices
@@ -133,16 +131,41 @@ class Pipeline:
         streams = [current_stream(d) for d in devices]
         exc_info: Optional[ExcInfo] = None
 
+        # With checkpointing, the autograd graph looks like this diagram:
+        # ┌─────┸──────┐
+        # │    Copy    │
+        # └─────┰──────┘   (fence)
+        # ─ ─ ─ ╂ ─ ─ ─ ─ ─ ─ ─ ─ ─
+        #       ┃          (compute)
+        # ┌─────┸──────┐
+        # │    Wait    │ [1] Synchronize the current stream with the copy stream.
+        # └─────┰──────┘
+        # ┌─────┸──────┐
+        # │ Checkpoint │ [2] Compute a partition within checkpointing.
+        # └─────┰──────┘
+        # ┌─────┸──────┐
+        # │    Wait    │ [3] Synchronize the copy stream with the current stream.
+        # └─────┰──────┘
+        #       ┠ ─ ─ ─ ┐
+        #       ┃ ┌─────┴─────┐
+        #       ┃ │ Recompute │ [4] Schedule the recomputation at backpropagation.
+        #       ┃ └─────┬─────┘
+        #       ┠ ─ ─ ─ ┘
+        #       ┃
+        # ─ ─ ─ ╂ ─ ─ ─ ─ ─ ─ ─ ─ ─
+        # ┌─────┸──────┐   (fence)
+        # │    Copy    │
+        # └─────┰──────┘
         for i, j in schedule:
             batch = batches[j]
             partition = partitions[i]
             device = devices[i]
 
-            # 1. Synchronize the current stream with the copy stream.
+            # Synchronize with the copied input. ([1] in the diagram)
             if i != 0:
                 wait(batch, copy_streams[i][j], streams[i])
 
-            # 2. Determine whether checkpointing or not.
+            # Determine whether checkpointing or not.
             checkpoint = (j < checkpoint_stop)
             if checkpoint:
                 chk = Checkpointing(partition, batch)
@@ -155,7 +178,7 @@ class Pipeline:
                 task = Task(device, streams[i], compute=compute, finalize=None)
                 del compute
 
-            # 3. Compute tasks in parallel.
+            # Compute tasks in parallel. ([2] in the diagram)
             in_queues[i].put(task)
 
         for i, j in schedule:
@@ -170,15 +193,14 @@ class Pipeline:
 
             task, batch = cast(Tuple[Task, Batch], payload)
 
-            # 4. Synchronize the copy stream with the current stream.
+            # The copy stream synchronizes to copy the output. ([3] in the
+            # diagram)
             if i != n-1:
                 wait(batch, streams[i], copy_streams[i][j])
 
-            # 5. Finalize tasks.
-            #
-            #    If checkpointing is enabled, here the recomputation is
-            #    scheduled at backpropagation.
-            #
+            # Finalize tasks. If checkpointing is enabled, here the
+            # recomputation is scheduled at backpropagation. ([4] in the
+            # diagram)
             task.finalize(batch)
 
             batches[j] = batch

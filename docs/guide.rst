@@ -51,6 +51,12 @@ parameter::
                  devices=[4, 5, 6, 7],  # Specify GPUs.
                  chunks=8)
 
+The typical model parallelism is a special case of GPipe. GPipe without
+micro-batches and checkpointing is equivalent to model parallelism. You can
+disable them with ``chunks=1`` and ``checkpoint='never'`` options::
+
+   model = GPipe(model, balance=[2, 2], chunks=1, checkpoint='never')
+
 Input and Output Device
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -105,6 +111,72 @@ CUDA memory usage of each layer. Choose the balancing tool for your needs::
 
 .. _PyTorch JIT: https://pytorch.org/docs/stable/jit.html
 
+Trade-offs
+~~~~~~~~~~
+
+Number of Micro-batches
+-----------------------
+
+Number of micro-batches has a trade-off between GPU utilization per micro-batch
+and total area of bubble. You need to find the best number of micro-batches for
+your model.
+
+GPU may slow down when processing many small micro-batches compared to larger
+micro-batches. GPU will not be fully utilized if each CUDA kernel is too cheap
+to compute, hence too small micro-batches cause underutilization. On the other
+hand, the area of bubble is minimized when the size of each micro-batch is
+minimal. Ideally, you should choose the largest number of micro-batches that
+doesn't underutilize GPUs.
+
+As a side note, BatchNorm tends to perform worse with smaller batch size. Large
+number of micro-batches may affect the final performance of model using
+BatchNorm negatively just like in :class:`nn.DataParallel
+<torch.nn.DataParallel>`.
+
+Checkpointing
+-------------
+
+Checkpointing drastically helps to reduce memory usage, but the overall
+training would slow down by about 25%. You can handle how to apply
+checkpointing on your model. There are three options:
+
+- ``always`` -- Apply checkpointing over all micro-batches.
+- ``except_last`` (default) -- Apply checkpointing except the last micro-batch.
+- ``never`` -- Checkpointing is never applied.
+
+Usually, checkpointing at the last micro-batch may not be useful because the
+saved memory will be reconstructed immediately. That's why we choose
+``except_last`` as the default option.
+
+If you decide not to use checkpointing at all, :class:`nn.DataParallel
+<torch.nn.DataParallel>` might be more efficient than GPipe.
+
+Referential Transparency
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Checkpointing executes forward propagation again at backpropagation, which is
+called `recomputation`. We assume that both the executions are identical.
+Hence, all layers should be `referentially transparent
+<https://en.wikipedia.org/wiki/Referential_transparency>`_ in forward
+propagation. Here are the typical cases that break referential transparency:
+
+In-place Operations:
+   We do not recommend using in-place operations with checkpointing.
+   Especially, if an in-place operation such as ``add_(1)`` is applied to the
+   input of a checkpointed partition, then the recomputation can't recover the
+   original input.
+
+Nondeterminism:
+   For example, :class:`nn.Dropout <torch.nn.Dropout>` will produce different
+   mask in recomputation from the forward propagation due to the randomness.
+   This type of nondeterministic behaviors are not taken care of in torchgpipe
+   yet.
+
+Side Effects:
+   Some modules such as BatchNorm update their state in forward propagation.
+   Hence, updated state in recomputation might not be identical to the original
+   state.
+
 Restrictions
 ~~~~~~~~~~~~
 
@@ -122,7 +194,7 @@ Sequential:
       >>> GPipe(model, balance=..., chunks=...)
       Traceback (most recent call last)
         ...
-      TypeError: non-sequential module cannot be partitioned
+      TypeError: module must be nn.Sequential to be partitioned
 
    See `the sequential ResNet example`_ to figure out how to make a  model into
    a :class:`nn.Sequential <torch.nn.Sequential>` model.
@@ -162,6 +234,21 @@ Tensor or Tensors:
 
    The reason is that GPipe can't assume how the non-tensor inputs for a
    mini-batch can be split for micro-batches.
+
+Unique Parameters:
+   :class:`~torchgpipe.GPipe` places each partition on the corresponding
+   device. When placing a partition, the parameters of the partition are also
+   moved to the destination. GPipe cannot support a module with a parameter on
+   two or more devices::
+
+      >>> conv1 = nn.Conv2d(3, 3, 1)
+      >>> conv2 = nn.Conv2d(3, 3, 1)
+      >>> conv1.weight = conv2.weight
+      >>> model = nn.Sequential(conv1, conv2)
+      >>> model = GPipe(model, balance=[1, 1], ...)
+      Traceback (most recent call last)
+        ...
+      ValueError: module with duplicate parameters in distinct children is not supported
 
 Complex Modules
 ~~~~~~~~~~~~~~~

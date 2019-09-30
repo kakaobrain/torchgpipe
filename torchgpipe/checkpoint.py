@@ -3,9 +3,9 @@
 PyTorch already provides the official checkpointing utilities in
 :mod:`torch.utils.checkpoint`. The official checkpointing combines
 recomputation and recursive backpropagation into one autograd function named
-``Checkpoint``. Hence, the recomputation can be started only when the gradients
-arrive to the function. In GPipe, the recomputation should be preceding with
-the gradient to minimize GPU idle time.
+``CheckpointFunction``. Hence, the recomputation can be started only when the
+gradients arrive to the function. In GPipe, the recomputation needs to precede
+the gradient arrival to minimize the GPU idle time.
 
 We solve this problem by introducing separate autograd functions named
 :class:`Recompute` and :class:`Checkpoint`. Each function represents
