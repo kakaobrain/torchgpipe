@@ -1,10 +1,10 @@
 Changelog
 =========
 
-v0.0.3 (WIP)
+v0.0.3
 ~~~~~~
 
-Not released yet.
+Released on September 30, 2019.
 
 Featured:
    torchgpipe now overlaps copy and computation using the separate CUDA
