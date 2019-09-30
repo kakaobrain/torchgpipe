@@ -110,7 +110,7 @@ Parallelism이 적용되지 않고 Checkpointing 오버헤드만 있어서 naive
 
 ### ResNet-101 정확도 벤치마크
 
-배치크기 | torchgpipe | nn.DataParalle | Goyal et al.
+배치크기 | torchgpipe | nn.DataParallel | Goyal et al.
 --: | ---------: | ---------: | ---------:
 256 | 21.99±0.13 | 22.02±0.11 | 22.08±0.06
  1k | 22.24±0.19 | 22.04±0.24 |        N/A
