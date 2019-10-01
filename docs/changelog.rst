@@ -6,6 +6,8 @@ v0.0.4 (WIP)
 
 Not released yet.
 
+- Reduced GPU memory fragmentation by caching CUDA streams for copy.
+
 v0.0.3
 ~~~~~~
 

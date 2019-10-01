@@ -10,7 +10,7 @@ from torchgpipe.checkpoint import Checkpointing
 from torchgpipe.copy import Copy, Wait
 from torchgpipe.dependency import fork, join
 from torchgpipe.microbatch import Batch
-from torchgpipe.stream import AbstractStream, current_stream, new_stream
+from torchgpipe.stream import AbstractStream, current_stream
 from torchgpipe.worker import Task, spawn_workers
 
 __all__: List[str] = []
@@ -64,6 +64,7 @@ class Pipeline:
                  batches: List[Batch],
                  partitions: List[nn.Sequential],
                  devices: Optional[List[torch.device]] = None,
+                 copy_streams: Optional[List[List[AbstractStream]]] = None,
                  checkpoint_stop: int = 0,
                  ) -> None:
         self.batches = batches
@@ -73,10 +74,9 @@ class Pipeline:
             devices = [torch.device('cpu') for _ in partitions]
         self.devices = devices
 
-        # NOTE(sublee): We don't need to manage a pool of CUDA streams because
-        # PyTorch already manages it.
-        # See https://github.com/pytorch/pytorch/pull/9938
-        self.copy_streams = [[new_stream(d) for _ in self.batches] for d in devices]
+        if copy_streams is None:
+            copy_streams = [[current_stream(d)] * len(batches) for d in devices]
+        self.copy_streams = copy_streams
 
         self.checkpoint_stop = checkpoint_stop
 

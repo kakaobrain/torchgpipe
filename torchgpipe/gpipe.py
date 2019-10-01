@@ -10,6 +10,7 @@ import torch.cuda
 from torchgpipe.batchnorm import DeferredBatchNorm
 from torchgpipe.microbatch import check, gather, scatter
 from torchgpipe.pipeline import Pipeline
+from torchgpipe.stream import AbstractStream, new_stream
 
 __all__ = ['GPipe']
 
@@ -227,6 +228,8 @@ class GPipe(Module):
         except BalanceError as exc:
             raise ValueError(recommend_torchgpipe_balancing(str(exc)))
 
+        self._copy_streams: List[List[AbstractStream]] = []
+
     def __len__(self) -> int:
         """Counts the length of the underlying sequential module."""
         return sum(len(p) for p in self.partitions)
@@ -281,6 +284,20 @@ class GPipe(Module):
 
         return super().to(*args, **kwargs)
 
+    def _ensure_copy_streams(self) -> List[List[AbstractStream]]:
+        """Ensures that :class:`GPipe` caches CUDA streams for copy.
+
+        It's worth to cache CUDA streams although PyTorch already manages a
+        pool of pre-allocated CUDA streams, because it may reduce GPU memory
+        fragementation when the number of micro-batches is small.
+
+        """
+        if not self._copy_streams:
+            for device in self.devices:
+                self._copy_streams.append([new_stream(device) for _ in range(self.chunks)])
+
+        return self._copy_streams
+
     def forward(self, input: TensorOrTensors) -> TensorOrTensors:  # type: ignore
         """:class:`GPipe` is a fairly transparent module wrapper. It doesn't
         modify the input and output signature of the underlying module. But
@@ -307,6 +324,9 @@ class GPipe(Module):
         # Divide a mini-batch into micro-batches.
         batches = scatter(input, self.chunks)
 
+        # Separate CUDA streams for copy.
+        copy_streams = self._ensure_copy_streams()
+
         # The micro-batch index where the checkpointing stops.
         if self.training:
             checkpoint_stop = {'always': self.chunks,
@@ -316,7 +336,11 @@ class GPipe(Module):
             checkpoint_stop = 0
 
         # Run pipeline parallelism.
-        pipeline = Pipeline(batches, self.partitions, self.devices, checkpoint_stop)
+        pipeline = Pipeline(batches,
+                            self.partitions,
+                            self.devices,
+                            copy_streams,
+                            checkpoint_stop)
         pipeline.run()
 
         # Merge the micro-batches into one mini-batch.
