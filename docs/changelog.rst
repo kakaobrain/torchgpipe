@@ -23,6 +23,8 @@ Other Improvements:
    - Added support for PyTorch 1.2.
    - Redesigned the internal pipeline parallelism to represent dependencies
      transparently.
+   - Reduced memory usage for backpropagation by forgetting recomputation
+     results at the right time.
    - Fixed the hanging issue when an exception is raised in a partition.
    - Fixed the unintended size accumulation (`issue #3`_ by `Shiyan Deng`_) of
      :func:`~torchgpipe_balancing.balance_by_size`.
