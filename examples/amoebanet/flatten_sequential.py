@@ -19,6 +19,6 @@ def _flatten_sequential(module: nn.Sequential) -> Iterator[Tuple[str, nn.Module]
         # flatten_sequential child sequential layers only.
         if isinstance(child, nn.Sequential):
             for sub_name, sub_child in _flatten_sequential(child):
-                yield ('%s_%s' % (name, sub_name), sub_child)
+                yield (f'{name}_{sub_name}', sub_child)
         else:
             yield (name, child)

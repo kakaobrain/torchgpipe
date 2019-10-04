@@ -87,14 +87,14 @@ def split_module(module: nn.Sequential,
     """
     if len(module) != sum(balance):
         raise BalanceError('module and sum of balance have different length '
-                           '(module: %d, sum of balance: %d)' % (len(module), sum(balance)))
+                           f'(module: {len(module)}, sum of balance: {sum(balance)})')
 
     if any(x <= 0 for x in balance):
-        raise BalanceError('all balance numbers must be positive integer (balance: %r)' % balance)
+        raise BalanceError(f'all balance numbers must be positive integer (balance: {balance})')
 
     if len(balance) > len(devices):
         raise IndexError('too few devices to hold given partitions '
-                         '(devices: %s, partitions: %d)' % (len(devices), len(balance)))
+                         f'(devices: {len(devices)}, partitions: {len(balance)})')
 
     i = 0
     partitions = []

@@ -22,13 +22,13 @@ def test_serial_checkpoints(device):
         @staticmethod
         def forward(ctx, name, x):
             ctx.name = name
-            timeline.append('%s:forward' % name)
+            timeline.append(f'{name}:forward')
             return x.detach()
 
         @staticmethod
         def backward(ctx, grad_output):
             name = ctx.name
-            timeline.append('%s:backward' % name)
+            timeline.append(f'{name}:backward')
             return None, grad_output
 
     a = torch.rand(1, device=device, requires_grad=True)

@@ -64,7 +64,7 @@ class Batch:
         return Batch(function(self.value))
 
     def __repr__(self) -> str:
-        return 'Batch[atomic=%r](%r)' % (self.atomic, self.value)
+        return f'Batch[atomic={self.atomic!r}]({self.value!r})'
 
     def __iter__(self) -> Iterator[Tensor]:
         if self.atomic:
@@ -137,7 +137,7 @@ def check(input: TensorOrTensors) -> None:
         return
 
     if not isinstance(input, Tensor):
-        raise TypeError('expected Tensor, but got %s' % input.__class__.__name__)
+        raise TypeError(f'expected Tensor, but got {input.__class__.__name__}')
 
 
 def scatter(input: TensorOrTensors, chunks: int) -> List[Batch]:

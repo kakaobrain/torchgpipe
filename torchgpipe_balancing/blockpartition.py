@@ -17,12 +17,11 @@ def solve(sequence: List[int], partitions: int = 1) -> List[List[int]]:
 
     """
     if partitions < 1:
-        raise ValueError('partitions must be a positive integer (%d < 1)' % (partitions,))
+        raise ValueError(f'partitions must be a positive integer ({partitions} < 1)')
 
     n = len(sequence)
     if n < partitions:
-        raise ValueError('sequence is shorter than intended partitions (%d < %d)'
-                         '' % (n, partitions))
+        raise ValueError(f'sequence is shorter than intended partitions ({n} < {partitions})')
 
     # Normalize the sequence in [0, 1].
     minimum = min(sequence)

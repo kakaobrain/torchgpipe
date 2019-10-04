@@ -8,4 +8,4 @@ def manual_seed_zero():
 
 
 def pytest_report_header():
-    return 'torch: %s' % torch.__version__
+    return f'torch: {torch.__version__}'
