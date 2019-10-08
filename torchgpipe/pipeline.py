@@ -38,7 +38,7 @@ def copy(batch: Batch, prev_stream: AbstractStream, next_stream: AbstractStream)
 
 
 def wait(batch: Batch, prev_stream: AbstractStream, next_stream: AbstractStream) -> None:
-    batch[0] = Wait.apply(prev_stream, next_stream, batch[0])
+    batch[:] = Wait.apply(prev_stream, next_stream, *batch)
 
 
 def clock_cycles(n: int, m: int) -> Iterable[List[Tuple[int, int]]]:

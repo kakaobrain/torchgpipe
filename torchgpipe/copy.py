@@ -85,22 +85,23 @@ class Wait(torch.autograd.Function):
     def forward(ctx: Context,  # type: ignore
                 prev_stream: AbstractStream,
                 next_stream: AbstractStream,
-                input: Tensor,
-                ) -> Tensor:
+                *input: Tensor,
+                ) -> Tensors:
         ctx.prev_stream = prev_stream
         ctx.next_stream = next_stream
 
         wait_stream(next_stream, prev_stream)
 
-        return input.detach()
+        return tuple(x.detach() for x in input)
 
     @staticmethod
-    def backward(ctx: Context,  # type: ignore
-                 grad_input: Tensor,
-                 ) -> Tuple[None, None, Tensor]:
+    def backward(ctx: Context,
+                 *grad_input: Tensor,
+                 ) -> Tuple[Optional[Tensor], ...]:
         prev_stream = ctx.prev_stream
         next_stream = ctx.next_stream
 
         wait_stream(prev_stream, next_stream)
 
-        return None, None, grad_input
+        grad_streams: Tuple[Optional[Tensor], ...] = (None, None)
+        return grad_streams + grad_input

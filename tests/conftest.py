@@ -9,6 +9,9 @@ def manual_seed_zero():
 
 @pytest.fixture(scope='session')
 def cuda_sleep():
+    # Warm-up CUDA.
+    torch.empty(1, device='cuda')
+
     # From test/test_cuda.py in PyTorch.
     start = torch.cuda.Event(enable_timing=True)
     end = torch.cuda.Event(enable_timing=True)
