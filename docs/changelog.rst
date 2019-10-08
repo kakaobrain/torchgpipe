@@ -1,10 +1,10 @@
 Changelog
 =========
 
-v0.0.4 (WIP)
+v0.0.4
 ~~~~~~
 
-Not released yet.
+Released on October 8, 2019.
 
 - Reduced GPU memory fragmentation by caching CUDA streams for copy.
 - Fixed potential GPU memory violation on tuple of multiple tensors.
