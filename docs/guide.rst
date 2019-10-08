@@ -277,15 +277,16 @@ a skip connection can be implemented by making underlying layers with
        # input --│-+-> layer1 ----│--> output
        #         │ '--------------│--> skip
        #         └────────────────┘
-       def forward(self, input: Tensor) -> Tuple[Tensor, Tensor]:
-           return layer1(input), input
+       def forward(self, input):
+           skip = input
+           return layer1(input), skip
 
    class Layer2(nn.Module):
        #         ┌────────────────┐
        # input --│---> layer2 ----│--> output
        #  skip --│----------------│--> skip
        #         └────────────────┘
-       def forward(self, input_and_skip: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
+       def forward(self, input_and_skip):
            input, skip = input_and_skip
            return layer2(input), skip
 
@@ -294,7 +295,7 @@ a skip connection can be implemented by making underlying layers with
        # input --│---> layer3 --+-│--> output
        #  skip --│--------------' │
        #         └────────────────┘
-       def forward(self, input_and_skip: Tuple[Tensor, Tensor]) -> Tensor:
+       def forward(self, input_and_skip):
            input, skip = input_and_skip
            return layer3(input) + skip
 
