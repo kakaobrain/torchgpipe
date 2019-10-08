@@ -8,12 +8,12 @@ from torchgpipe.stream import (CPUStream, current_stream, get_device, is_cuda, n
 skip_if_no_cuda = pytest.mark.skipif(not torch.cuda.is_available(), reason='cuda required')
 
 
-def _test_copy_wait(prev_stream, next_stream):
+def _test_copy_wait(prev_stream, next_stream, cuda_sleep=None):
     device = get_device(prev_stream)
 
     with use_stream(prev_stream):
         if is_cuda(prev_stream):
-            torch.cuda._sleep(100000000)
+            cuda_sleep(0.5)
         x = torch.ones(100, device=device, requires_grad=True)
 
     y, = Copy.apply(prev_stream, next_stream, x)
@@ -33,21 +33,21 @@ def test_copy_wait_cpu_cpu():
 
 
 @skip_if_no_cuda
-def test_copy_wait_cpu_cuda():
+def test_copy_wait_cpu_cuda(cuda_sleep):
     prev_stream = CPUStream
     next_stream = current_stream(torch.device('cuda'))
-    _test_copy_wait(prev_stream, next_stream)
+    _test_copy_wait(prev_stream, next_stream, cuda_sleep)
 
 
 @skip_if_no_cuda
-def test_copy_wait_cuda_cpu():
+def test_copy_wait_cuda_cpu(cuda_sleep):
     prev_stream = current_stream(torch.device('cuda'))
     next_stream = CPUStream
-    _test_copy_wait(prev_stream, next_stream)
+    _test_copy_wait(prev_stream, next_stream, cuda_sleep)
 
 
 @skip_if_no_cuda
-def test_copy_wait_cuda_cuda():
+def test_copy_wait_cuda_cuda(cuda_sleep):
     prev_stream = current_stream(torch.device('cuda'))
     next_stream = new_stream(torch.device('cuda'))
-    _test_copy_wait(prev_stream, next_stream)
+    _test_copy_wait(prev_stream, next_stream, cuda_sleep)

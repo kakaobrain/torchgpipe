@@ -7,6 +7,11 @@ v0.0.4 (WIP)
 Not released yet.
 
 - Reduced GPU memory fragmentation by caching CUDA streams for copy.
+- Fixed potential GPU memory violation when copying shifted view tensors.
+  (`issue #27366`_ and `pull request #27371`_ on PyTorch)
+
+.. _issue #27366: https://github.com/pytorch/pytorch/issues/27366
+.. _pull request #27371: https://github.com/pytorch/pytorch/pull/27371
 
 v0.0.3
 ~~~~~~
