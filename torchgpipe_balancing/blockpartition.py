@@ -3,7 +3,7 @@
 Paper: https://arxiv.org/pdf/1308.2452.pdf
 
 """
-from typing import List
+from typing import Iterator, List, Tuple
 
 __all__ = ['solve']
 
@@ -40,7 +40,7 @@ def solve(sequence: List[int], partitions: int = 1) -> List[List[int]]:
         stop = splits[i]
         return sum(normal_sequence[start:stop])
 
-    def leaderboard():
+    def leaderboard() -> Iterator[Tuple[float, int]]:
         return ((block_size(i), i) for i in range(partitions))
 
     while True:

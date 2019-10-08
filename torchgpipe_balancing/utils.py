@@ -60,7 +60,7 @@ def training_sandbox(module: nn.Sequential) -> Generator[None, None, None]:
     module.train(training)
 
 
-def synchronize_device(device: torch.device):
+def synchronize_device(device: torch.device) -> None:
     if device.type == 'cpu':
         return
     torch.cuda.synchronize(device)
