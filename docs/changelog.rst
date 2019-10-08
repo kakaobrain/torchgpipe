@@ -1,6 +1,11 @@
 Changelog
 =========
 
+v0.0.5 (WIP)
+~~~~~~
+
+Not released yet.
+
 v0.0.4
 ~~~~~~
 
