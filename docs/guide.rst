@@ -28,14 +28,17 @@ argument specifies the number of micro-batches. Input, output, and intermediate
 tensors must be ``Tensor`` or ``Tuple[Tensor, ...]``. See also `Restrictions`_
 for more details.
 
-The below example code shows how to split a module with four layers into four
-partitions each having a single layer. This code also splits a mini-batch into
-8 micro-batches::
+The below example code shows how to split a module with four layers into two
+partitions each having two layers. This code also splits a mini-batch into 8
+micro-batches::
 
    from torchgpipe import GPipe
 
    model = nn.Sequential(a, b, c, d)
-   model = GPipe(model, balance=[1, 1, 1, 1], chunks=8)
+   model = GPipe(model, balance=[2, 2], chunks=8)
+
+   # 1st partition: nn.Sequential(a, b) on cuda:0
+   # 2nd partition: nn.Sequential(c, d) on cuda:1
 
    for input in data_loader:
        output = model(input)
@@ -47,8 +50,8 @@ order for each partition. You can also specify GPUs to use with `devices`
 parameter::
 
    model = GPipe(model,
-                 balance=[1, 1, 1, 1],
-                 devices=[4, 5, 6, 7],  # Specify GPUs.
+                 balance=[2, 2],
+                 devices=[4, 2],  # Specify GPUs.
                  chunks=8)
 
 The typical model parallelism is a special case of GPipe. GPipe without
