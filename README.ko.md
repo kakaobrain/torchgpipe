@@ -233,8 +233,8 @@ naive-1 대비 22배 이상 큰 모델도 학습시킬 수 있었습니다.
 ## 개발진 및 사용권
 
 torchgpipe 프로젝트는 [카카오브레인][]의 [이흥섭][], [정명룡][], [김치헌][]이
-개발하고 [임성빈][], [김일두][], [백운혁][]의 도움을 받았습니다. [Apache
-License 2.0 사용권](LICENSE)으로 배포됩니다.
+개발하고 [임성빈][], [김일두][], [백운혁][], [윤부근][]의 도움을 받았습니다.
+[Apache License 2.0 사용권](LICENSE)으로 배포됩니다.
 
 [카카오브레인]: https://kakaobrain.com/
 [이흥섭]: https://subl.ee/
@@ -243,6 +243,7 @@ License 2.0 사용권](LICENSE)으로 배포됩니다.
 [임성빈]: https://github.com/sungbinlim
 [김일두]: https://github.com/ildoonet
 [백운혁]: https://github.com/wbaek
+[윤부근]: https://github.com/bgyoon
 
 ## 인용
 
@@ -250,7 +251,8 @@ License 2.0 사용권](LICENSE)으로 배포됩니다.
 
 ```
 @misc{torchgpipe,
-  author       = {Kakao Brain},
+  author       = {Lee, Heungsub and Jeong, Myungryong and Kim, Chiheon and
+                  Lim, Sungbin and Kim, Ildoo and Baek, Woonhyuk and Yoon, Boogeon},
   title        = {torchgpipe, {A} {GPipe} implementation in {PyTorch}},
   howpublished = {\url{https://github.com/kakaobrain/torchgpipe}},
   year         = {2019}

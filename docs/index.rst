@@ -63,7 +63,8 @@ If you apply this library to any project and research, please cite our code:
 .. sourcecode:: bibtex
 
    @misc{torchgpipe,
-     author       = {Kakao Brain},
+     author       = {Lee, Heungsub and Jeong, Myungryong and Kim, Chiheon and
+                     Lim, Sungbin and Kim, Ildoo and Baek, Woonhyuk and Yoon, Boogeon},
      title        = {torchgpipe, {A} {GPipe} implementation in {PyTorch}},
      howpublished = {\url{https://github.com/kakaobrain/torchgpipe}},
      year         = {2019}

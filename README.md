@@ -245,9 +245,9 @@ APIs are subject to change without warning until v0.1.0.
 ## Authors and Licensing
 
 torchgpipe project is developed by [Heungsub Lee][], [Myungryong Jeong][], and
-[Chiheon Kim][] at [Kakao Brain][], with [Sungbin Lim][], [Ildoo Kim][], and
-[Woonhyuk Baek][]'s help. It is distributed under [Apache License
-2.0](LICENSE).
+[Chiheon Kim][] at [Kakao Brain][], with [Sungbin Lim][], [Ildoo Kim][],
+[Woonhyuk Baek][], and [Boogeon Yoon][]'s help. It is distributed under [Apache
+License 2.0](LICENSE).
 
 [Kakao Brain]: https://kakaobrain.com/
 [Heungsub Lee]: https://subl.ee/
@@ -256,6 +256,7 @@ torchgpipe project is developed by [Heungsub Lee][], [Myungryong Jeong][], and
 [Sungbin Lim]: https://github.com/sungbinlim
 [Ildoo Kim]: https://github.com/ildoonet
 [Woonhyuk Baek]: https://github.com/wbaek
+[Boogeon Yoon]: https://github.com/bgyoon
 
 ## Citation
 
@@ -263,7 +264,8 @@ If you apply this library to any project and research, please cite our code:
 
 ```
 @misc{torchgpipe,
-  author       = {Kakao Brain},
+  author       = {Lee, Heungsub and Jeong, Myungryong and Kim, Chiheon and
+                  Lim, Sungbin and Kim, Ildoo and Baek, Woonhyuk and Yoon, Boogeon},
   title        = {torchgpipe, {A} {GPipe} implementation in {PyTorch}},
   howpublished = {\url{https://github.com/kakaobrain/torchgpipe}},
   year         = {2019}
