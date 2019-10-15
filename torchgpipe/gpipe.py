@@ -161,7 +161,8 @@ class GPipe(Module):
             ``'except_last'``, or ``'never'`` (default: ``'except_last'``)
         deferred_batch_norm (bool):
             whether to use deferred BatchNorm moving statistics
-            (default: ``False``, See :ref:`Deferred BatchNorm` for more details)
+            (default: ``False``, See :ref:`Deferred Batch Normalization` for
+            more details)
 
     Raises:
         TypeError:
