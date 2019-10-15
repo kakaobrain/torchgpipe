@@ -6,6 +6,8 @@ v0.0.5 (WIP)
 
 Not released yet.
 
+- Checkpointing deterministically handles randomness managed by PyTorch.
+
 v0.0.4
 ~~~~~~
 

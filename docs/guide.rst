@@ -169,11 +169,12 @@ In-place Operations:
    input of a checkpointed partition, then the recomputation can't recover the
    original input.
 
-Nondeterminism:
-   For example, :class:`nn.Dropout <torch.nn.Dropout>` will produce different
-   mask in recomputation from the forward propagation due to the randomness.
-   This type of nondeterministic behaviors are not taken care of in torchgpipe
-   yet.
+Randomness not managed by PyTorch:
+   The randomness managed by PyTorch, including :func:`torch.manual_seed`,
+   :func:`torch.rand`, or :class:`nn.Dropout <torch.nn.Dropout>`, is stored for
+   recomputation. But other randomnesses, such as Python standard :mod:`random`
+   or :mod:`numpy.random`, are not. We highly recommend to use PyTorch
+   randomness for referential transparency.
 
 Side Effects:
    Some modules such as BatchNorm update their state in forward propagation.

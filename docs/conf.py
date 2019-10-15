@@ -54,7 +54,11 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # Link to PyTorch's documentation.
 extensions.append('sphinx.ext.intersphinx')
-intersphinx_mapping = {'torch': ('https://pytorch.org/docs/stable/', None)}
+intersphinx_mapping = {
+    'torch': ('https://pytorch.org/docs/stable/', None),
+    'numpy': ('https://numpy.org/devdocs/', None),
+    'python': ('https://docs.python.org/3', None),
+}
 
 # Mock up 'torch' to make sure build on Read the Docs.
 autodoc_mock_imports = ['torch']
