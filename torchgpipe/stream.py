@@ -22,21 +22,21 @@ AbstractStream = Union[torch.cuda.Stream, CPUStreamType]
 
 def new_stream(device: torch.device) -> AbstractStream:
     """Creates a new stream for either CPU or CUDA device."""
-    if device.type == 'cpu':
+    if device.type != 'cuda':
         return CPUStream
     return torch.cuda.Stream(device)
 
 
 def current_stream(device: torch.device) -> AbstractStream:
     """:func:`torch.cuda.current_stream` for either CPU or CUDA device."""
-    if device.type == 'cpu':
+    if device.type != 'cuda':
         return CPUStream
     return torch.cuda.current_stream(device)
 
 
 def default_stream(device: torch.device) -> AbstractStream:
     """:func:`torch.cuda.default_stream` for either CPU or CUDA device."""
-    if device.type == 'cpu':
+    if device.type != 'cuda':
         return CPUStream
     return torch.cuda.default_stream(device)
 
@@ -44,7 +44,7 @@ def default_stream(device: torch.device) -> AbstractStream:
 @contextmanager
 def use_device(device: torch.device) -> Generator[None, None, None]:
     """:func:`torch.cuda.device` for either CPU or CUDA device."""
-    if device.type == 'cpu':
+    if device.type != 'cuda':
         yield
         return
 

@@ -171,10 +171,10 @@ In-place Operations:
 
 Randomness not managed by PyTorch:
    The randomness managed by PyTorch, including :func:`torch.manual_seed`,
-   :func:`torch.rand`, or :class:`nn.Dropout <torch.nn.Dropout>`, is stored for
-   recomputation. But other randomnesses, such as Python standard :mod:`random`
-   or :mod:`numpy.random`, are not. We highly recommend to use PyTorch
-   randomness for referential transparency.
+   :func:`torch.rand`, or :class:`nn.Dropout <torch.nn.Dropout>`, is
+   deterministically reproduced in recomputation. But other randomnesses, such
+   as Python standard :mod:`random` or :mod:`numpy.random`, are not. We highly
+   recommend to use PyTorch randomness for referential transparency.
 
 Side Effects:
    Some modules such as BatchNorm update their state in forward propagation.

@@ -10,7 +10,7 @@ from torchgpipe.checkpoint import Checkpointing
 from torchgpipe.copy import Copy, Wait
 from torchgpipe.dependency import fork, join
 from torchgpipe.microbatch import Batch
-from torchgpipe.stream import AbstractStream, current_stream
+from torchgpipe.stream import AbstractStream, current_stream, use_device
 from torchgpipe.worker import Task, spawn_workers
 
 __all__: List[str] = []
@@ -88,11 +88,12 @@ class Pipeline:
         """
         batches = self.batches
         partitions = self.partitions
+        devices = self.devices
 
         n = len(partitions)
         m = len(batches)
 
-        with spawn_workers(n) as (in_queues, out_queues):
+        with spawn_workers(devices) as (in_queues, out_queues):
             for schedule in clock_cycles(n, m):
                 self.fence(schedule)
                 self.compute(schedule, in_queues, out_queues)
@@ -159,7 +160,6 @@ class Pipeline:
         for i, j in schedule:
             batch = batches[j]
             partition = partitions[i]
-            device = devices[i]
 
             # Synchronize with the copied input. ([1] in the diagram)
             if i != 0:
@@ -169,13 +169,13 @@ class Pipeline:
             checkpoint = (j < checkpoint_stop)
             if checkpoint:
                 chk = Checkpointing(partition, batch)
-                task = Task(device, streams[i], compute=chk.checkpoint, finalize=chk.recompute)
+                task = Task(streams[i], compute=chk.checkpoint, finalize=chk.recompute)
                 del chk
 
             else:
                 def compute(batch: Batch = batch, partition: nn.Sequential = partition) -> Batch:
                     return batch.call(partition)
-                task = Task(device, streams[i], compute=compute, finalize=None)
+                task = Task(streams[i], compute=compute, finalize=None)
                 del compute
 
             # Compute tasks in parallel. ([2] in the diagram)
@@ -201,7 +201,8 @@ class Pipeline:
             # Finalize tasks. If checkpointing is enabled, here the
             # recomputation is scheduled at backpropagation. ([4] in the
             # diagram)
-            task.finalize(batch)
+            with use_device(devices[i]):
+                task.finalize(batch)
 
             batches[j] = batch
 

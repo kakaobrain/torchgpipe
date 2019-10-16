@@ -1,6 +1,7 @@
 import pytest
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 from torchgpipe import GPipe
 
@@ -102,3 +103,20 @@ def test_tuple_wait(cuda_sleep):
     torch.cuda.synchronize(1)
 
     assert torch.isclose(b.grad.norm().cpu(), torch.tensor(5.000))
+
+
+def test_parallel_randoms():
+    class Dropouts(nn.Module):
+        def forward(self, x):
+            for _ in range(100):
+                x = F.dropout(x, p=0.001)
+            return x
+
+    model = nn.Sequential(Dropouts(), Dropouts())
+
+    x = torch.rand(10, 10, requires_grad=True)
+    model = GPipe(model, [1, 1], devices=['cpu', 'cpu'], chunks=10, checkpoint='always')
+    y = model(x)
+    y.norm().backward()
+
+    assert y.bool().tolist() == x.grad.bool().tolist()

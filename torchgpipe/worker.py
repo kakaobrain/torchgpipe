@@ -4,7 +4,8 @@ from queue import Queue
 import sys
 from threading import Thread
 from types import TracebackType
-from typing import TYPE_CHECKING, Callable, Generator, List, Optional, Tuple, Type, Union, cast
+from typing import (TYPE_CHECKING, Callable, Dict, Generator, List, Optional, Tuple, Type, Union,
+                    cast)
 
 import torch
 
@@ -42,70 +43,86 @@ class Task:
     """
 
     def __init__(self,
-                 device: torch.device,
                  stream: AbstractStream,
                  *,
                  compute: Callable[[], Batch],
                  finalize: Optional[Callable[[Batch], None]],
                  ) -> None:
-        self.device = device
         self.stream = stream
         self._compute = compute
         self._finalize = finalize
 
     def compute(self) -> Batch:
-        with use_device(self.device), use_stream(self.stream):
+        with use_stream(self.stream):
             return self._compute()
 
     def finalize(self, batch: Batch) -> None:
         if self._finalize is None:
             return
-        with use_device(self.device), use_stream(self.stream):
+        with use_stream(self.stream):
             self._finalize(batch)
 
 
 def worker(in_queue: InQueue,
            out_queue: OutQueue,
+           device: torch.device,
            grad_mode: bool,
            ) -> None:
     """The main loop of a worker thread."""
     torch.set_grad_enabled(grad_mode)
 
-    while True:
-        task = in_queue.get()
+    with use_device(device):
+        while True:
+            task = in_queue.get()
 
-        if task is None:
-            break
+            if task is None:
+                break
 
-        try:
-            batch = task.compute()
-        except Exception:
-            exc_info = cast(ExcInfo, sys.exc_info())
-            out_queue.put((False, exc_info))
-            continue
+            try:
+                batch = task.compute()
+            except Exception:
+                exc_info = cast(ExcInfo, sys.exc_info())
+                out_queue.put((False, exc_info))
+                continue
 
-        out_queue.put((True, (task, batch)))
+            out_queue.put((True, (task, batch)))
 
     done = (False, None)
     out_queue.put(done)
 
 
 @contextmanager
-def spawn_workers(count: int) -> Generator[Tuple[List[InQueue], List[OutQueue]], None, None]:
-    """Spawns worker threads."""
+def spawn_workers(devices: List[torch.device],
+                  ) -> Generator[Tuple[List[InQueue], List[OutQueue]], None, None]:
+    """Spawns worker threads. A worker thread is bound to a device."""
     in_queues: List[InQueue] = []
     out_queues: List[OutQueue] = []
 
-    grad_mode = torch.is_grad_enabled()
-
     # Spawn workers.
-    for _ in range(count):
-        in_queue: InQueue = Queue(1)
-        out_queue: OutQueue = Queue(1)
+    workers: Dict[torch.device, Tuple[InQueue, OutQueue]] = {}
 
-        t = Thread(target=worker, args=(in_queue, out_queue, grad_mode))
-        t.daemon = True
-        t.start()
+    def normalize_device(device: torch.device) -> torch.device:
+        if device.type == 'cuda' and device.index is None:
+            return torch.device('cuda', index=torch.cuda.current_device())
+
+        if device.type == 'cpu' and device.index is not None:
+            return torch.device('cpu')
+
+        return device
+
+    for device in devices:
+        device = normalize_device(device)
+
+        try:
+            in_queue, out_queue = workers[device]
+        except KeyError:
+            in_queue = Queue()
+            out_queue = Queue()
+            workers[device] = (in_queue, out_queue)
+
+            t = Thread(target=worker, args=(in_queue, out_queue, device, torch.is_grad_enabled()))
+            t.daemon = True
+            t.start()
 
         in_queues.append(in_queue)
         out_queues.append(out_queue)
@@ -114,7 +131,7 @@ def spawn_workers(count: int) -> Generator[Tuple[List[InQueue], List[OutQueue]],
         yield (in_queues, out_queues)
     finally:
         # Close workers.
-        for in_queue in in_queues:
+        for in_queue in set(in_queues):
             in_queue.put(None)
 
         # Join running workers.

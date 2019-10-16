@@ -9,6 +9,14 @@ from torchgpipe.stream import CPUStream
 from torchgpipe.worker import Task, spawn_workers
 
 
+class fake_device:
+    """A test double for :class:`torch.device`. Every fake device is different
+    with each other.
+    """
+    type = 'fake'
+    index = None
+
+
 def test_join_running_workers():
     count = 0
 
@@ -18,15 +26,15 @@ def test_join_running_workers():
         count += 1
         return Batch(())
 
-    with spawn_workers(10) as (in_queues, out_queues):
+    with spawn_workers([fake_device() for _ in range(10)]) as (in_queues, out_queues):
         def call_in_worker(i, f):
-            task = Task(torch.device('cpu'), CPUStream, compute=f, finalize=None)
+            task = Task(CPUStream, compute=f, finalize=None)
             in_queues[i].put(task)
 
         for i in range(10):
             call_in_worker(i, counter)
 
-    # There's no indeterminism because 'spawn_workers' joins all running
+    # There's no nondeterminism because 'spawn_workers' joins all running
     # workers.
     assert count == 10
 
@@ -44,9 +52,9 @@ def test_join_running_workers_with_exception():
         return Batch(())
 
     with pytest.raises(ExpectedException):
-        with spawn_workers(10) as (in_queues, out_queues):
+        with spawn_workers([fake_device() for _ in range(10)]) as (in_queues, out_queues):
             def call_in_worker(i, f):
-                task = Task(torch.device('cpu'), CPUStream, compute=f, finalize=None)
+                task = Task(CPUStream, compute=f, finalize=None)
                 in_queues[i].put(task)
 
             for i in range(10):
@@ -54,7 +62,7 @@ def test_join_running_workers_with_exception():
 
             raise ExpectedException
 
-    # There's no indeterminism because only 1 task can be placed in input
+    # There's no nondeterminism because only 1 task can be placed in input
     # queues.
     assert count == 10
 
@@ -68,9 +76,9 @@ def test_compute_multithreading():
         thread_ids.add(thread_id)
         return Batch(())
 
-    with spawn_workers(2) as (in_queues, out_queues):
-        t = Task(torch.device('cpu'), CPUStream, compute=log_thread_id, finalize=None)
+    with spawn_workers([fake_device() for _ in range(2)]) as (in_queues, out_queues):
         for i in range(2):
+            t = Task(CPUStream, compute=log_thread_id, finalize=None)
             in_queues[i].put(t)
         for i in range(2):
             out_queues[i].get()
@@ -83,8 +91,8 @@ def test_compute_success():
     def _42():
         return Batch(torch.tensor(42))
 
-    with spawn_workers(1) as (in_queues, out_queues):
-        t = Task(torch.device('cpu'), CPUStream, compute=_42, finalize=None)
+    with spawn_workers([torch.device('cpu')]) as (in_queues, out_queues):
+        t = Task(CPUStream, compute=_42, finalize=None)
         in_queues[0].put(t)
         ok, (task, batch) = out_queues[0].get()
 
@@ -99,8 +107,8 @@ def test_compute_exception():
     def zero_div():
         0/0
 
-    with spawn_workers(1) as (in_queues, out_queues):
-        t = Task(torch.device('cpu'), CPUStream, compute=zero_div, finalize=None)
+    with spawn_workers([torch.device('cpu')]) as (in_queues, out_queues):
+        t = Task(CPUStream, compute=zero_div, finalize=None)
         in_queues[0].put(t)
         ok, exc_info = out_queues[0].get()
 
@@ -116,11 +124,29 @@ def test_grad_mode(grad_mode):
         return Batch(x)
 
     with torch.set_grad_enabled(grad_mode):
-        with spawn_workers(1) as (in_queues, out_queues):
-            task = Task(torch.device('cpu'), CPUStream, compute=detect_grad_enabled, finalize=None)
+        with spawn_workers([torch.device('cpu')]) as (in_queues, out_queues):
+            task = Task(CPUStream, compute=detect_grad_enabled, finalize=None)
             in_queues[0].put(task)
 
             ok, (_, batch) = out_queues[0].get()
 
             assert ok
             assert batch[0].requires_grad == grad_mode
+
+
+def test_worker_per_device():
+    cpu = torch.device('cpu')
+    cpu0 = torch.device('cpu', index=0)
+    fake1 = fake_device()
+    fake2 = fake_device()
+
+    with spawn_workers([cpu, cpu, cpu0, fake1, fake2]) as (in_queues, out_queues):
+        assert len(in_queues) == len(out_queues) == 5
+
+        # 0: cpu, 1: cpu, 2: cpu0
+        assert in_queues[0] is in_queues[1] is in_queues[2]
+        assert out_queues[0] is out_queues[1] is out_queues[2]
+
+        # 3: fake1, 4: fake2
+        assert in_queues[3] is not in_queues[4]
+        assert out_queues[3] is not out_queues[4]
