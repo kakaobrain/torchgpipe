@@ -119,4 +119,4 @@ def test_parallel_randoms():
     y = model(x)
     y.norm().backward()
 
-    assert y.bool().tolist() == x.grad.bool().tolist()
+    assert y.to(torch.bool).tolist() == x.grad.to(torch.bool).tolist()
