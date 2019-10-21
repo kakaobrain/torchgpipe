@@ -21,12 +21,13 @@ Applying GPipe
 ~~~~~~~~~~~~~~
 
 To train a module with GPipe, simply wrap it with :class:`torchgpipe.GPipe`.
-Your module must be :class:`nn.Sequential <torch.nn.Sequential>` as GPipe will
-automatically split the module into partitions with consecutive layers.
-`balance` argument determines the number of layers in each partition. `chunks`
-argument specifies the number of micro-batches. Input, output, and intermediate
-tensors must be ``Tensor`` or ``Tuple[Tensor, ...]``. See also `Restrictions`_
-for more details.
+Your module must be a :class:`nn.Sequential <torch.nn.Sequential>` as GPipe
+will automatically split the module into partitions. A partition is a group of
+consecutive layers that run on a single device together. `balance` argument
+determines the number of layers in each partition. `chunks` argument specifies
+the number of micro-batches. Input, output, and intermediate tensors must be
+``Tensor`` or ``Tuple[Tensor, ...]``. See also `Restrictions`_ for more
+details.
 
 The below example code shows how to split a module with four layers into two
 partitions each having two layers. This code also splits a mini-batch into 8
