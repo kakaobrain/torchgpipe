@@ -66,7 +66,7 @@ setup(
 
     zip_safe=False,
 
-    packages=['torchgpipe', 'torchgpipe_balancing'],
+    packages=['torchgpipe', 'torchgpipe.balancing'],
     package_data={'torchgpipe': ['py.typed']},
 
     install_requires=['torch>=1.1'],

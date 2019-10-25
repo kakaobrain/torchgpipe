@@ -93,20 +93,20 @@ Automatic Balancing
 
 It could be hard to determine the optimal balance of a model. In particular, if
 you are still designing a model, the model architecture may change over time.
-In this case, we highly recommend :mod:`torchgpipe_balancing` for automatic
+In this case, we highly recommend :mod:`torchgpipe.balancing` for automatic
 balancing. This won't give you the optimal balance, but a good-enough balance.
 Note that this is provided by `torchgpipe` package, and is not from the GPipe
 paper.
 
-There are two balancing tools, :func:`~torchgpipe_balancing.balance_by_time`
-and :func:`~torchgpipe_balancing.balance_by_size`. Both are based on per-layer
+There are two balancing tools, :func:`~torchgpipe.balancing.balance_by_time`
+and :func:`~torchgpipe.balancing.balance_by_size`. Both are based on per-layer
 profiling. Just like `PyTorch JIT`_, you need to feed a sample input into the
-model. :func:`~torchgpipe_balancing.balance_by_time` traces elapsed time of
-each layer, while :func:`~torchgpipe_balancing.balance_by_size` detects the
+model. :func:`~torchgpipe.balancing.balance_by_time` traces elapsed time of
+each layer, while :func:`~torchgpipe.balancing.balance_by_size` detects the
 CUDA memory usage of each layer. Choose the balancing tool for your needs::
 
    from torchgpipe import GPipe
-   from torchgpipe_balancing import balance_by_time
+   from torchgpipe.balancing import balance_by_time
 
    sample = torch.rand(128, 3, 224, 224)
    balance = balance_by_time(model, sample, partitions=4)

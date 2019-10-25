@@ -4,7 +4,7 @@ Usage::
 
     import torch
     from torchgpipe import GPipe
-    from torchgpipe_balancing import balance_by_time
+    from torchgpipe.balancing import balance_by_time
 
     sample = torch.rand(128, 3, 224, 224)
     balance = balance_by_time(model, sample, partitions=4)
@@ -18,8 +18,8 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 
-from torchgpipe_balancing import utils
-from torchgpipe_balancing.profile import profile_sizes, profile_times
+from torchgpipe.balancing import utils
+from torchgpipe.balancing.profile import profile_sizes, profile_times
 
 __all__ = ['balance_by_time', 'balance_by_size']
 

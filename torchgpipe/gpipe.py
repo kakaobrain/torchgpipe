@@ -29,16 +29,16 @@ else:
     NamedModules = OrderedDict
 
 
-def recommend_torchgpipe_balancing(message: str) -> str:
-    """Expands a message with recommendation to :mod:`torchgpipe_balancing`."""
+def recommend_balancing(message: str) -> str:
+    """Expands a message with recommendation to :mod:`torchgpipe.balancing`."""
     return '''{message}
 
 If your model is still under development, its optimal balance would change
-frequently. In this case, we highly recommend torchgpipe_balancing for naive
+frequently. In this case, we highly recommend 'torchgpipe.balancing' for naive
 automatic balancing:
 
   from torchgpipe import GPipe
-  from torchgpipe_balancing import balance_by_time
+  from torchgpipe.balancing import balance_by_time
 
   sample = torch.rand(...)
   balance = balance_by_time(model, sample, partitions=...)
@@ -204,7 +204,7 @@ class GPipe(Module):
         super().__init__()
 
         if balance is None:
-            raise ValueError(recommend_torchgpipe_balancing('balance is required'))
+            raise ValueError(recommend_balancing('balance is required'))
         if chunks <= 0:
             raise ValueError('number of chunks must be positive integer')
         if checkpoint not in ['always', 'except_last', 'never']:
@@ -227,7 +227,7 @@ class GPipe(Module):
         try:
             self.partitions, self.balance, self.devices = split_module(module, balance, devices)
         except BalanceError as exc:
-            raise ValueError(recommend_torchgpipe_balancing(str(exc)))
+            raise ValueError(recommend_balancing(str(exc)))
 
         self._copy_streams: List[List[AbstractStream]] = []
 

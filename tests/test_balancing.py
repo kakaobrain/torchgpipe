@@ -4,7 +4,7 @@ import pytest
 import torch
 from torch import nn
 
-from torchgpipe_balancing import balance_by_size, balance_by_time, blockpartition
+from torchgpipe.balancing import balance_by_size, balance_by_time, blockpartition
 
 
 def test_blockpartition():
