@@ -6,7 +6,11 @@ v0.0.5 (WIP)
 
 Not released yet.
 
-- Checkpointing deterministically handles randomness managed by PyTorch.
+Improvements:
+   - Checkpointing deterministically handles randomness managed by PyTorch.
+
+Breaking Changes:
+   - Moved ``torchgpipe_balancing`` module to :mod:`torchgpipe.balance`.
 
 v0.0.4
 ~~~~~~

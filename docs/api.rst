@@ -19,6 +19,6 @@ Inspecting GPipe Timeline
 Automatic Balancing
 ~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: torchgpipe_balancing.balance_by_time(module, canary, partitions, device, timeout)
+.. autofunction:: torchgpipe.balance.balance_by_time(module, canary, partitions, device, timeout)
 
-.. autofunction:: torchgpipe_balancing.balance_by_size(module, canary, partitions, device)
+.. autofunction:: torchgpipe.balance.balance_by_size(module, canary, partitions, device)
