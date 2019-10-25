@@ -98,3 +98,8 @@ def test_not_training():
     balance_by_time(model, sample, partitions=1, device='cpu')
 
     assert not model.training
+
+
+def test_deprecated_torchgpipe_balancing():
+    with pytest.raises(ImportError, match='torchgpipe.balancing'):
+        __import__('torchgpipe_balancing')
