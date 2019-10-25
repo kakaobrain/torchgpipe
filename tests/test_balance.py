@@ -4,7 +4,7 @@ import pytest
 import torch
 from torch import nn
 
-from torchgpipe.balancing import balance_by_size, balance_by_time, blockpartition
+from torchgpipe.balance import balance_by_size, balance_by_time, blockpartition
 
 
 def test_blockpartition():
@@ -101,5 +101,5 @@ def test_not_training():
 
 
 def test_deprecated_torchgpipe_balancing():
-    with pytest.raises(ImportError, match='torchgpipe.balancing'):
+    with pytest.raises(ImportError, match='torchgpipe.balance'):
         __import__('torchgpipe_balancing')

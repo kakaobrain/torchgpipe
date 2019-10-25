@@ -6,7 +6,7 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 
-from torchgpipe.balancing import utils
+from torchgpipe.balance import utils
 
 __all__: List[str] = []
 

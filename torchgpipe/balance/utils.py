@@ -6,7 +6,7 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 
-from torchgpipe.balancing import blockpartition
+from torchgpipe.balance import blockpartition
 
 __all__: List[str] = []
 
