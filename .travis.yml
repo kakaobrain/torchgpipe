@@ -8,6 +8,7 @@ python:
 
 # Supported PyTorch versions
 env:
+  - PYTORCH=1.3.0
   - PYTORCH=1.2.0
   - PYTORCH=1.1.0
 
