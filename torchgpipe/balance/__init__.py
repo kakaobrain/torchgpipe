@@ -62,7 +62,10 @@ def balance_by_time(partitions: int,
 
 def balance_by_size(partitions: int,
                     module: nn.Sequential,
-                    sample: Tensor,
+                    input: Tensor,
+                    *,
+                    chunks: int = 1,
+                    param_scale: float = 2.0,
                     ) -> List[int]:
     """Naive automatic balancing by CUDA memory usage per layer.
 
@@ -71,16 +74,24 @@ def balance_by_size(partitions: int,
             intended number of partitions
         module (nn.Sequential):
             sequential module to be partitioned
-        sample (Tensor):
-            example input with arbitrary batch size
+        input (Tensor):
+            example mini-batch with the same size to train
+
+    Keyword Args:
+        chunks (int):
+            number of micro-batches will be used to train (default: ``1``)
+        param_scale (float):
+            how many copies of parameters would be allocated for training. It
+            depends on the optimization method. See the above guide. (default:
+            ``2.0``)
 
     Returns:
         A list of number of layers in each partition. Use it for the
         ``balance`` parameter of :class:`~torchgpipe.GPipe`.
 
     .. note::
-        `module` and `sample` must be placed on the same CUDA device.
+        `module` and `input` must be placed on the same CUDA device.
 
     """
-    sizes = profile_sizes(module, sample)
+    sizes = profile_sizes(module, input, chunks, param_scale)
     return utils.balance_cost(sizes, partitions)
