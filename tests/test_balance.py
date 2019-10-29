@@ -6,6 +6,10 @@ from torch import nn
 
 from torchgpipe.balance import balance_by_size, balance_by_time, blockpartition
 
+devices = ['cpu']
+if torch.cuda.is_available():
+    devices.append('cuda')
+
 
 def test_blockpartition():
     assert blockpartition.solve([1, 2, 3, 4, 5, 6], partitions=2) == [[1, 2, 3, 4], [5, 6]]
@@ -69,12 +73,13 @@ def test_balance_by_size():
     assert balance == [2, 4]
 
 
-def test_sandbox():
-    model = nn.Sequential(nn.BatchNorm2d(3))
+@pytest.mark.parametrize('device', devices)
+def test_sandbox(device):
+    model = nn.Sequential(nn.BatchNorm2d(3)).to(device)
 
     before = {k: v.clone() for k, v in model.state_dict().items()}
 
-    sample = torch.rand(1, 3, 10, 10)
+    sample = torch.rand(1, 3, 10, 10, device=device)
     balance_by_time(1, model, sample)
 
     after = model.state_dict()
