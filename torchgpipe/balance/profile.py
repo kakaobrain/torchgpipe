@@ -1,41 +1,45 @@
 """Per-layer profilers."""
+from itertools import chain
 import time
-from typing import List, Optional, Union
+from typing import List, Tuple, Union
 
 import torch
 from torch import Tensor
 import torch.nn as nn
 
 from torchgpipe.balance import utils
+from torchgpipe.microbatch import Batch
 
 __all__: List[str] = []
 
 
 Device = Union[torch.device, int, str]
 
+Tensors = Tuple[Tensor, ...]
+TensorOrTensors = Union[Tensor, Tensors]
+
 
 def profile_times(module: nn.Sequential,
-                  sample: Tensor,
-                  device: Optional[Device],
+                  sample: TensorOrTensors,
                   timeout: float,
                   ) -> List[int]:
     """Profiles elapsed times per layer."""
-    sample, device = utils.concentrate_on_device(module, sample, device)
-
     time_bufs: List[List[float]] = [[] for _ in module]
 
     begun_at = time.time()
     while time.time() - begun_at < timeout:
+        batch = Batch(sample)
 
-        x = sample
         with utils.training_sandbox(module):
             for i, layer in enumerate(module):
-                utils.synchronize_device(device)
+                if batch[0].device.type == 'cuda':
+                    torch.cuda.synchronize(batch[0].device)
                 tick = time.time()
 
-                x = layer(x)
+                batch = batch.call(layer)
 
-                utils.synchronize_device(device)
+                if batch[0].device.type == 'cuda':
+                    torch.cuda.synchronize(batch[0].device)
                 tock = time.time()
 
                 time_bufs[i].append(tock - tick)
@@ -45,30 +49,28 @@ def profile_times(module: nn.Sequential,
 
 
 def profile_sizes(module: nn.Sequential,
-                  sample: Tensor,
-                  device: Optional[Device],
+                  sample: TensorOrTensors,
                   ) -> List[int]:
     """Profiles CUDA memory usage per layer."""
-    if not hasattr(torch.cuda, 'reset_max_memory_allocated'):
-        raise NotImplementedError('balance_by_size requires PyTorch>=1.1')
-
-    sample, device = utils.concentrate_on_device(module, sample, device)
-
-    if device.type != 'cuda':
-        raise ValueError('balance_by_size supports only CUDA device')
-
+    batch = Batch(sample)
     sizes: List[int] = []
 
-    x = sample
-    with torch.cuda.device(device), utils.training_sandbox(module):
+    tensors = chain(batch, module.parameters(), module.buffers())
+    if any(x.device.type != 'cuda' for x in tensors):
+        raise ValueError('size profiler supports only CUDA device')
+
+    with utils.training_sandbox(module):
         for i, layer in enumerate(module):
+            # Detect memory usage at both forward and backward, which means
+            # that size of activations and activation gradients.
+            device = batch[0].device
             torch.cuda.reset_max_memory_allocated(device)
+            memory_before = torch.cuda.max_memory_allocated(device)
 
-            size_before = torch.cuda.max_memory_allocated(device)
-            x = layer(x)
-            size_after = torch.cuda.max_memory_allocated(device)
+            batch = batch.call(layer)
 
-            size = size_after - size_before
-            sizes.append(size)
+            memory_after = torch.cuda.max_memory_allocated(device)
+            size = memory_after - memory_before
+            sizes.append(int(size))
 
     return sizes

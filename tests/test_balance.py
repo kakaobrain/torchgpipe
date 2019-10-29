@@ -41,7 +41,7 @@ def test_balance_by_time():
 
     model = nn.Sequential(*[Delay(i/100) for i in [1, 2, 3, 4, 5, 6]])
     sample = torch.rand(1)
-    balance = balance_by_time(model, sample, partitions=2, device='cpu')
+    balance = balance_by_time(2, model, sample)
     assert balance == [4, 2]
 
 
@@ -58,14 +58,14 @@ def test_balance_by_size():
                 x = x + torch.rand_like(x, requires_grad=True)
             return x
 
-    sample = torch.rand(10, 100, 100)
+    sample = torch.rand(10, 100, 100, device='cuda')
 
-    model = nn.Sequential(*[Expand(i) for i in [1, 2, 3, 4, 5, 6]])
-    balance = balance_by_size(model, sample, partitions=2, device='cuda')
+    model = nn.Sequential(*[Expand(i) for i in [1, 2, 3, 4, 5, 6]]).to('cuda')
+    balance = balance_by_size(2, model, sample)
     assert balance == [4, 2]
 
-    model = nn.Sequential(*[Expand(i) for i in [6, 5, 4, 3, 2, 1]])
-    balance = balance_by_size(model, sample, partitions=2, device='cuda')
+    model = nn.Sequential(*[Expand(i) for i in [6, 5, 4, 3, 2, 1]]).to('cuda')
+    balance = balance_by_size(2, model, sample)
     assert balance == [2, 4]
 
 
@@ -75,13 +75,13 @@ def test_sandbox():
     before = {k: v.clone() for k, v in model.state_dict().items()}
 
     sample = torch.rand(1, 3, 10, 10)
-    balance_by_time(model, sample, partitions=1, device='cpu')
+    balance_by_time(1, model, sample)
 
     after = model.state_dict()
 
     assert before.keys() == after.keys()
     for key, value in before.items():
-        assert torch.allclose(after[key], value)
+        assert torch.allclose(after[key], value), key
 
 
 def test_not_training():
@@ -95,7 +95,7 @@ def test_not_training():
     assert not model.training
 
     sample = torch.rand(1)
-    balance_by_time(model, sample, partitions=1, device='cpu')
+    balance_by_time(1, model, sample)
 
     assert not model.training
 
@@ -103,3 +103,19 @@ def test_not_training():
 def test_deprecated_torchgpipe_balancing():
     with pytest.raises(ImportError, match='torchgpipe.balance'):
         __import__('torchgpipe_balancing')
+
+
+def test_tuple():
+    class Twin(nn.Module):
+        def forward(self, x):
+            return x, x.detach()
+
+    class Add(nn.Module):
+        def forward(self, a_b):
+            a, b = a_b
+            return a + b
+
+    model = nn.Sequential(Twin(), Add())
+
+    sample = torch.rand(1, requires_grad=True)
+    balance_by_time(1, model, sample)

@@ -7,12 +7,12 @@ Usage::
     from torchgpipe.balance import balance_by_time
 
     sample = torch.rand(128, 3, 224, 224)
-    balance = balance_by_time(model, sample, partitions=4)
+    balance = balance_by_time(4, model, sample)
 
     gpipe = GPipe(model, balance, chunks=8)
 
 """
-from typing import List, Optional, Union
+from typing import List, Union
 
 import torch
 from torch import Tensor
@@ -27,27 +27,23 @@ __all__ = ['balance_by_time', 'balance_by_size']
 Device = Union[torch.device, int, str]
 
 
-def balance_by_time(module: nn.Sequential,
+def balance_by_time(partitions: int,
+                    module: nn.Sequential,
                     sample: Tensor,
                     *,
-                    partitions: int = 1,
-                    device: Optional[Device] = None,
                     timeout: float = 1.0,
                     ) -> List[int]:
-    """Balances the given seqeuntial module by elapsed time per layer.
+    """Naive automatic balancing by elapsed time per layer.
 
     Args:
+        partitions (int):
+            intended number of partitions
         module (nn.Sequential):
             sequential module to be partitioned
         sample (Tensor):
-            example input
+            example input with arbitrary batch size
 
     Keyword Args:
-        partitions (int):
-            intended number of partitions (default: ``1``)
-        device (torch.device):
-            CUDA device where the module is profiled (default: any related CUDA
-            device or ``torch.device('cuda')``)
         timeout (float):
             profiling iterates again if the timeout (in second) is not exceeded
             (default: ``1.0``)
@@ -56,41 +52,35 @@ def balance_by_time(module: nn.Sequential,
         A list of number of layers in each partition. Use it for the
         ``balance`` parameter of :class:`~torchgpipe.GPipe`.
 
+    .. note::
+        `module` and `sample` must be placed on the same device.
+
     """
-    times = profile_times(module, sample, device, timeout)
+    times = profile_times(module, sample, timeout)
     return utils.balance_cost(times, partitions)
 
 
-def balance_by_size(module: nn.Sequential,
+def balance_by_size(partitions: int,
+                    module: nn.Sequential,
                     sample: Tensor,
-                    *,
-                    partitions: int = 1,
-                    device: Optional[Device] = None,
                     ) -> List[int]:
-    """Balances the given seqeuntial module by memory usage per layer.
-
-    Note:
-        This function relies on :func:`torch.cuda.reset_max_memory_allocated`
-        which is introduced at PyTorch 1.1. Therefore, it doesn't support
-        neither CPU tensors nor PyTorch 1.0.x.
+    """Naive automatic balancing by CUDA memory usage per layer.
 
     Args:
+        partitions (int):
+            intended number of partitions
         module (nn.Sequential):
             sequential module to be partitioned
         sample (Tensor):
-            example input
-
-    Keyword Args:
-        partitions (int):
-            intended number of partitions (default: ``1``)
-        device (torch.device):
-            CUDA device where the module is profiled (default: any related CUDA
-            device or ``torch.device('cuda')``)
+            example input with arbitrary batch size
 
     Returns:
         A list of number of layers in each partition. Use it for the
         ``balance`` parameter of :class:`~torchgpipe.GPipe`.
 
+    .. note::
+        `module` and `sample` must be placed on the same CUDA device.
+
     """
-    sizes = profile_sizes(module, sample, device)
+    sizes = profile_sizes(module, sample)
     return utils.balance_cost(sizes, partitions)
