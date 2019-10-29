@@ -69,6 +69,26 @@ def balance_by_size(partitions: int,
                     ) -> List[int]:
     """Naive automatic balancing by CUDA memory usage per layer.
 
+    During training, required memory for parameters depends on which optimizer
+    is used. Optimizers may use buffers for each parameter to track
+    optimization statistics internally, such as momentum buffer in SGD.
+
+    To get more reliable size based balance, you should specify `param_scale`
+    with regard to your optimizer. The default `param_scale` is 2 instead of 1
+    due to gradient accumulation which is necessary for every optimizer.
+
+    Follow this guide to choose correct `param_scale` for typical optimizers:
+
+    =========  =============  =========================================
+    Optimizer  `param_scale`  Internal State
+    =========  =============  =========================================
+    SGD        2--3           (momentum_buffer)
+    Adam       4--5           exp_avg, exp_avg_sq, (max_exp_avg_sq)
+    Adadelta   4              square_avg, acc_delta
+    Adagrad    3              sum
+    RMSprop    3--5           square_avg, (momentum_buffer), (grad_avg)
+    =========  =============  =========================================
+
     Args:
         partitions (int):
             intended number of partitions
@@ -82,8 +102,7 @@ def balance_by_size(partitions: int,
             number of micro-batches will be used to train (default: ``1``)
         param_scale (float):
             how many copies of parameters would be allocated for training. It
-            depends on the optimization method. See the above guide. (default:
-            ``2.0``)
+            depends on optimizer. See the above guide. (default: ``2.0``)
 
     Returns:
         A list of number of layers in each partition. Use it for the
