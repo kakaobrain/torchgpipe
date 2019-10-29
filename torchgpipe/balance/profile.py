@@ -1,13 +1,13 @@
 """Per-layer profilers."""
+from contextlib import contextmanager
 from itertools import chain
 import time
-from typing import List, Tuple, Union
+from typing import Generator, List, Tuple, Union
 
 import torch
 from torch import Tensor
 import torch.nn as nn
 
-from torchgpipe.balance import utils
 from torchgpipe.microbatch import Batch
 
 __all__: List[str] = []
@@ -17,6 +17,26 @@ Device = Union[torch.device, int, str]
 
 Tensors = Tuple[Tensor, ...]
 TensorOrTensors = Union[Tensor, Tensors]
+
+
+@contextmanager
+def training_sandbox(module: nn.Sequential) -> Generator[None, None, None]:
+    """A context manager for training in sandbox mode."""
+    training = module.training
+    module.train()
+
+    # Clone state to CPU to minimize CUDA memory for sandboxing.
+    def clone_to_cpu(v: Tensor) -> Tensor:
+        if v.device.type == 'cpu':
+            return v.clone()
+        return v.cpu()
+
+    state_dict = {k: clone_to_cpu(v) for k, v in module.state_dict().items()}
+
+    yield
+
+    module.load_state_dict(state_dict)
+    module.train(training)
 
 
 def backward(layer: nn.Module, output: Batch) -> Batch:
@@ -53,7 +73,7 @@ def profile_times(module: nn.Sequential,
     while time.time() - begun_at < timeout:
         batch = Batch(sample)
 
-        with utils.training_sandbox(module):
+        with training_sandbox(module):
             for i, layer in enumerate(module):
                 if batch[0].device.type == 'cuda':
                     torch.cuda.synchronize(batch[0].device)
@@ -89,7 +109,7 @@ def profile_sizes(module: nn.Sequential,
     for i, x in enumerate(batch):
         batch[i] = x[:1].clone()
 
-    with utils.training_sandbox(module):
+    with training_sandbox(module):
         for i, layer in enumerate(module):
             # Detect memory usage at both forward and backward, which means
             # that size of activations and activation gradients.

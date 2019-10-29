@@ -18,7 +18,7 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 
-from torchgpipe.balance import utils
+from torchgpipe.balance import blockpartition
 from torchgpipe.balance.profile import profile_sizes, profile_times
 
 __all__ = ['balance_by_time', 'balance_by_size']
@@ -28,6 +28,11 @@ Device = Union[torch.device, int, str]
 
 Tensors = Tuple[Tensor, ...]
 TensorOrTensors = Union[Tensor, Tensors]
+
+
+def balance_cost(cost: List[int], partitions: int) -> List[int]:
+    partitioned = blockpartition.solve(cost, partitions)
+    return [len(p) for p in partitioned]
 
 
 def balance_by_time(partitions: int,
@@ -65,7 +70,7 @@ def balance_by_time(partitions: int,
 
     """
     times = profile_times(module, sample, timeout)
-    return utils.balance_cost(times, partitions)
+    return balance_cost(times, partitions)
 
 
 def balance_by_size(partitions: int,
@@ -140,4 +145,4 @@ def balance_by_size(partitions: int,
 
     """
     sizes = profile_sizes(module, input, chunks, param_scale)
-    return utils.balance_cost(sizes, partitions)
+    return balance_cost(sizes, partitions)
