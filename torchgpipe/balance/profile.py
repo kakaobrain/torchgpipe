@@ -19,6 +19,29 @@ Tensors = Tuple[Tensor, ...]
 TensorOrTensors = Union[Tensor, Tensors]
 
 
+def backward(layer: nn.Module, output: Batch) -> Batch:
+    """Backpropagates a layer for profiling."""
+    if any(p.grad is not None for p in layer.parameters()):
+        raise ValueError('some parameter has gradient')
+
+    tensors = tuple(y for y in output if y.requires_grad)
+    if not tensors:
+        return output
+
+    torch.autograd.backward(tensors, tensors)
+
+    # Free memory for gradients.
+    for p in layer.parameters():
+        p.grad = None
+
+    # Detach from autograd graph.
+    for y in output:
+        requires_grad = y.requires_grad
+        y.detach_().requires_grad_(requires_grad)
+
+    return output
+
+
 def profile_times(module: nn.Sequential,
                   sample: TensorOrTensors,
                   timeout: float,
@@ -37,6 +60,7 @@ def profile_times(module: nn.Sequential,
                 tick = time.time()
 
                 batch = batch.call(layer)
+                batch = backward(layer, batch)
 
                 if batch[0].device.type == 'cuda':
                     torch.cuda.synchronize(batch[0].device)
@@ -74,6 +98,7 @@ def profile_sizes(module: nn.Sequential,
             memory_before = torch.cuda.max_memory_allocated(device)
 
             batch = batch.call(layer)
+            batch = backward(layer, batch)
 
             memory_after = torch.cuda.max_memory_allocated(device)
             latent_size = memory_after - memory_before
