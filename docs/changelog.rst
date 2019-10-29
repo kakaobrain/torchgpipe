@@ -11,6 +11,8 @@ Improvements:
 
 Breaking Changes:
    - Moved ``torchgpipe_balancing`` module to :mod:`torchgpipe.balance`.
+   - Changed interface of :func:`~torchgpipe.balance.balance_by_time` and
+     :func:`~torchgpipe.balance.balance_by_size`.
 
 v0.0.4
 ~~~~~~
