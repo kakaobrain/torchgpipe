@@ -120,8 +120,11 @@ def spawn_workers(devices: List[torch.device],
             out_queue = Queue()
             workers[device] = (in_queue, out_queue)
 
-            t = Thread(target=worker, args=(in_queue, out_queue, device, torch.is_grad_enabled()))
-            t.daemon = True
+            t = Thread(
+                target=worker,
+                args=(in_queue, out_queue, device, torch.is_grad_enabled()),
+                daemon=True,
+            )
             t.start()
 
         in_queues.append(in_queue)

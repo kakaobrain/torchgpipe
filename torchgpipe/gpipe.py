@@ -337,9 +337,11 @@ class GPipe(Module):
 
         # The micro-batch index where the checkpointing stops.
         if self.training:
-            checkpoint_stop = {'always': self.chunks,
-                               'except_last': self.chunks-1,
-                               'never': 0}[self.checkpoint]
+            checkpoint_stop = {
+                'always': self.chunks,
+                'except_last': self.chunks-1,
+                'never': 0,
+            }[self.checkpoint]
         else:
             checkpoint_stop = 0
 
