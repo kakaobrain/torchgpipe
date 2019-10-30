@@ -7,8 +7,8 @@ from torch import Tensor, nn
 import torch.autograd
 import torch.cuda
 
+from torchgpipe import microbatch
 from torchgpipe.batchnorm import DeferredBatchNorm
-from torchgpipe.microbatch import check, gather, scatter
 from torchgpipe.pipeline import Pipeline
 from torchgpipe.stream import AbstractStream, new_stream
 
@@ -323,14 +323,14 @@ class GPipe(Module):
             TypeError: input is not a tensor or tensors.
 
         """
-        check(input)
+        microbatch.check(input)
 
         if not self.devices:
             # Empty sequential module is not illegal.
             return input
 
         # Divide a mini-batch into micro-batches.
-        batches = scatter(input, self.chunks)
+        batches = microbatch.scatter(input, self.chunks)
 
         # Separate CUDA streams for copy.
         copy_streams = self._ensure_copy_streams()
@@ -354,5 +354,5 @@ class GPipe(Module):
         pipeline.run()
 
         # Merge the micro-batches into one mini-batch.
-        output = gather(batches)
+        output = microbatch.gather(batches)
         return output
