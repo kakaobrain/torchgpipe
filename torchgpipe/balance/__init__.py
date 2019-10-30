@@ -12,7 +12,7 @@ Usage::
     gpipe = GPipe(model, balance, chunks=8)
 
 """
-from typing import List, Union
+from typing import List, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -26,10 +26,13 @@ __all__ = ['balance_by_time', 'balance_by_size']
 
 Device = Union[torch.device, int, str]
 
+Tensors = Tuple[Tensor, ...]
+TensorOrTensors = Union[Tensor, Tensors]
+
 
 def balance_by_time(partitions: int,
                     module: nn.Sequential,
-                    sample: Tensor,
+                    sample: TensorOrTensors,
                     *,
                     timeout: float = 1.0,
                     ) -> List[int]:
@@ -67,7 +70,7 @@ def balance_by_time(partitions: int,
 
 def balance_by_size(partitions: int,
                     module: nn.Sequential,
-                    input: Tensor,
+                    input: TensorOrTensors,
                     *,
                     chunks: int = 1,
                     param_scale: float = 2.0,
