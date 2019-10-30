@@ -8,6 +8,7 @@ Not released yet.
 
 Improvements:
    - Checkpointing deterministically handles randomness managed by PyTorch.
+   - :func:`~torchgpipe.balance.balance_by_size` analyzes parameters as well.
 
 Breaking Changes:
    - Moved ``torchgpipe_balancing`` module to :mod:`torchgpipe.balance`.

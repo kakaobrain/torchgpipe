@@ -2,7 +2,7 @@
 from contextlib import contextmanager
 from typing import Generator, List
 
-from torch import nn
+from torch import Tensor, nn
 
 from torchgpipe.balance import blockpartition
 
@@ -15,7 +15,13 @@ def training_sandbox(module: nn.Sequential) -> Generator[None, None, None]:
     training = module.training
     module.train()
 
-    state_dict = {k: v.clone() for k, v in module.state_dict().items()}
+    # Clone state to CPU to minimize CUDA memory for sandboxing.
+    def clone_to_cpu(v: Tensor) -> Tensor:
+        if v.device.type == 'cpu':
+            return v.clone()
+        return v.cpu()
+
+    state_dict = {k: clone_to_cpu(v) for k, v in module.state_dict().items()}
 
     yield
 
