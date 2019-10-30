@@ -108,8 +108,9 @@ memory usage of each layer. Choose the balancing tool for your needs::
    from torchgpipe import GPipe
    from torchgpipe.balance import balance_by_time
 
+   partitions = torch.cuda.device_count()
    sample = torch.rand(128, 3, 224, 224)
-   balance = balance_by_time(model, sample, partitions=4)
+   balance = balance_by_time(partitions, model, sample)
 
    model = GPipe(model, balance, chunks=8)
 
