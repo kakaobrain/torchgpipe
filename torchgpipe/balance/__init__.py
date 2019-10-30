@@ -6,8 +6,8 @@ Usage::
     from torchgpipe import GPipe
     from torchgpipe.balance import balance_by_time
 
-    sample = torch.rand(128, 3, 224, 224)
-    balance = balance_by_time(4, model, sample)
+    sample = torch.empty(128, 3, 224, 224)
+    balance = balance_by_time(torch.cuda.device_count(), model, sample)
 
     gpipe = GPipe(model, balance, chunks=8)
 
@@ -34,6 +34,11 @@ def balance_by_time(partitions: int,
                     timeout: float = 1.0,
                     ) -> List[int]:
     """Naive automatic balancing by elapsed time per layer.
+    ::
+
+        sample = torch.empty(128, 3, 224, 224)
+        balance = balance_by_time(torch.cuda.device_count(), model, sample)
+        gpipe = GPipe(model, balance, chunks=8)
 
     Args:
         partitions (int):
@@ -88,6 +93,25 @@ def balance_by_size(partitions: int,
     Adagrad    3              sum
     RMSprop    3--5           square_avg, (momentum_buffer), (grad_avg)
     =========  =============  =========================================
+
+    Here's a simple example with the Adam optimizer::
+
+        balance = balance_by_size(
+            torch.cuda.device_count(),
+            model,
+
+            # Same size with mini-batch to train
+            torch.empty(1024, 3, 224, 224),
+
+            # Number of micro-batches to train with GPipe
+            chunks=8,
+
+            # 4 for Adam
+            param_scale=4.0,
+        )
+
+        gpipe = GPipe(model, balance, chunks=8)
+        adam = Adam(gpipe.parameters())
 
     Args:
         partitions (int):
