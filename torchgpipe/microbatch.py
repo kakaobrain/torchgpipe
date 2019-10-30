@@ -18,8 +18,8 @@ class Batch:
     """An abstraction of an atomic tensor or a tuple of tensors. This
     eliminates every boilerplate code to classify an atomic tensor or a tuple
     of tensors.
+    ::
 
-    Examples::
         x = generate_tensor_or_tensors()
         x = Batch(x)
 

@@ -130,7 +130,8 @@ MOVING_DENIED = TypeError('denied to move parameters and buffers, '
 class GPipe(Module):
     """Wraps an arbitrary :class:`nn.Sequential <torch.nn.Sequential>` module
     to train on GPipe_. If the module requires lots of memory, GPipe will be
-    very efficient::
+    very efficient.
+    ::
 
         model = nn.Sequential(a, b, c, d)
         model = GPipe(model, balance=[1, 1, 1, 1], chunks=8)
