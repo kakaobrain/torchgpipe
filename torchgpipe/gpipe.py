@@ -258,6 +258,11 @@ class GPipe(Module):
 
         raise IndexError
 
+    def __iter__(self) -> Iterable[nn.Module]:
+        """Iterates over children of the underlying sequential module."""
+        for partition in self.partitions:
+            yield from partition
+
     # GPipe should manage the device of each partition.
     # Deny cuda(), cpu(), and to() with device, by TypeError.
     def cuda(self, device: Optional[Device] = None) -> 'GPipe':
