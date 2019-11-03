@@ -137,9 +137,9 @@ The reproducible code can be found in
 Experiment | torchgpipe | GPipe (original)
 ---------- | -----: | -----:
 naive-2    |     1x |     1x
-pipeline-2 | 1.434x | 1.156x
-pipeline-4 | 2.049x | 2.483x
-pipeline-8 | 2.424x | 3.442x
+pipeline-2 | 1.465x | 1.156x
+pipeline-4 | 2.225x | 2.483x
+pipeline-8 | 3.044x | 3.442x
 
 The table shows the reproduced speed benchmark on AmoebaNet-D, as reported in
 Figure 3(a) of the paper. But there is some difference between torchgpipe and

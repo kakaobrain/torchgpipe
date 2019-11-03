@@ -127,9 +127,9 @@ Parallelism이 적용되지 않고 Checkpointing 오버헤드만 있어서 naive
 실험 | torchgpipe | GPipe (논문)
 ---------- | -----: | -----:
 naive-2    |     1x |     1x
-pipeline-2 | 1.434x | 1.156x
-pipeline-4 | 2.049x | 2.483x
-pipeline-8 | 2.424x | 3.442x
+pipeline-2 | 1.465x | 1.156x
+pipeline-4 | 2.225x | 2.483x
+pipeline-8 | 3.044x | 3.442x
 
 GPipe 논문의 그림3 (a)에 보고된 AmoebaNet-D 학습 속도 벤치마크 비교에선
 torchgpipe와 GPipe간 다소 차이가 있습니다. 이는 TensorFlow로 구현된

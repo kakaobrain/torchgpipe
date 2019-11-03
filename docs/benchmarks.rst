@@ -42,14 +42,14 @@ can be found in `examples/resnet101_accuracy_benchmark`_.
 AmoebaNet-D Speed Benchmark
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-==========  ===================  =======
-Experiment  Throughput           Speedup
-==========  ===================  =======
-naive-2      14.188 samples/sec   1.000x
-pipeline-2   20.346 samples/sec   1.434x
-pipeline-4   29.074 samples/sec   2.049x
-pipeline-8   34.392 samples/sec   2.424x
-==========  ===================  =======
+==========  ==================  =======
+Experiment  Throughput          Speedup
+==========  ==================  =======
+naive-2     13.884 samples/sec   1.000x
+pipeline-2  20.334 samples/sec   1.465x
+pipeline-4  30.893 samples/sec   2.225x
+pipeline-8  42.263 samples/sec   3.044x
+==========  ==================  =======
 
 The code is reproducible on Tesla P40 GPUs, and the experiment details
 can be found in `examples/amoebanetd_speed_benchmark`_.
