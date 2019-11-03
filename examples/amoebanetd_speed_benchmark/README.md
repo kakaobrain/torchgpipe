@@ -26,6 +26,7 @@ pipeline-8 | 42.263 samples/sec |   3.044x
 
 ## Optimized Environment
 
+- torchgpipe 0.0.4
 - Python 3.6.9
 - PyTorch 1.3.0
 - CUDA 10.1.243
