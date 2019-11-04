@@ -31,23 +31,10 @@ def layerwise_sandbox(module: nn.Sequential,
         yield layer_copy
 
 
-def backward(layer: nn.Module, output: Batch) -> Batch:
-    """Backpropagates a layer for profiling."""
-    if any(p.grad is not None for p in layer.parameters()):
-        raise ValueError('some parameter already has gradient')
-
-    tensors = tuple(y for y in output if y.requires_grad)
-    if not tensors:
-        return output
-
-    torch.autograd.backward(tensors, tensors)
-
-    # Detach from autograd graph.
-    for y in output:
-        requires_grad = y.requires_grad
-        y.detach_().requires_grad_(requires_grad)
-
-    return output
+def detach(batch: Batch) -> None:
+    """Detaches from autograd graph."""
+    for i, x in enumerate(batch):
+        batch[i] = x.detach().requires_grad_(x.requires_grad)
 
 
 def profile_times(module: nn.Sequential,
@@ -56,6 +43,9 @@ def profile_times(module: nn.Sequential,
                   device: torch.device,
                   ) -> List[int]:
     """Profiles elapsed times per layer."""
+    if any(p.grad is not None for p in module.parameters()):
+        raise ValueError('some parameter already has gradient')
+
     batch = Batch(sample)
     for i, x in enumerate(batch):
         batch[i] = x.to(device).detach().requires_grad_(x.requires_grad)
@@ -65,12 +55,19 @@ def profile_times(module: nn.Sequential,
 
     while time.time() - begun_at < timeout:
         for i, layer in enumerate(layerwise_sandbox(module, device)):
+            detach(batch)
+
             if device.type == 'cuda':
                 torch.cuda.synchronize(device)
             tick = time.time()
 
+            # Forward
             batch = batch.call(layer)
-            batch = backward(layer, batch)
+
+            # Backward
+            backward_tensors = tuple(y for y in batch if y.requires_grad)
+            if backward_tensors:
+                torch.autograd.backward(backward_tensors, backward_tensors)
 
             if device.type == 'cuda':
                 torch.cuda.synchronize(device)
@@ -97,18 +94,15 @@ def profile_sizes(module: nn.Sequential,
 
     latent_scale = batch[0].size(0) / chunks
     for i, x in enumerate(batch):
-        batch[i] = x[:1].to(device).detach().requires_grad_(x.requires_grad)
+        batch[i] = x[:1].detach().to(device).requires_grad_(x.requires_grad)
 
     for layer in layerwise_sandbox(module, device):
-        # Detect memory usage at both forward and backward, which means that
-        # size of activations and activation gradients.
-        torch.cuda.reset_max_memory_allocated(device)
-        memory_before = torch.cuda.max_memory_allocated(device)
+        detach(batch)
 
+        # Detect memory usage at forward.
+        memory_before = torch.cuda.memory_allocated(device)
         batch = batch.call(layer)
-        batch = backward(layer, batch)
-
-        memory_after = torch.cuda.max_memory_allocated(device)
+        memory_after = torch.cuda.memory_allocated(device)
         latent_size = memory_after - memory_before
 
         # Analyze size of parameters.
