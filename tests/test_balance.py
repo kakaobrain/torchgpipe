@@ -5,6 +5,7 @@ import torch
 from torch import nn
 
 from torchgpipe.balance import balance_by_size, balance_by_time, blockpartition
+from torchgpipe.balance.profile import layerwise_sandbox
 
 skip_if_no_cuda = pytest.mark.skipif(not torch.cuda.is_available(), reason='cuda required')
 
@@ -35,7 +36,8 @@ def test_blockpartition_short_sequence():
         blockpartition.solve([42], partitions=2)
 
 
-def test_balance_by_time():
+@pytest.mark.parametrize('device', devices)
+def test_balance_by_time(device):
     class Delay(nn.Module):
         def __init__(self, seconds):
             super().__init__()
@@ -47,7 +49,7 @@ def test_balance_by_time():
 
     model = nn.Sequential(*[Delay(i/100) for i in [1, 2, 3, 4, 5, 6]])
     sample = torch.rand(1)
-    balance = balance_by_time(2, model, sample)
+    balance = balance_by_time(2, model, sample, device=device)
     assert balance == [4, 2]
 
 
@@ -63,27 +65,27 @@ def test_balance_by_size_latent():
                 x = x + torch.rand_like(x, requires_grad=True)
             return x
 
-    sample = torch.rand(10, 100, 100, device='cuda')
+    sample = torch.rand(10, 100, 100)
 
-    model = nn.Sequential(*[Expand(i) for i in [1, 2, 3, 4, 5, 6]]).to('cuda')
+    model = nn.Sequential(*[Expand(i) for i in [1, 2, 3, 4, 5, 6]])
     balance = balance_by_size(2, model, sample)
     assert balance == [4, 2]
 
-    model = nn.Sequential(*[Expand(i) for i in [6, 5, 4, 3, 2, 1]]).to('cuda')
+    model = nn.Sequential(*[Expand(i) for i in [6, 5, 4, 3, 2, 1]])
     balance = balance_by_size(2, model, sample)
     assert balance == [2, 4]
 
 
 @skip_if_no_cuda
 def test_balance_by_size_param():
-    model = nn.Sequential(*[nn.Linear(i+1, i+2) for i in range(6)]).to('cuda')
-    sample = torch.rand(7, 1, device='cuda')
-    balance = balance_by_size(2, model, sample, param_scale=100)
+    model = nn.Sequential(*[nn.Linear(i+1, i+2) for i in range(6)])
+    sample = torch.rand(7, 1)
+    balance = balance_by_size(2, model, sample, param_scale=1000)
     assert balance == [4, 2]
 
-    model = nn.Sequential(*[nn.Linear(i+2, i+1) for i in reversed(range(6))]).to('cuda')
-    sample = torch.rand(1, 7, device='cuda')
-    balance = balance_by_size(2, model, sample, param_scale=100)
+    model = nn.Sequential(*[nn.Linear(i+2, i+1) for i in reversed(range(6))])
+    sample = torch.rand(1, 7)
+    balance = balance_by_size(2, model, sample, param_scale=1000)
     assert balance == [2, 4]
 
 
@@ -107,25 +109,38 @@ def test_balance_by_size_param_scale():
         Tradeoff(param_size=4, latent_size=3),
         Tradeoff(param_size=5, latent_size=2),
         Tradeoff(param_size=6, latent_size=1),
-    ).to('cuda')
+    )
 
-    sample = torch.rand(1, requires_grad=True, device='cuda')
+    sample = torch.rand(1, requires_grad=True)
 
     balance = balance_by_size(2, model, sample, param_scale=0)
     assert balance == [2, 4]
 
-    balance = balance_by_size(2, model, sample, param_scale=100)
+    balance = balance_by_size(2, model, sample, param_scale=1000)
     assert balance == [4, 2]
 
 
 @pytest.mark.parametrize('device', devices)
-def test_sandbox(device):
-    model = nn.Sequential(nn.BatchNorm2d(3)).to(device)
+def test_layerwise_sandbox(device):
+    model = nn.Sequential(nn.Conv2d(3, 3, 1), nn.BatchNorm2d(3))
+    model.eval()
+
+    for layer in layerwise_sandbox(model, torch.device(device)):
+        assert layer.training
+        assert all(p.device.type == device for p in layer.parameters())
+
+    assert all(not l.training for l in model)
+    assert all(p.device.type == 'cpu' for p in model.parameters())
+
+
+@pytest.mark.parametrize('device', devices)
+def test_sandbox_during_profiling(device):
+    model = nn.Sequential(nn.BatchNorm2d(3))
 
     before = {k: v.clone() for k, v in model.state_dict().items()}
 
-    sample = torch.rand(1, 3, 10, 10, device=device)
-    balance_by_time(1, model, sample)
+    sample = torch.rand(1, 3, 10, 10)
+    balance_by_time(1, model, sample, device=device)
 
     after = model.state_dict()
 
@@ -181,6 +196,15 @@ def test_balance_by_size_tuple():
             a, b = a_b
             return a + b
 
-    model = nn.Sequential(Twin(), Add()).to('cuda')
-    sample = torch.rand(1, requires_grad=True, device='cuda')
+    model = nn.Sequential(Twin(), Add())
+    sample = torch.rand(1, requires_grad=True)
     balance_by_size(1, model, sample)
+
+
+def test_already_has_grad():
+    model = nn.Sequential(nn.Conv2d(3, 3, 1))
+    sample = torch.rand(1, 3, 32, 32)
+    model(sample).norm().backward()
+
+    with pytest.raises(ValueError, match='some parameter already has gradient'):
+        balance_by_time(1, model, sample, device='cpu')

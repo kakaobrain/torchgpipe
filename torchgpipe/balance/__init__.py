@@ -40,6 +40,7 @@ def balance_by_time(partitions: int,
                     sample: TensorOrTensors,
                     *,
                     timeout: float = 1.0,
+                    device: Device = torch.device('cuda'),
                     ) -> List[int]:
     """Naive automatic balancing by elapsed time per layer.
     ::
@@ -60,6 +61,9 @@ def balance_by_time(partitions: int,
         timeout (float):
             profiling iterates again if the timeout (in second) is not exceeded
             (default: ``1.0``)
+        device ('cpu' or 'cuda' device):
+            CPU or CUDA device where each layer is profiled (default: the
+            current CUDA device)
 
     Returns:
         A list of number of layers in each partition. Use it for the
@@ -69,7 +73,7 @@ def balance_by_time(partitions: int,
         `module` and `sample` must be placed on the same device.
 
     """
-    times = profile_times(module, sample, timeout)
+    times = profile_times(module, sample, timeout, torch.device(device))
     return balance_cost(times, partitions)
 
 
@@ -79,6 +83,7 @@ def balance_by_size(partitions: int,
                     *,
                     chunks: int = 1,
                     param_scale: float = 2.0,
+                    device: Device = torch.device('cuda'),
                     ) -> List[int]:
     """Naive automatic balancing by CUDA memory usage per layer.
 
@@ -135,6 +140,9 @@ def balance_by_size(partitions: int,
         param_scale (float):
             how many copies of parameters would be allocated for training. It
             depends on optimizer. See the above guide. (default: ``2.0``)
+        device ('cuda' device):
+            CUDA device where each layer is profiled (default: the current CUDA
+            device)
 
     Returns:
         A list of number of layers in each partition. Use it for the
@@ -144,5 +152,5 @@ def balance_by_size(partitions: int,
         `module` and `input` must be placed on the same CUDA device.
 
     """
-    sizes = profile_sizes(module, input, chunks, param_scale)
+    sizes = profile_sizes(module, input, chunks, param_scale, torch.device(device))
     return balance_cost(sizes, partitions)
