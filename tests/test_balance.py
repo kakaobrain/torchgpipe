@@ -53,6 +53,13 @@ def test_balance_by_time(device):
     assert balance == [4, 2]
 
 
+def test_balance_by_time_loop_resets_input():
+    model = nn.Sequential(nn.Conv2d(3, 2, 1), nn.Flatten(), nn.Linear(128, 10))
+    sample = torch.rand(10, 3, 8, 8)
+    balance = balance_by_time(2, model, sample, device='cpu')
+    assert balance == [1, 2]
+
+
 @skip_if_no_cuda
 def test_balance_by_size_latent():
     class Expand(nn.Module):

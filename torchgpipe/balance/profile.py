@@ -46,14 +46,16 @@ def profile_times(module: nn.Sequential,
     if any(p.grad is not None for p in module.parameters()):
         raise ValueError('some parameter already has gradient')
 
-    batch = Batch(sample)
-    for i, x in enumerate(batch):
-        batch[i] = x.to(device).detach().requires_grad_(x.requires_grad)
+    _batch = Batch(sample)
+    for i, x in enumerate(_batch):
+        _batch[i] = x.detach().to(device).requires_grad_(x.requires_grad)
 
     time_bufs: List[List[float]] = [[] for _ in module]
     begun_at = time.time()
 
     while time.time() - begun_at < timeout:
+        batch = _batch
+
         for i, layer in enumerate(layerwise_sandbox(module, device)):
             detach(batch)
 
