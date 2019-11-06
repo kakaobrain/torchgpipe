@@ -41,7 +41,7 @@ def wait(batch: Batch, prev_stream: AbstractStream, next_stream: AbstractStream)
     batch[:] = Wait.apply(prev_stream, next_stream, *batch)
 
 
-def clock_cycles(n: int, m: int) -> Iterable[List[Tuple[int, int]]]:
+def clock_cycles(m: int, n: int) -> Iterable[List[Tuple[int, int]]]:
     """Generates schedules for each clock cycle."""
     # i: index of partition
     # j: index of micro-batch
@@ -53,8 +53,8 @@ def clock_cycles(n: int, m: int) -> Iterable[List[Tuple[int, int]]]:
     # 2 (0,2) (1,1) (2,0)
     # 3       (1,2) (2,1)
     # 4             (2,2)
-    for k in range(n+m-1):
-        yield [(i, k-i) for i in range(max(1+k-m, 0), min(1+k, n))]
+    for k in range(m+n-1):
+        yield [(i, k-i) for i in range(max(1+k-n, 0), min(1+k, m))]
 
 
 class Pipeline:
@@ -90,11 +90,11 @@ class Pipeline:
         partitions = self.partitions
         devices = self.devices
 
-        n = len(partitions)
-        m = len(batches)
+        m = len(partitions)
+        n = len(batches)
 
         with spawn_workers(devices) as (in_queues, out_queues):
-            for schedule in clock_cycles(n, m):
+            for schedule in clock_cycles(m, n):
                 self.fence(schedule)
                 self.compute(schedule, in_queues, out_queues)
 
@@ -128,7 +128,7 @@ class Pipeline:
         copy_streams = self.copy_streams
         checkpoint_stop = self.checkpoint_stop
 
-        n = len(partitions)
+        m = len(partitions)
         streams = [current_stream(d) for d in devices]
         exc_info: Optional[ExcInfo] = None
 
@@ -195,7 +195,7 @@ class Pipeline:
 
             # The copy stream synchronizes to copy the output. ([3] in the
             # diagram)
-            if i != n-1:
+            if i != m-1:
                 wait(batch, streams[i], copy_streams[i][j])
 
             # Finalize tasks. If checkpointing is enabled, here the
