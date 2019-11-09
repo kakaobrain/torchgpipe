@@ -23,6 +23,8 @@ GPipe Module
 Inspecting GPipe Timeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. autofunction:: torchgpipe.is_checkpointing()
+
 .. autofunction:: torchgpipe.is_recomputing()
 
 Automatic Balancing
