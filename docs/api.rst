@@ -8,7 +8,16 @@ GPipe Module
 
    .. automethod:: forward(input)
 
+   .. autoattribute:: balance
+      :annotation:
+
    .. autoattribute:: devices
+      :annotation:
+
+   .. autoattribute:: chunks
+      :annotation:
+
+   .. autoattribute:: checkpoint
       :annotation:
 
 Inspecting GPipe Timeline
