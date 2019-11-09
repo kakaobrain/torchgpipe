@@ -167,7 +167,7 @@ def test_not_training():
     assert not model.training
 
     sample = torch.rand(1)
-    balance_by_time(1, model, sample)
+    balance_by_time(1, model, sample, device='cpu')
 
     assert not model.training
 
@@ -189,7 +189,7 @@ def test_balance_by_time_tuple():
 
     model = nn.Sequential(Twin(), Add())
     sample = torch.rand(1, requires_grad=True)
-    balance_by_time(1, model, sample)
+    balance_by_time(1, model, sample, device='cpu')
 
 
 @skip_if_no_cuda
