@@ -11,7 +11,7 @@ __all__: List[str] = []
 
 def fork(input: Tensor) -> Tuple[Tensor, Tensor]:
     """Branches out from an autograd lane of the given tensor."""
-    if input.requires_grad and torch.is_grad_enabled():
+    if torch.is_grad_enabled() and input.requires_grad:
         input, phony = Fork.apply(input)
     else:
         phony = get_phony(input.device, requires_grad=False)
@@ -32,7 +32,7 @@ class Fork(torch.autograd.Function):
 
 def join(input: Tensor, phony: Tensor) -> Tensor:
     """Merges two autograd lanes."""
-    if input.requires_grad and torch.is_grad_enabled():
+    if torch.is_grad_enabled() and (input.requires_grad or phony.requires_grad):
         input = Join.apply(input, phony)
 
     return input
