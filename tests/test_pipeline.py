@@ -4,7 +4,29 @@ import torch
 from torch import nn
 
 from torchgpipe.microbatch import Batch
-from torchgpipe.pipeline import Pipeline
+from torchgpipe.pipeline import Pipeline, clock_cycles
+
+
+def test_clock_cycles():
+    assert list(clock_cycles(1, 1)) == [[(0, 0)]]
+    assert list(clock_cycles(1, 3)) == [[(0, 0)], [(0, 1)], [(0, 2)]]
+    assert list(clock_cycles(3, 1)) == [[(0, 0)], [(1, 0)], [(2, 0)]]
+
+    assert list(clock_cycles(3, 3)) == [  # noqa
+        [(0, 0)],
+        [(1, 0), (0, 1)],
+        [(2, 0), (1, 1), (0, 2)],
+                [(2, 1), (1, 2)],
+                        [(2, 2)],
+    ]
+
+    assert list(clock_cycles(4, 2)) == [  # noqa
+        [(0, 0)],
+        [(1, 0), (0, 1)],
+        [(2, 0), (1, 1)],
+        [(3, 0), (2, 1)],
+                [(3, 1)],
+    ]
 
 
 def test_forward_lockstep():
