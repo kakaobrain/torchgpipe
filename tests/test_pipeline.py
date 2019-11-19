@@ -11,17 +11,17 @@ def test_forward_lockstep():
     timeline = []
 
     class DelayedLog(nn.Module):
-        def __init__(self, i, seconds):
+        def __init__(self, j, seconds):
             super().__init__()
-            self.i = i
-            self.j = 0
+            self.i = 0
+            self.j = j
             self.seconds = seconds
 
         def forward(self, x):
             time.sleep(self.seconds)
 
             timeline.append((self.i, self.j))
-            self.j += 1
+            self.i += 1
 
             return x
 
@@ -37,4 +37,4 @@ def test_forward_lockstep():
     # Partition #0: 0! 1!   2!
     # Partition #1:    000! 111! 222!
     #
-    assert timeline == [(0, 0), (0, 1), (1, 0), (0, 2), (1, 1), (1, 2)]
+    assert timeline == [(0, 0), (1, 0), (0, 1), (2, 0), (1, 1), (2, 1)]

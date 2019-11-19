@@ -43,18 +43,21 @@ def wait(batch: Batch, prev_stream: AbstractStream, next_stream: AbstractStream)
 
 def clock_cycles(m: int, n: int) -> Iterable[List[Tuple[int, int]]]:
     """Generates schedules for each clock cycle."""
-    # i: index of partition
-    # j: index of micro-batch
+    # m: number of micro-batches
+    # n: number of partitions
+    # i: index of micro-batch
+    # j: index of partition
+    # k: clock number
     #
     # k (i,j) (i,j) (i,j)
     # - ----- ----- -----
     # 0 (0,0)
-    # 1 (0,1) (1,0)
-    # 2 (0,2) (1,1) (2,0)
-    # 3       (1,2) (2,1)
+    # 1 (1,0) (0,1)
+    # 2 (2,0) (1,1) (0,2)
+    # 3       (2,1) (1,2)
     # 4             (2,2)
     for k in range(m+n-1):
-        yield [(i, k-i) for i in range(max(1+k-n, 0), min(1+k, m))]
+        yield [(k-j, j) for j in range(max(1+k-m, 0), min(1+k, n))]
 
 
 class Pipeline:
@@ -90,8 +93,8 @@ class Pipeline:
         partitions = self.partitions
         devices = self.devices
 
-        m = len(partitions)
-        n = len(batches)
+        m = len(batches)
+        n = len(partitions)
 
         with spawn_workers(devices) as (in_queues, out_queues):
             for schedule in clock_cycles(m, n):
@@ -106,15 +109,15 @@ class Pipeline:
         copy_streams = self.copy_streams
 
         for i, j in schedule:
-            # Ensure that batches[j-1] is executed after batches[j] in
+            # Ensure that batches[i-1] is executed after batches[i] in
             # backpropagation by an explicit dependency.
-            if j != 0:
-                depend(batches[j-1], batches[j])
-
             if i != 0:
-                prev_stream = copy_streams[i-1][j]
-                next_stream = copy_streams[i][j]
-                copy(batches[j], prev_stream, next_stream)
+                depend(batches[i-1], batches[i])
+
+            if j != 0:
+                prev_stream = copy_streams[j-1][i]
+                next_stream = copy_streams[j][i]
+                copy(batches[i], prev_stream, next_stream)
 
     def compute(self,
                 schedule: List[Tuple[int, int]],
@@ -128,7 +131,7 @@ class Pipeline:
         copy_streams = self.copy_streams
         checkpoint_stop = self.checkpoint_stop
 
-        m = len(partitions)
+        n = len(partitions)
         streams = [current_stream(d) for d in devices]
         exc_info: Optional[ExcInfo] = None
 
@@ -158,31 +161,31 @@ class Pipeline:
         # │    Copy    │
         # └─────┰──────┘
         for i, j in schedule:
-            batch = batches[j]
-            partition = partitions[i]
+            batch = batches[i]
+            partition = partitions[j]
 
             # Synchronize with the copied input. ([1] in the diagram)
-            if i != 0:
-                wait(batch, copy_streams[i][j], streams[i])
+            if j != 0:
+                wait(batch, copy_streams[j][i], streams[j])
 
             # Determine whether checkpointing or not.
-            checkpoint = (j < checkpoint_stop)
+            checkpoint = (i < checkpoint_stop)
             if checkpoint:
                 chk = Checkpointing(partition, batch)
-                task = Task(streams[i], compute=chk.checkpoint, finalize=chk.recompute)
+                task = Task(streams[j], compute=chk.checkpoint, finalize=chk.recompute)
                 del chk
 
             else:
                 def compute(batch: Batch = batch, partition: nn.Sequential = partition) -> Batch:
                     return batch.call(partition)
-                task = Task(streams[i], compute=compute, finalize=None)
+                task = Task(streams[j], compute=compute, finalize=None)
                 del compute
 
             # Compute tasks in parallel. ([2] in the diagram)
-            in_queues[i].put(task)
+            in_queues[j].put(task)
 
         for i, j in schedule:
-            ok, payload = out_queues[i].get()
+            ok, payload = out_queues[j].get()
 
             # Hold the first exception.
             if exc_info is not None:
@@ -195,16 +198,16 @@ class Pipeline:
 
             # The copy stream synchronizes to copy the output. ([3] in the
             # diagram)
-            if i != m-1:
-                wait(batch, streams[i], copy_streams[i][j])
+            if j != n-1:
+                wait(batch, streams[j], copy_streams[j][i])
 
             # Finalize tasks. If checkpointing is enabled, here the
             # recomputation is scheduled at backpropagation. ([4] in the
             # diagram)
-            with use_device(devices[i]):
+            with use_device(devices[j]):
                 task.finalize(batch)
 
-            batches[j] = batch
+            batches[i] = batch
 
         # Fail at the first exception.
         if exc_info is not None:

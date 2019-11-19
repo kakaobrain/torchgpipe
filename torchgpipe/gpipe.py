@@ -97,28 +97,28 @@ def split_module(module: nn.Sequential,
         raise IndexError('too few devices to hold given partitions '
                          f'(devices: {len(devices)}, partitions: {len(balance)})')
 
-    i = 0
+    j = 0
     partitions = []
     layers: NamedModules = OrderedDict()
 
     for name, layer in module.named_children():
         layers[name] = layer
 
-        if len(layers) == balance[i]:
+        if len(layers) == balance[j]:
             # Group buffered layers as a partition.
             partition = nn.Sequential(layers)
 
-            device = devices[i]
+            device = devices[j]
             partition.to(device)
 
             partitions.append(partition)
 
             # Prepare for the next partition.
             layers.clear()
-            i += 1
+            j += 1
 
     partitions = cast(List[nn.Sequential], nn.ModuleList(partitions))
-    del devices[i:]
+    del devices[j:]
 
     return partitions, balance, devices
 
