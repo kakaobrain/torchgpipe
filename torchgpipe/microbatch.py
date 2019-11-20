@@ -54,7 +54,7 @@ class Batch:
 
     @property
     def tensor_or_tensors(self) -> TensorOrTensors:
-        """Retrieves the underlying tensor or tensors."""
+        """Retrieves the underlying tensor or tensors regardless of type."""
         return self.value
 
     def call(self, function: Function) -> 'Batch':

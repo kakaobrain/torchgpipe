@@ -16,6 +16,29 @@ def test_parameters():
     assert list(gpipe.parameters()) != []
 
 
+def test_public_attrs():
+    class MyString:
+        def __init__(self, value):
+            self.value = value
+
+        def __str__(self):
+            return self.value
+
+    model = nn.Sequential(nn.Linear(1, 1))
+    gpipe = GPipe(model,
+                  balance=(1,),
+                  devices=('cpu',),
+                  chunks=42.000,
+                  checkpoint=MyString('always'))
+
+    assert gpipe.balance == [1]
+    assert gpipe.devices == [torch.device('cpu')]
+    assert gpipe.chunks == 42
+    assert isinstance(gpipe.chunks, int)
+    assert gpipe.checkpoint == 'always'
+    assert isinstance(gpipe.checkpoint, str)
+
+
 @pytest.mark.parametrize('balance', [[2], [1, 1]])
 def test_sequential_like(balance):
     a = nn.Linear(1, 1)
@@ -134,11 +157,21 @@ def test_checkpoint_mode():
     assert count_grad_fn(never_output.grad_fn, 'CheckpointBackward') == 0
 
 
-def test_checkpoint_option_invalid():
+def test_checkpoint_mode_invalid():
     model = nn.Sequential(nn.Linear(1, 1))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError,
+                       match="checkpoint is not one of 'always', 'except_last', or 'never'"):
         GPipe(model, balance=[1], devices=['cpu'], chunks=2, checkpoint='INVALID_CHECKPOINT')
+
+
+def test_checkpoint_mode_when_chunks_1():
+    model = nn.Sequential(nn.Linear(1, 1))
+
+    # All checkpoint modes are fine.
+    GPipe(model, balance=[1], devices=['cpu'], chunks=1, checkpoint='except_last')
+    GPipe(model, balance=[1], devices=['cpu'], chunks=1, checkpoint='always')
+    GPipe(model, balance=[1], devices=['cpu'], chunks=1, checkpoint='never')
 
 
 def test_checkpoint_eval():

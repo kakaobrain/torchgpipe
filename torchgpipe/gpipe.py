@@ -67,7 +67,7 @@ class BalanceError(ValueError):
 
 
 def split_module(module: nn.Sequential,
-                 balance: List[int],
+                 balance: Iterable[int],
                  devices: List[torch.device],
                  ) -> Tuple[List[nn.Sequential], List[int], List[torch.device]]:
     """Splits a module into multiple partitions.
@@ -86,6 +86,8 @@ def split_module(module: nn.Sequential,
             the number of devices is fewer than the number of partitions.
 
     """
+    balance = list(balance)
+
     if len(module) != sum(balance):
         raise BalanceError('module and sum of balance have different length '
                            f'(module: {len(module)}, sum of balance: {sum(balance)})')
@@ -163,7 +165,7 @@ class GPipe(Module):
             ``'except_last'``, or ``'never'`` (default: ``'except_last'``)
         deferred_batch_norm (bool):
             whether to use deferred BatchNorm moving statistics
-            (default: ``False``, See :ref:`Deferred Batch Normalization` for
+            (default: ``False``, see :ref:`Deferred Batch Normalization` for
             more details)
 
     Raises:
@@ -175,6 +177,11 @@ class GPipe(Module):
             the number of devices is fewer than the number of partitions.
 
     """
+
+    #: The number of layers in each partition.
+    balance: List[int] = []
+    #                    ^^
+    # The default value [] required for Sphinx's autoattribute.
 
     #: The devices mapped to each partition.
     #:
@@ -191,19 +198,27 @@ class GPipe(Module):
     #:         loss = F.cross_entropy(output, target)
     #:
     devices: List[torch.device] = []
-    #                             ^^
-    # The default value [] required for Sphinx's autoattribute.
+
+    #: The number of micro-batches.
+    chunks: int = 1
+
+    #: The checkpoint mode to determine when to enable checkpointing. It is one
+    #: of ``always``, ``except_last``, or ``never``.
+    checkpoint: str = 'except_last'
 
     def __init__(self,
                  module: nn.Sequential,
                  balance: Optional[Iterable[int]] = None,
                  *,
                  devices: Optional[Devices] = None,
-                 chunks: int = 1,
-                 checkpoint: str = 'except_last',
+                 chunks: int = chunks,
+                 checkpoint: str = checkpoint,
                  deferred_batch_norm: bool = False,
                  ) -> None:
         super().__init__()
+
+        chunks = int(chunks)
+        checkpoint = str(checkpoint)
 
         if balance is None:
             raise ValueError(recommend_auto_balance('balance is required'))
@@ -218,9 +233,7 @@ class GPipe(Module):
         verify_module(module)
 
         if deferred_batch_norm:
-            module = DeferredBatchNorm.convert_deferred_batch_norm(module, self.chunks)
-
-        balance = list(balance)
+            module = DeferredBatchNorm.convert_deferred_batch_norm(module, chunks)
 
         if devices is None:
             devices = range(torch.cuda.device_count())
