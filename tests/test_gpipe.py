@@ -98,11 +98,11 @@ def test_batch_size_small():
     with pytest.warns(None) as record:
         model(torch.rand(2, 1))
 
-    # Small batch size is legal.
+    # Batch size smaller than chunks is legal.
     assert not record
 
 
-def test_checkpoint_option():
+def test_checkpoint_mode():
     def count_grad_fn(grad_fn, name, visited=set()):
         if grad_fn in visited:
             return 0
