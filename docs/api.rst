@@ -20,6 +20,17 @@ GPipe Module
    .. autoattribute:: checkpoint
       :annotation:
 
+Skip Connections
+~~~~~~~~~~~~~~~~
+
+.. autodecorator:: torchgpipe.skip.skippable([stash], [pop])
+
+   .. automethod:: torchgpipe.skip.skippable.Skippable.isolate(ns, [only=name])
+
+.. autoclass:: torchgpipe.skip.Namespace
+
+.. autofunction:: torchgpipe.skip.verify_skippables(module)
+
 Inspecting GPipe Timeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 

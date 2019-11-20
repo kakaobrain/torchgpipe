@@ -9,35 +9,8 @@ __all__ = ['Namespace']
 
 @total_ordering
 class Namespace(metaclass=abc.ABCMeta):
-    """An isolated namespace for skip tensors.
-
-    Skip tensors having the same name can be declared in a single sequential
-    module if they are isolated by different namespaces.
-
-    Usage::
-
-        @skippable(stash=['skip'])
-        class Stash(nn.Module):
-            def forward(self, x):
-                yield stash('skip', x)
-                return x + 1
-
-        @skippable(pop=['skip'])
-        class Pop(nn.Module):
-            def forward(self, x):
-                skip = yield pop('skip')
-                return x + skip + 1
-
-        ns1 = Namespace()
-        ns2 = Namespace()
-
-        model = nn.Sequential(
-            Stash().isolate(ns1),
-            Stash().isolate(ns2),
-            Pop().isolate(ns2),
-            Pop().isolate(ns1),
-        )
-
+    """An isolated namespace for skip tensors used by :meth:`isolate()
+    <torchgpipe.skip.skippable.Skippable.isolate>`.
     """
     __slots__ = ('id',)
 
