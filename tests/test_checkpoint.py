@@ -5,7 +5,7 @@ import torch
 from torch import nn
 import torch.cuda
 
-from torchgpipe.checkpoint import Checkpointing, checkpoint
+from torchgpipe.checkpoint import Checkpointing, checkpoint, is_checkpointing, is_recomputing
 from torchgpipe.dependency import fork, join
 from torchgpipe.microbatch import Batch
 
@@ -105,3 +105,37 @@ def test_random_in_checkpoint(device):
     chk_y.norm().backward()
 
     assert torch.allclose(x.grad, chk_x.grad)
+
+
+def test_detect_checkpointing_recomputing():
+    logs = []
+
+    class Detect(nn.Module):
+        def forward(self, input):
+            logs.append((is_checkpointing(), is_recomputing()))
+            return input
+
+    model = Detect()
+    input = torch.rand(1, requires_grad=True)
+
+    output = checkpoint(model, input)
+    output.backward()
+
+    assert logs == [(True, False), (False, True)]
+
+
+def test_detect_checkpointing_recomputing_without_checkpoint():
+    logs = []
+
+    class Detect(nn.Module):
+        def forward(self, input):
+            logs.append((is_checkpointing(), is_recomputing()))
+            return input
+
+    model = Detect()
+    input = torch.rand(1, requires_grad=True)
+
+    output = model(input)
+    output.backward()
+
+    assert logs == [(False, False)]
