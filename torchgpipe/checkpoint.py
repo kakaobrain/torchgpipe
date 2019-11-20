@@ -139,7 +139,18 @@ def is_checkpointing() -> bool:
 
 def is_recomputing() -> bool:
     """Whether if the current forward propagation is under checkpoint
-    recomputation.
+    recomputation. Use this to prevent duplicated side-effects at forward
+    propagation::
+
+        class Counter(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.counter = 0
+
+            def forward(self, input):
+                if not is_recomputing():
+                    self.counter += 1
+                return input
 
     Returns:
         bool: ``True`` if it's under checkpoint recomputation.
