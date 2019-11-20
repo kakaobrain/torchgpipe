@@ -10,4 +10,7 @@ class Flatten(Module):
     start_dim: int
     end_dim: int
     def forward(self, input: Tensor) -> Tensor: ...  # type: ignore
+
+class Identity(Module):
+    def forward(self, input: Tensor) -> Tensor: ...  # type: ignore
 #END

@@ -15,7 +15,9 @@ _scalar_or_tuple_3_t = Union[T, Tuple[T, T, T]]
 # For arguments which represent size parameters (eg, kernel size, padding)
 _size_any_t = _scalar_or_tuple_any_t[int]
 _size_1_t = _scalar_or_tuple_1_t[int]
-_size_2_t = _scalar_or_tuple_2_t[int]
+#MODIFIED BY TORCHGPIPE
+_size_2_t = Union[int, Tuple[int, int], Tuple[int, int, int, int]]
+#END
 _size_3_t = _scalar_or_tuple_3_t[int]
 
 # For arguments that represent a ratio to adjust each dimension of an input with (eg, upsampling parameters)
