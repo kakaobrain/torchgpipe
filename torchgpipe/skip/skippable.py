@@ -286,7 +286,9 @@ def skippable(stash: Iterable[str] = (),
 
 
 class stash:
-    """The command to stash a skip tensor::
+    """The command to stash a skip tensor.
+
+    ::
 
         def forward(self, input):
             yield stash('name', input)
@@ -301,7 +303,9 @@ class stash:
 
 
 class pop:
-    """The command to pop a skip tensor::
+    """The command to pop a skip tensor.
+
+    ::
 
         def forward(self, input):
             skip = yield pop('name')
