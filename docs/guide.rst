@@ -345,8 +345,121 @@ Because of the skip connection being represented as a normal parameter,
 
 It is the most straightforward approach to implement skip connections. But
 there is a disadvantage. In the above example, the skip tensor is copied to the
-second device, but it is never used on the second device. Unnecessarily copying
-tensor wastes time and memory.
+second device, but it is never used at the device. Unnecessarily copied tensor
+wastes time and memory.
+
+The following section introduces alternative approach for skip connection.
+
+Long Skip Connections
+---------------------
+
+The disadvantage mentioned above might be catastrophic if the unnecessarily
+copied tensor is very large, or it is copied over many devices. The second case
+often occurs when implementing long skip connections. Let's assume now we have
+8 layers between input and output::
+
+   latent = layer1(input)
+   latent = layer2(latent)
+   latent = layer3(latent)
+   latent = layer4(latent)
+   latent = layer5(latent)
+   latent = layer6(latent)
+   latent = layer7(latent)
+   output = layer8(latent) + input  # skip connection
+
+With the prior approach, GPipe will copy the skip tensor to all devices, but 6
+of them are unnecessary. The alternative approach is to expose where the skip
+tensor is produced and consumed. Now we will introduce the :func:`@skippable
+<torchgpipe.skip.skippable>` class decorator to toss the tensor without going
+through regardless layers. It provides a hidden storage for skip tensors. A
+module can stash a tensor into the storage or pop. This functionality still
+works well without GPipe.
+
+The decorator declares which skip tensors would be stashed or popped in the
+decorated module class to let GPipe understand the connections. To learn the
+usage, let's examine with the example of 8 layers. Here we use name "skip" for
+the skip connection between ``Layer1`` and ``Layer8``::
+
+   # Layer1 stashes 'skip'.
+   @skippable(stash=['skip'])
+   class Layer1(nn.Module):
+       ...
+
+   # Layer8 pops 'skip'.
+   @skippable(pop=['skip'])
+   class Layer8(nn.Module):
+       ...
+
+When ``Layer1`` prepares a skip tensor, it can stash the tensor into the hidden
+storage by :func:`yield stash() <torchgpipe.skip.stash>`. Yes, we will define
+``forward()`` as a generator instead of a normal function::
+
+   @skippable(stash=['skip'])
+   class Layer1(nn.Module):
+       def forward(self, input):
+           skip = input
+           yield stash('skip', skip)
+           return layer1(input)
+
+With the similar way, ``Layer8`` also can pop the stashed skip tensor by
+:func:`yield pop() <torchgpipe.skip.pop>`::
+
+   @skippable(pop=['skip'])
+   class Layer8(nn.Module):
+       def forward(self, input):
+           skip = yield pop('skip')
+           return layer8(input) + skip
+
+Now the regardless intermediate layers don't require to pass the skip tensor
+to ``Layer8``::
+
+   class Layer2(nn.Module):
+       def forward(self, input):
+           return layer2(input)
+   ...
+   class Layer7(nn.Module):
+       def forward(self, input):
+           return layer7(input)
+
+You can design any complex skip connections with :func:`@skippable
+<torchgpipe.skip.skippable>` since a skippable module could stash and/or pop
+multiple skip tensors. However, there are obvious restriction:
+
+- Every skip name must be unique within a sequential module.
+- One skip tensor must be stashed and popped exactly once.
+
+Then, how to reuse a skippable module two or more times in a sequential module?
+You can isolate some skip names by :class:`~torch.skip.Namespace`. For example,
+a conceptual U-Net can be designed like this::
+
+   # 1F. Encoder ------------------ Decoder - Segment
+   #        \                          /
+   # 2F.  Encoder ---------------- Decoder
+   #          \                      /
+   # 3F.   Encoder - Bottleneck - Decoder
+
+   @skippable(stash=['skip'])
+   class Encoder(nn.Module):
+       ...
+
+   @skippable(pop=['skip'])
+   class Decoder(nn.Module):
+       ...
+
+   ns_1f = Namespace()
+   ns_2f = Namespace()
+   ns_3f = Namespace()
+
+   model = nn.Sequential(
+       Encoder().isolate(ns_1f),
+       Encoder().isolate(ns_2f),
+       Encoder().isolate(ns_3f),
+       Bottleneck(),
+       Decoder().isolate(ns_3f),
+       Decoder().isolate(ns_2f),
+       Decoder().isolate(ns_1f),
+       Segment(),
+   )
 
 Detecting Recomputation
 -----------------------
