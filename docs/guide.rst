@@ -59,9 +59,10 @@ Nested Sequentials
 ------------------
 
 Consecutive layers in a :class:`nn.Sequential <torch.nn.Sequential>` module can
-be grouped as a partition by GPipe. However, you may want to split logically
-consecutive layers in nested sequentials. To split a module with nested
-sequentials, you should flatten the module before wrapping with GPipe.
+be grouped as a partition by :class:`~torchgpipe.GPipe`. However, you may want
+to split logically consecutive layers in nested sequentials. To split a module
+with nested sequentials, you should flatten the module before wrapping with
+:class:`~torchgpipe.GPipe`.
 
 Follow this code snippet which flattens nested sequentials::
 
@@ -127,7 +128,7 @@ you are still designing a model, the model architecture may change over time.
 In this case, we highly recommend :mod:`torchgpipe.balance` for automatic
 balancing. This won't give you the optimal balance, but a good-enough balance.
 Note that this is provided by `torchgpipe` package, and is not from the GPipe
-paper.
+paper by Huang et al.
 
 There are two balancing tools, :func:`~torchgpipe.balance.balance_by_time` and
 :func:`~torchgpipe.balance.balance_by_size`. Both are based on per-layer
@@ -367,18 +368,19 @@ often occurs when implementing long skip connections. Let's assume now we have
    latent = layer7(latent)
    output = layer8(latent) + input  # skip connection
 
-With the prior approach, GPipe will copy the skip tensor to all devices, but 6
-of them are unnecessary. The alternative approach is to expose where the skip
-tensor is produced and consumed. Now we will introduce the :func:`@skippable
-<torchgpipe.skip.skippable>` class decorator to toss the tensor without going
-through regardless layers. It provides a hidden storage for skip tensors. A
-module can stash a tensor into the storage or pop. This functionality still
-works well without GPipe.
+With the prior approach, :class:`~torchgpipe.GPipe` will copy the skip tensor
+to all devices, but 6 of them are unnecessary. The alternative approach is to
+expose where the skip tensor is produced and consumed. Now we will introduce
+the :func:`@skippable <torchgpipe.skip.skippable>` class decorator to toss the
+tensor without going through regardless layers. It provides a hidden storage
+for skip tensors. A module can stash a tensor into the storage or pop. This
+functionality still works well without :mod:`torchgpipe`.
 
 The decorator declares which skip tensors would be stashed or popped in the
-decorated module class to let GPipe understand the connections. To learn the
-usage, let's examine with the example of 8 layers. Here we use name "skip" for
-the skip connection between ``Layer1`` and ``Layer8``::
+decorated module class to let :class:`~torchgpipe.GPipe` understand the
+connections. To learn the usage, let's examine with the example of 8 layers.
+Here we use name "skip" for the skip connection between ``Layer1`` and
+``Layer8``::
 
    # Layer1 stashes 'skip'.
    @skippable(stash=['skip'])

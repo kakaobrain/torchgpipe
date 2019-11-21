@@ -216,7 +216,7 @@ def skippable(stash: Iterable[str] = (),
               ) -> Callable[[Type[SkippableModule]], Type[Skippable]]:
     """The decorator to define a :class:`nn.Module <torch.nn.Module>` with skip
     connections. Decorated modules are called "skippable". A skippable module
-    works well with or without GPipe.
+    works well with or without :mod:`torchgpipe`.
 
     Each skip tensor is managed by its name. Before manipulating skip tensors,
     a skippable module must declare statically which names will be used by
@@ -227,7 +227,7 @@ def skippable(stash: Iterable[str] = (),
     Every skip tensor must have only one pair of ``stash`` and ``pop``.
     :class:`~torchgpipe.GPipe` will check this restriction automatically when
     wrapping a module with skippable modules. You can also check the
-    restriction by :func:`torchgpipe.skip.verify_skippables`.
+    restriction by :func:`~torchgpipe.skip.verify_skippables`.
 
     Here is an example with three layers. A skip tensor named ``1to3`` is
     stashed and popped at the first and last layer, respectively::
