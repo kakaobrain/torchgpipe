@@ -297,7 +297,7 @@ GPipe works. See :ref:`Understanding GPipe`.
 Skip Connections
 ----------------
 
-Many deep learning models, such as ResNet or AmoebaNet, contain skip
+Many deep learning models, such as ResNet, AmoebaNet, or U-Net, contain skip
 connections. There are two ways to implement skip connections. Let's assume we
 have to implement a skip connection like this::
 

@@ -214,8 +214,9 @@ class Skippable(nn.Module):
 def skippable(stash: Iterable[str] = (),
               pop: Iterable[str] = (),
               ) -> Callable[[Type[SkippableModule]], Type[Skippable]]:
-    """The decorator to define a :class:`~torch.nn.Module` with skip
-    connections. Decorated modules are called "skippable".
+    """The decorator to define a :class:`nn.Module <torch.nn.Module>` with skip
+    connections. Decorated modules are called "skippable". A skippable module
+    works well with or without GPipe.
 
     Each skip tensor is managed by its name. Before manipulating skip tensors,
     a skippable module must declare statically which names will be used by
@@ -223,7 +224,7 @@ def skippable(stash: Iterable[str] = (),
     be stashed by ``yield stash(name, tensor)`` and also popped by ``tensor =
     yield pop(name)``.
 
-    Every skip tensors must have only one pair of ``stash`` and ``pop``.
+    Every skip tensor must have only one pair of ``stash`` and ``pop``.
     :class:`~torchgpipe.GPipe` will check this restriction automatically when
     wrapping a module with skippable modules. You can also check the
     restriction by :func:`torchgpipe.skip.verify_skippables`.
@@ -261,9 +262,9 @@ def skippable(stash: Iterable[str] = (),
 
     .. note::
 
-        ``@skippable()`` decorator changes the type of the wrapped class. But
-        currently (mypy v0.740), mypy could not understand class decorators yet
-        (`#3135 <https://github.com/python/mypy/issues/3135>`_).
+        :func:`@skippable <skippable>` changes the type of the wrapped class.
+        But currently (mypy v0.740), mypy could not understand class decorators
+        yet (`#3135 <https://github.com/python/mypy/issues/3135>`_).
 
         There are two workarounds:
 
