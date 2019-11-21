@@ -55,6 +55,36 @@ specify GPUs to use with `devices` parameter::
                  devices=[4, 2],  # Specify GPUs.
                  chunks=8)
 
+Nested Sequentials
+------------------
+
+Consecutive layers in a :class:`nn.Sequential <torch.nn.Sequential>` module can
+be grouped as a partition by GPipe. However, you may want to split logically
+consecutive layers in nested sequentials. To split a module with nested
+sequentials, you should flatten the module before wrapping with GPipe.
+
+Follow this code snippet which flattens nested sequentials::
+
+   _3_layers = nn.Sequential(...)  # len(_3_layers) == 3
+   _4_layers = nn.Sequential(...)  # len(_4_layers) == 4
+   model = nn.Sequential(_3_layers, _4_layers)  # len(model) == 2
+
+   def flatten_sequential(module):
+       def _flatten(module):
+           for name, child in module.named_children():
+               if isinstance(child, nn.Sequential):
+                   for sub_name, sub_child in _flatten(child):
+                       yield (f'{name}_{sub_name}', sub_child)
+               else:
+                   yield (name, child)
+       return nn.Sequential(OrderedDict(_flatten(module)))
+
+   model = flatten_sequential(model)  # len(model) == 7
+   model = GPipe(model, balance=[2, 3, 2], chunks=4)
+
+Typical Model Parallelism
+-------------------------
+
 The typical model parallelism is a special case of GPipe. GPipe without
 micro-batches and checkpointing is equivalent to model parallelism. You can
 disable them with ``chunks=1`` and ``checkpoint='never'`` options::
