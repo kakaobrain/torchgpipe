@@ -7,7 +7,8 @@ from torch import nn
 
 from torchgpipe.microbatch import Batch
 from torchgpipe.skip import pop, skippable, stash
-from torchgpipe.skip.tracker import SkipTracker, current_skip_tracker
+from torchgpipe.skip.layout import SkipLayout
+from torchgpipe.skip.tracker import SkipTracker, SkipTrackerThroughPotals, current_skip_tracker
 
 
 def test_default_skip_tracker():
@@ -22,7 +23,8 @@ def test_default_skip_tracker():
 
     skip_tracker = q.get()
 
-    assert isinstance(skip_tracker, SkipTracker)
+    assert type(skip_tracker) is SkipTracker
+    assert type(skip_tracker) is not SkipTrackerThroughPotals
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='cuda required')
@@ -49,15 +51,18 @@ def test_default_skip_tracker_by_data_parallel():
 
 
 def test_reuse_portal():
-    skip_tracker = SkipTracker()
+    skip_layout = SkipLayout(num_partitions=2, skip_routes={
+        (None, 'test'): (0, 1),
+    })
+    skip_tracker = SkipTrackerThroughPotals(skip_layout)
 
     batch = Batch(torch.tensor([1.0]))
     a = torch.tensor([2.0])
     b = torch.tensor([2.0])
 
-    skip_tracker._save_portal(batch, None, 'test', a)
+    skip_tracker.save(batch, None, 'test', a)
     portal = skip_tracker.portals[(None, 'test')]
+    assert portal.tensor is a
 
-    assert portal.tensor is not None
-    skip_tracker._save_portal(batch, None, 'test', b)
-    assert portal.tensor is None
+    skip_tracker.save(batch, None, 'test', b)
+    assert portal.tensor is b
