@@ -111,12 +111,12 @@ def test_pop_not_stashed():
     @skippable(pop=['foo'])
     class Pop(nn.Module):
         def forward(self, input):
-            foo = yield pop('foo')
-            assert foo is None
-            return input
+            yield pop('foo')
 
     l1 = Pop()
-    l1(torch.tensor(42))
+
+    with pytest.raises(RuntimeError):
+        l1(torch.tensor(42))
 
 
 def test_stash_none():

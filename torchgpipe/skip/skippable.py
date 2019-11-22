@@ -134,6 +134,11 @@ class Skippable(nn.Module):
         """Performs the forward propagation. :class:`stash` or :class:`pop`
         commands will be handled by portals silently. The portals won't be
         exposed to users.
+
+        Raises:
+            RuntimeError:
+                illegal 'stash' or 'pop' is found.
+
         """
         skip_tracker = current_skip_tracker()
         # TODO: stashed_tensors
@@ -144,18 +149,21 @@ class Skippable(nn.Module):
         skips_to_pop = {}
         batch = Batch(input)
         for ns, name in self.poppable():
-            skips_to_pop[name] = skip_tracker.load(batch, ns, name)
+            try:
+                skips_to_pop[name] = skip_tracker.load(batch, ns, name)
+            except KeyError:
+                raise RuntimeError(f"'{name}' has not been stashed")
         input = batch.tensor_or_tensors
 
         # Handle skip commands.
         def handle_stash(name: str, tensor: Optional[Tensor]) -> None:
             if name not in self.stashable_names:
-                raise RuntimeError("'%s' has not been declared as stashable" % name)
+                raise RuntimeError(f"'{name}' has not been declared as stashable")
             skips_stashed[name] = tensor
 
         def handle_pop(name: str) -> Optional[Tensor]:
             if name not in self.poppable_names:
-                raise RuntimeError("'%s' has not been declared as poppable" % name)
+                raise RuntimeError(f"'{name}' has not been declared as poppable")
             return skips_to_pop.pop(name)
 
         output = self.dispatch(input, handle_stash, handle_pop)
@@ -167,10 +175,10 @@ class Skippable(nn.Module):
 
         if not_stashed:
             comma_names = ', '.join("'%s'" % n for n in not_stashed)
-            raise RuntimeError('%s must be stashed but have not' % comma_names)
+            raise RuntimeError(f'{comma_names} must be stashed but have not')
         if not_popped:
             comma_names = ', '.join("'%s'" % n for n in not_popped)
-            raise RuntimeError('%s must be popped but have not' % comma_names)
+            raise RuntimeError(f'{comma_names} must be popped but have not')
 
         # Save stashed skip tensors.
         batch = Batch(output)
