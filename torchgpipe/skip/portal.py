@@ -35,13 +35,6 @@ class Portal:
         # recomputation.
         self.tensor_life = tensor_life
 
-    # TODO: change to duplicate
-    def close(self) -> None:
-        """Removes underlying tensors."""
-        self.tensor = None
-        self.grad = None
-        self.tensor_life = -1
-
     def blue(self) -> Tensor:
         """Creates a :class:`PortalBlue` which hides the underlying tensor from
         the autograd engine.
