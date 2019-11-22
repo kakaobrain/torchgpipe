@@ -1,6 +1,6 @@
 """The user interface to define skip connections."""
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Dict, FrozenSet, Generator, Iterable,
-                    List, Optional, Set, Tuple, Type, TypeVar, Union, cast)
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Collection, Dict, FrozenSet, Generator,
+                    Iterable, List, Optional, Set, Tuple, Type, TypeVar, Union, cast)
 
 from torch import Tensor, nn
 
@@ -166,17 +166,10 @@ class Skippable(nn.Module):
 
         output = self.dispatch(input, handle_stash, handle_pop)
 
-        # TODO: split to subroutine
         # All declared skips must be stashed or popped.
         not_stashed = self.stashable_names - stashed_tensors.keys()
         not_popped = poppable_tensors.keys()
-
-        if not_stashed:
-            comma_names = ', '.join("'%s'" % n for n in not_stashed)
-            raise RuntimeError(f'{comma_names} must be stashed but have not')
-        if not_popped:
-            comma_names = ', '.join("'%s'" % n for n in not_popped)
-            raise RuntimeError(f'{comma_names} must be popped but have not')
+        verify_stashed_and_popped(not_stashed, not_popped)
 
         # Save stashed skip tensors.
         batch = Batch(output)
@@ -186,6 +179,15 @@ class Skippable(nn.Module):
         output = batch.tensor_or_tensors
 
         return output
+
+
+def verify_stashed_and_popped(not_stashed: Collection[str], not_popped: Collection[str]) -> None:
+    if not_stashed:
+        comma_names = ', '.join("'%s'" % n for n in not_stashed)
+        raise RuntimeError(f'{comma_names} must be stashed but have not')
+    if not_popped:
+        comma_names = ', '.join("'%s'" % n for n in not_popped)
+        raise RuntimeError(f'{comma_names} must be popped but have not')
 
 
 def skippable(stash: Iterable[str] = (),
