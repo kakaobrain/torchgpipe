@@ -10,7 +10,8 @@ import torch.cuda
 from torchgpipe import microbatch
 from torchgpipe.batchnorm import DeferredBatchNorm
 from torchgpipe.pipeline import Pipeline
-from torchgpipe.skip.analysis import inspect_skip_layout, verify_skippables
+from torchgpipe.skip.layout import inspect_skip_layout
+from torchgpipe.skip.skippable import verify_skippables
 from torchgpipe.stream import AbstractStream, new_stream
 
 __all__ = ['GPipe']

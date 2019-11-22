@@ -1,8 +1,7 @@
 import pytest
 from torch import nn
 
-from torchgpipe.skip import Namespace, skippable
-from torchgpipe.skip.analysis import verify_skippables
+from torchgpipe.skip import Namespace, skippable, verify_skippables
 
 
 def test_matching():

@@ -1,7 +1,7 @@
 from torch import nn
 
 from torchgpipe.skip import Namespace, pop, skippable, stash
-from torchgpipe.skip.analysis import inspect_skip_layout
+from torchgpipe.skip.layout import inspect_skip_layout
 
 
 class Pass(nn.Module):

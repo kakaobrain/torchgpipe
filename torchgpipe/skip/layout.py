@@ -1,6 +1,8 @@
 """Static skip connection layout of a ``@skippable`` module."""
 from typing import Dict, Iterable, List, Tuple
 
+from torch import nn
+
 from torchgpipe.skip.namespace import Namespace
 
 __all__: List[str] = []
@@ -54,3 +56,28 @@ class SkipLayout:
         """
         prev_j, next_j = self.by_ns_name.get((ns, name), (-1, -1))
         return prev_j != next_j
+
+
+def inspect_skip_layout(partitions: List[nn.Sequential]) -> SkipLayout:
+    """Inspects the skip connection layout in the given partitions."""
+    # NOTE(sublee): Hide circular import inside this subroutine. Circular
+    # import is not ideal but placing this logic near to SkipLayout may
+    # increase cohesion of code.
+    from torchgpipe.skip.skippable import Skippable
+
+    skip_routes: Dict[Tuple[Namespace, str], Tuple[int, int]] = {}
+    stashed_at: Dict[Tuple[Namespace, str], int] = {}
+
+    for j, partition in enumerate(partitions):
+        for layer in partition:
+            if not isinstance(layer, Skippable):
+                continue
+
+            for ns, name in layer.stashable():
+                stashed_at[(ns, name)] = j
+
+            for ns, name in layer.poppable():
+                prev_j = stashed_at.pop((ns, name))
+                skip_routes[(ns, name)] = (prev_j, j)
+
+    return SkipLayout(len(partitions), skip_routes)
