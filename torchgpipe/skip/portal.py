@@ -94,9 +94,13 @@ class Portal:
 
         return PortalCopy.apply(self, prev_stream, next_stream, phony)
 
+    def keep_tensor(self, tensor: Optional[Tensor]) -> None:
+        """Stores a tensor into this portal."""
+        self.tensor = tensor
+
     def use_tensor(self) -> Tensor:
-        """Gets the underlying tensor. If the tensor life becomes 0, it removes
-        the tensor.
+        """Retrieves the underlying tensor and decreases the tensor  life. When
+        the life becomes 0, it the tensor will be removed.
         """
         if self.tensor is None:
             raise RuntimeError('tensor in portal has been removed')
@@ -109,9 +113,13 @@ class Portal:
 
         return tensor
 
+    def keep_grad(self, grad: Tensor) -> None:
+        """Stores a gradient into this portal."""
+        self.grad = grad
+
     def use_grad(self) -> Tensor:
-        """Gets and removes the underlying gradient. The gradient is always
-        ephemeral.
+        """Retrieves and removes the underlying gradient. The gradient is
+        always ephemeral.
         """
         if self.grad is None:
             raise RuntimeError('grad in portal has been removed or never set')
