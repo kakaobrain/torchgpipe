@@ -29,57 +29,64 @@ class SkipTracker:
 
     """
 
-    def __init__(self, skip_layout: Optional[SkipLayout] = None) -> None:
+    def __init__(self) -> None:
+        self.tensors: Dict[Tuple[Namespace, str], Optional[Tensor]] = {}
+
+    def save(self, batch: Batch, ns: Namespace, name: str, tensor: Optional[Tensor]) -> None:
+        self.tensors[(ns, name)] = tensor
+
+    def load(self, batch: Batch, ns: Namespace, name: str) -> Optional[Tensor]:
+        return self.tensors.pop((ns, name))
+
+    def copy(self,
+             batch: Batch,
+             prev_stream: AbstractStream,
+             next_stream: AbstractStream,
+             ns: Namespace,
+             name: str,
+             ) -> None:
+        raise TypeError('copy is not supported for non-portal skip tensors')
+
+
+class SkipTrackerThroughPotals(SkipTracker):
+    """Tracks saved skip tensors through portals. The skip tensors will be
+    hided into portals so that the autograd engine cannot track them.
+
+    This tracker is only used when the training or evaluating module is wrapped
+    with :class:`torchgpipe.GPipe`.
+
+    """
+
+    def __init__(self, skip_layout: SkipLayout) -> None:
+        super().__init__()
         self.skip_layout = skip_layout
         self.portals: Dict[Tuple[Namespace, str], Portal] = {}
 
-        # TODO: don't remove
-        self.tensors: Dict[Tuple[Namespace, str], Tensor] = {}
-
-    def _requires_portal(self, ns: Namespace, name: str) -> bool:
-        return self.skip_layout is not None and self.skip_layout.requires_copy(ns, name)
-
     def save(self, batch: Batch, ns: Namespace, name: str, tensor: Optional[Tensor]) -> None:
-        # Portals have overhead. Make them only when necessary.
-        # TODO: merge them.
-        if self._requires_portal(ns, name):
-            self._save_portal(batch, ns, name, tensor)
-        else:
-            self._save_tensor(ns, name, tensor)
-
-    def _save_portal(self,
-                     batch: Batch,
-                     ns: Namespace,
-                     name: str,
-                     tensor: Optional[Tensor],
-                     ) -> None:
         """Saves a stashed skip tensor into a portal. The skip tensor will be
         connected onto the given micro-batch with :class:`Join`.
         """
-        if tensor is None:
-            self.portals.pop((ns, name), None)
+        if not self.skip_layout.requires_copy(ns, name):
+            super().save(batch, ns, name, tensor)
             return
 
         if (ns, name) in self.portals:
-            # TODO: does it need?
-            # TODO: when is new tensor removed?
-            # Reuse the existing gradient if there's duplication.
-            duplicated = self.portals[(ns, name)]
-            portal = Portal(tensor, grad=duplicated.grad)
-            duplicated.close()
+            # Reuse the existing portal.
+            portal = self.portals[(ns, name)]
+            portal.keep_tensor(tensor)
 
         else:
-            tensor_life = 1
-
             # Under checkpointing, the tensor should be kept from the first
             # PortalOrange. It will be reused by the second (recomputed)
             # PortalOrange.
             if is_checkpointing():
-                tensor_life += 1
+                tensor_life = 2
+            else:
+                tensor_life = 1
 
             portal = Portal(tensor, tensor_life=tensor_life)
+            self.portals[(ns, name)] = portal
 
-        self.portals[(ns, name)] = portal
         phony = portal.blue()
         batch[0] = join(batch[0], phony)
 
@@ -99,32 +106,16 @@ class SkipTracker:
 
         return hook
 
-    def _save_tensor(self, ns: Namespace, name: str, tensor: Optional[Tensor]) -> None:
-        # TODO: write about None
-        # TODO: just set if it is None.
-        if tensor is None:
-            self.tensors.pop((ns, name), None)
-        else:
-            self.tensors[(ns, name)] = tensor
-
     def load(self, batch: Batch, ns: Namespace, name: str) -> Optional[Tensor]:
-        # Portals have overhead. Make them only when necessary.
-        if self._requires_portal(ns, name):
-            tensor = self._load_portal(batch, ns, name)
-        else:
-            tensor = self._load_tensor(ns, name)
-        return tensor
-
-    def _load_portal(self, batch: Batch, ns: Namespace, name: str) -> Optional[Tensor]:
         """Loads a skip tensor to pop. The given micro-batch will be connected
         onto the skip tensor with :class:`Fork`. It will return ``None`` if
         there's no such skip tensor.
         """
-        try:
-            portal = self.portals[(ns, name)]
-        except KeyError:
-            return None
+        if not self.skip_layout.requires_copy(ns, name):
+            tensor = super().load(batch, ns, name)
+            return tensor
 
+        portal = self.portals[(ns, name)]
         batch[0], phony = fork(batch[0])
         tensor = portal.orange(phony)
 
@@ -133,10 +124,6 @@ class SkipTracker:
             del self.portals[(ns, name)]
 
         return tensor
-
-    def _load_tensor(self, ns: Namespace, name: str) -> Optional[Tensor]:
-        # TODO: don't use default for explicit error
-        return self.tensors.pop((ns, name), None)
 
     def copy(self,
              batch: Batch,
@@ -148,11 +135,13 @@ class SkipTracker:
         """Copies a skip tensor. The given micro-batch and the skip tensor will
         be tied with :class:`Fork` and :class:`Join`.
         """
-        assert self._requires_portal(ns, name)
-        portal = self.portals[(ns, name)]
+        assert self.skip_layout.requires_copy(ns, name)
 
         batch[0], phony = fork(batch[0])
+
+        portal = self.portals[(ns, name)]
         phony = portal.copy(prev_stream, next_stream, phony)
+
         batch[0] = join(batch[0], phony)
 
 

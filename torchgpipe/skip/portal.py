@@ -22,11 +22,11 @@ class Portal:
     """A portal for a tensor."""
 
     def __init__(self,
-                 tensor: Tensor,
+                 tensor: Optional[Tensor],
                  grad: Optional[Tensor] = None,
                  tensor_life: int = 1,
                  ) -> None:
-        self.tensor: Optional[Tensor] = tensor
+        self.tensor = tensor
         self.grad = grad
 
         # How many times the tensor can be retrieved by use_tensor().

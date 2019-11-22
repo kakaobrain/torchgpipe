@@ -11,7 +11,7 @@ from torchgpipe.copy import Copy, Wait
 from torchgpipe.dependency import fork, join
 from torchgpipe.microbatch import Batch
 from torchgpipe.skip.layout import SkipLayout
-from torchgpipe.skip.tracker import SkipTracker, use_skip_tracker
+from torchgpipe.skip.tracker import SkipTrackerThroughPotals, use_skip_tracker
 from torchgpipe.stream import AbstractStream, current_stream, use_device
 from torchgpipe.worker import Task, spawn_workers
 
@@ -104,7 +104,7 @@ class Pipeline:
         m = len(batches)
         n = len(partitions)
 
-        skip_trackers = [SkipTracker(skip_layout) for _ in batches]
+        skip_trackers = [SkipTrackerThroughPotals(skip_layout) for _ in batches]
 
         with spawn_workers(devices) as (in_queues, out_queues):
             for schedule in clock_cycles(m, n):
@@ -113,7 +113,7 @@ class Pipeline:
 
     def fence(self,
               schedule: List[Tuple[int, int]],
-              skip_trackers: List[SkipTracker],
+              skip_trackers: List[SkipTrackerThroughPotals],
               ) -> None:
         """Copies micro-batches after computation for the previous
         micro-batches.
@@ -141,7 +141,7 @@ class Pipeline:
 
     def compute(self,
                 schedule: List[Tuple[int, int]],
-                skip_trackers: List[SkipTracker],
+                skip_trackers: List[SkipTrackerThroughPotals],
                 in_queues: List[InQueue],
                 out_queues: List[OutQueue],
                 ) -> None:
@@ -194,7 +194,7 @@ class Pipeline:
             if checkpoint:
                 def function(input: TensorOrTensors,
                              partition: nn.Sequential = partition,
-                             skip_tracker: SkipTracker = skip_trackers[i],
+                             skip_tracker: SkipTrackerThroughPotals = skip_trackers[i],
                              ) -> TensorOrTensors:
                     with use_skip_tracker(skip_tracker):
                         return partition(input)
@@ -206,7 +206,7 @@ class Pipeline:
             else:
                 def compute(batch: Batch = batch,
                             partition: nn.Sequential = partition,
-                            skip_tracker: SkipTracker = skip_trackers[i],
+                            skip_tracker: SkipTrackerThroughPotals = skip_trackers[i],
                             ) -> Batch:
                     with use_skip_tracker(skip_tracker):
                         return batch.call(partition)
