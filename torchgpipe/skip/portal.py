@@ -29,7 +29,7 @@ class Portal:
         self.tensor: Optional[Tensor] = tensor
         self.grad = grad
 
-        # How many times the tensor can be retrieved by :meth:`use_tensor`.
+        # How many times the tensor can be retrieved by use_tensor().
         # Typically, it is 1 because every stashed tensor must be popped only
         # once. But it should be 2 if checkpointing is enabled for
         # recomputation.
