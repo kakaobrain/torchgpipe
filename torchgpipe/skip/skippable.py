@@ -141,16 +141,14 @@ class Skippable(nn.Module):
 
         """
         skip_tracker = current_skip_tracker()
-        # TODO: stashed_tensors
-        skips_stashed: Dict[str, Optional[Tensor]] = {}
+        stashed_tensors: Dict[str, Optional[Tensor]] = {}
 
         # Load skip tensors that might be popped.
-        # TODO: poppable_tensors
-        skips_to_pop = {}
+        poppable_tensors = {}
         batch = Batch(input)
         for ns, name in self.poppable():
             try:
-                skips_to_pop[name] = skip_tracker.load(batch, ns, name)
+                poppable_tensors[name] = skip_tracker.load(batch, ns, name)
             except KeyError:
                 raise RuntimeError(f"'{name}' has not been stashed")
         input = batch.tensor_or_tensors
@@ -159,19 +157,19 @@ class Skippable(nn.Module):
         def handle_stash(name: str, tensor: Optional[Tensor]) -> None:
             if name not in self.stashable_names:
                 raise RuntimeError(f"'{name}' has not been declared as stashable")
-            skips_stashed[name] = tensor
+            stashed_tensors[name] = tensor
 
         def handle_pop(name: str) -> Optional[Tensor]:
             if name not in self.poppable_names:
                 raise RuntimeError(f"'{name}' has not been declared as poppable")
-            return skips_to_pop.pop(name)
+            return poppable_tensors.pop(name)
 
         output = self.dispatch(input, handle_stash, handle_pop)
 
         # TODO: split to subroutine
         # All declared skips must be stashed or popped.
-        not_stashed = self.stashable_names - skips_stashed.keys()
-        not_popped = skips_to_pop.keys()
+        not_stashed = self.stashable_names - stashed_tensors.keys()
+        not_popped = poppable_tensors.keys()
 
         if not_stashed:
             comma_names = ', '.join("'%s'" % n for n in not_stashed)
@@ -183,7 +181,7 @@ class Skippable(nn.Module):
         # Save stashed skip tensors.
         batch = Batch(output)
         for ns, name in self.stashable():
-            tensor = skips_stashed[name]
+            tensor = stashed_tensors[name]
             skip_tracker.save(batch, ns, name, tensor)
         output = batch.tensor_or_tensors
 
