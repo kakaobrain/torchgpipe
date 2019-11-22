@@ -142,11 +142,12 @@ class PortalBlue(torch.autograd.Function):
                 portal: Portal,
                 tensor: Tensor,
                 ) -> Tensor:
-        # This condition is guaranteed by Portal.blue().
-        # TODO: why tensor should be taken?
+        # This condition is guaranteed by Portal.blue(). However, this function
+        # still has to take the tensor for passing its gradient.
         assert tensor is portal.tensor
 
         ctx.portal = portal
+
         phony = get_phony(tensor.device, requires_grad=False)
         return phony.detach()
 
@@ -154,8 +155,8 @@ class PortalBlue(torch.autograd.Function):
     def backward(ctx: Context,  # type: ignore
                  grad_phony: Tensor,
                  ) -> Tuple[None, Tensor]:
-        portal = ctx.portal
-        grad = portal.use_grad()
+        # The paired PortalOrange should keep the gradient.
+        grad = ctx.portal.use_grad()
         return None, grad
 
 
@@ -169,9 +170,8 @@ class PortalOrange(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx: Context, grad: Tensor) -> Tuple[None, None]:  # type: ignore
-        portal = ctx.portal
-        # TODO: How PortalBlue uses it?
-        portal.grad = grad
+        # The paired PortalBlue will use the gradient.
+        ctx.portal.keep_grad(grad)
         return None, None
 
 
@@ -189,7 +189,6 @@ class PortalCopy(torch.autograd.Function):
         ctx.portal = portal
 
         if portal.tensor is not None:
-            # TODO: does it make graph?
             portal.tensor, = Copy.forward(ctx, prev_stream, next_stream, portal.tensor)
 
         phony = get_phony(get_device(next_stream), requires_grad=False)
