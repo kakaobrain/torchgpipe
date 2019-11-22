@@ -35,6 +35,7 @@ class Portal:
         # recomputation.
         self.tensor_life = tensor_life
 
+    # TODO: change to duplicate
     def close(self) -> None:
         """Removes underlying tensors."""
         self.tensor = None
@@ -134,6 +135,7 @@ class PortalBlue(torch.autograd.Function):
                 tensor: Tensor,
                 ) -> Tensor:
         # This condition is guaranteed by Portal.blue().
+        # TODO: why tensor should be taken?
         assert tensor is portal.tensor
 
         ctx.portal = portal
@@ -160,6 +162,7 @@ class PortalOrange(torch.autograd.Function):
     @staticmethod
     def backward(ctx: Context, grad: Tensor) -> Tuple[None, None]:  # type: ignore
         portal = ctx.portal
+        # TODO: How PortalBlue uses it?
         portal.grad = grad
         return None, None
 
@@ -178,6 +181,7 @@ class PortalCopy(torch.autograd.Function):
         ctx.portal = portal
 
         if portal.tensor is not None:
+            # TODO: does it make graph?
             portal.tensor, = Copy.forward(ctx, prev_stream, next_stream, portal.tensor)
 
         phony = get_phony(get_device(next_stream), requires_grad=False)

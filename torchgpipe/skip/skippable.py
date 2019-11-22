@@ -136,9 +136,11 @@ class Skippable(nn.Module):
         exposed to users.
         """
         skip_tracker = current_skip_tracker()
+        # TODO: stashed_tensors
         skips_stashed: Dict[str, Optional[Tensor]] = {}
 
         # Load skip tensors that might be popped.
+        # TODO: poppable_tensors
         skips_to_pop = {}
         batch = Batch(input)
         for ns, name in self.poppable():
@@ -158,6 +160,7 @@ class Skippable(nn.Module):
 
         output = self.dispatch(input, handle_stash, handle_pop)
 
+        # TODO: split to subroutine
         # All declared skips must be stashed or popped.
         not_stashed = self.stashable_names - skips_stashed.keys()
         not_popped = skips_to_pop.keys()

@@ -32,6 +32,8 @@ class SkipTracker:
     def __init__(self, skip_layout: Optional[SkipLayout] = None) -> None:
         self.skip_layout = skip_layout
         self.portals: Dict[Tuple[Namespace, str], Portal] = {}
+
+        # TODO: don't remove
         self.tensors: Dict[Tuple[Namespace, str], Tensor] = {}
 
     def _requires_portal(self, ns: Namespace, name: str) -> bool:
@@ -39,6 +41,7 @@ class SkipTracker:
 
     def save(self, batch: Batch, ns: Namespace, name: str, tensor: Optional[Tensor]) -> None:
         # Portals have overhead. Make them only when necessary.
+        # TODO: merge them.
         if self._requires_portal(ns, name):
             self._save_portal(batch, ns, name, tensor)
         else:
@@ -58,6 +61,8 @@ class SkipTracker:
             return
 
         if (ns, name) in self.portals:
+            # TODO: does it need?
+            # TODO: when is new tensor removed?
             # Reuse the existing gradient if there's duplication.
             duplicated = self.portals[(ns, name)]
             portal = Portal(tensor, grad=duplicated.grad)
@@ -82,6 +87,7 @@ class SkipTracker:
         if phony.requires_grad:
             phony.register_hook(self._hook_to_delete(ns, name))
 
+    # TODO: just keep on empty portals.
     def _hook_to_delete(self, ns: Namespace, name: str) -> Callable[[Tensor], Tensor]:
         ref = weakref.ref(self)
 
@@ -94,6 +100,8 @@ class SkipTracker:
         return hook
 
     def _save_tensor(self, ns: Namespace, name: str, tensor: Optional[Tensor]) -> None:
+        # TODO: write about None
+        # TODO: just set if it is None.
         if tensor is None:
             self.tensors.pop((ns, name), None)
         else:
@@ -127,6 +135,7 @@ class SkipTracker:
         return tensor
 
     def _load_tensor(self, ns: Namespace, name: str) -> Optional[Tensor]:
+        # TODO: don't use default for explicit error
         return self.tensors.pop((ns, name), None)
 
     def copy(self,
@@ -147,6 +156,7 @@ class SkipTracker:
         batch[0] = join(batch[0], phony)
 
 
+# TODO: rename to thread_local
 class State(threading.local):
     def __init__(self) -> None:
         self.skip_tracker: Optional[SkipTracker] = None
