@@ -33,8 +33,8 @@ def count_leaked_portals(monkeypatch):
     def count():
         counter = 0
         for skip_tracker in skip_trackers:
-            counter += len(skip_tracker.portals)
-            counter += len(skip_tracker.tensors)
+            counter += len([p for p in skip_tracker.portals if not (p.tensor is p.grad is None)])
+            counter += len([x for x in skip_tracker.tensors if x is not None])
         return counter
 
     def current_skip_tracker():
