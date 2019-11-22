@@ -145,13 +145,12 @@ class SkipTrackerThroughPotals(SkipTracker):
         batch[0] = join(batch[0], phony)
 
 
-# TODO: rename to thread_local
-class State(threading.local):
+class ThreadLocal(threading.local):
     def __init__(self) -> None:
         self.skip_tracker: Optional[SkipTracker] = None
 
 
-_state = State()
+thread_local = ThreadLocal()
 
 
 @contextmanager
@@ -163,22 +162,22 @@ def use_skip_tracker(skip_tracker: SkipTracker) -> Generator[None, None, None]:
             ...
 
     """
-    orig = _state.skip_tracker
+    orig = thread_local.skip_tracker
 
-    _state.skip_tracker = skip_tracker
+    thread_local.skip_tracker = skip_tracker
 
     try:
         yield
     finally:
-        _state.skip_tracker = orig
+        thread_local.skip_tracker = orig
 
 
 def current_skip_tracker() -> SkipTracker:
     """Gets the skip tracker on the current thread."""
-    skip_tracker = _state.skip_tracker
+    skip_tracker = thread_local.skip_tracker
 
     if skip_tracker is None:
         skip_tracker = SkipTracker()
-        _state.skip_tracker = skip_tracker
+        thread_local.skip_tracker = skip_tracker
 
     return skip_tracker
