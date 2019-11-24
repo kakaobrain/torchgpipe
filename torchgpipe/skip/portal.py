@@ -21,38 +21,8 @@ __all__: List[str] = []
 class Portal:
     """A portal for a tensor."""
 
-    def __init__(self,
-                 tensor: Optional[Tensor],
-                 tensor_life: int,
-                 ) -> None:
-        # [Life of Tensor through Portal]
-        #
-        # The tensor can be retrieved by use_tensor() up to 'tensor_life'
-        # times. When the life becomes 0, the tensor will be deleted for
-        # deallocation in CUDA memory.
-        #
-        # The below events participate in a tensor through a portal:
-        #
-        #  1. [x] blue()
-        #  2. [ ]   PortalBlue.forward
-        #  3. [ ] copy()
-        #  4. [ ]   PortalCopy.forward
-        #  5. [ ] orange()
-        #  6. [x]   PortalOrange.forward
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        #  7. [ ] orange() (recomputed)
-        #  8. [x]   PortalOrange.forward (recomputed)
-        #  9. [ ]   PortalOrange.backward
-        # 10. [ ] PortalCopy.backward
-        # 11. [x] blue() (recomputed)
-        # 12. [ ]   PortalBlue.forward (recomputed)
-        # 13. [ ]   PortalBlue.backward
-        #
-        # 1, 6, 8, and 11 calls use_tensor().
-        #
-        self.tensor = tensor
-        self.tensor_life = tensor_life
-
+    def __init__(self, tensor: Optional[Tensor], tensor_life: int) -> None:
+        self.put_tensor(tensor, tensor_life)
         self.grad: Optional[Tensor] = None
 
     def blue(self) -> Tensor:
@@ -102,14 +72,41 @@ class Portal:
         return PortalCopy.apply(self, prev_stream, next_stream, phony)
 
     def check_tensor_life(self) -> None:
-        if self.tensor_life == 0:
+        if self.tensor_life <= 0:
             raise RuntimeError('tensor in portal has been removed')
 
     def put_tensor(self, tensor: Optional[Tensor], tensor_life: int) -> None:
         """Stores a tensor into this portal."""
+        self.tensor = tensor
+
+        if tensor_life <= 0:
+            self.tensor = None
+
+        # [Life of Tensor through Portal]
+        #
+        # The tensor can be retrieved by use_tensor() up to 'tensor_life'
+        # times. When the life becomes 0, the tensor will be deleted for
+        # deallocation in CUDA memory.
+        #
+        # The below events participate in a tensor through a portal.
+        # Note that [x] denotes the events which call use_tensor():
+        #
+        #  1. [x] blue()
+        #  2. [ ]   PortalBlue.forward
+        #  3. [ ] copy()
+        #  4. [ ]   PortalCopy.forward
+        #  5. [ ] orange()
+        #  6. [x]   PortalOrange.forward
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #  7. [ ] orange() (recomputed)
+        #  8. [x]   PortalOrange.forward (recomputed)
+        #  9. [ ]   PortalOrange.backward
+        # 10. [ ] PortalCopy.backward
+        # 11. [x] blue() (recomputed)
+        # 12. [ ]   PortalBlue.forward (recomputed)
+        # 13. [ ]   PortalBlue.backward
+        #
         self.tensor_life = tensor_life
-        if tensor_life > 0:
-            self.tensor = tensor
 
     def use_tensor(self) -> Tensor:
         """Retrieves the underlying tensor and decreases the tensor  life. When
@@ -121,7 +118,8 @@ class Portal:
         assert tensor is not None
 
         self.tensor_life -= 1
-        if self.tensor_life == 0:
+
+        if self.tensor_life <= 0:
             self.tensor = None
 
         return tensor
