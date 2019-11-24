@@ -38,9 +38,13 @@ class Portal:
 
         """
         tensor = self.use_tensor()
+
+        if tensor is None:
+            return get_phony(torch.device('cpu'), requires_grad=False)
+
         return PortalBlue.apply(self, tensor)
 
-    def orange(self, phony: Tensor) -> Tensor:
+    def orange(self, phony: Tensor) -> Optional[Tensor]:
         """Creates a :class:`PortalOrange` which retrieves the hidden tensor
         without losing ability of backpropagation.
 
@@ -52,6 +56,10 @@ class Portal:
 
         """
         self.check_tensor_life()
+
+        if self.tensor is None:
+            return self.use_tensor()
+
         return PortalOrange.apply(self, phony)
 
     def copy(self,
@@ -68,7 +76,9 @@ class Portal:
             -- Fork ---------- Join --
 
         """
-        self.check_tensor_life()
+        if self.tensor is None:
+            return get_phony(torch.device('cpu'), requires_grad=False)
+
         return PortalCopy.apply(self, prev_stream, next_stream, phony)
 
     def check_tensor_life(self) -> None:
@@ -77,11 +87,6 @@ class Portal:
 
     def put_tensor(self, tensor: Optional[Tensor], tensor_life: int) -> None:
         """Stores a tensor into this portal."""
-        self.tensor = tensor
-
-        if tensor_life <= 0:
-            self.tensor = None
-
         # [Life of Tensor through Portal]
         #
         # The tensor can be retrieved by use_tensor() up to 'tensor_life'
@@ -108,14 +113,18 @@ class Portal:
         #
         self.tensor_life = tensor_life
 
-    def use_tensor(self) -> Tensor:
+        if tensor_life > 0:
+            self.tensor = tensor
+        else:
+            self.tensor = None
+
+    def use_tensor(self) -> Optional[Tensor]:
         """Retrieves the underlying tensor and decreases the tensor  life. When
         the life becomes 0, it the tensor will be removed.
         """
         self.check_tensor_life()
 
         tensor = self.tensor
-        assert tensor is not None
 
         self.tensor_life -= 1
 
@@ -155,6 +164,7 @@ class PortalBlue(torch.autograd.Function):
                 tensor: Tensor,
                 ) -> Tensor:
         ctx.portal = portal
+
         phony = get_phony(tensor.device, requires_grad=False)
         return phony.detach()
 
@@ -172,7 +182,10 @@ class PortalOrange(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Context, portal: Portal, phony: Tensor) -> Tensor:  # type: ignore
         ctx.portal = portal
+
         tensor = portal.use_tensor()
+        assert tensor is not None
+
         return tensor.detach()
 
     @staticmethod
@@ -195,8 +208,8 @@ class PortalCopy(torch.autograd.Function):
                 ) -> Tensor:
         ctx.portal = portal
 
-        if portal.tensor is not None:
-            portal.tensor, = Copy.forward(ctx, prev_stream, next_stream, portal.tensor)
+        assert portal.tensor is not None
+        portal.tensor, = Copy.forward(ctx, prev_stream, next_stream, portal.tensor)
 
         phony = get_phony(get_device(next_stream), requires_grad=False)
         return phony.detach()
@@ -207,7 +220,7 @@ class PortalCopy(torch.autograd.Function):
                  ) -> Tuple[None, None, None, None]:
         portal = ctx.portal
 
-        if portal.grad is not None:
-            _, _, portal.grad = Copy.backward(ctx, portal.grad)
+        assert portal.grad is not None
+        _, _, portal.grad = Copy.backward(ctx, portal.grad)
 
         return None, None, None, None
