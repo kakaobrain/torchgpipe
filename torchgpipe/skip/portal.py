@@ -23,17 +23,37 @@ class Portal:
 
     def __init__(self,
                  tensor: Optional[Tensor],
-                 grad: Optional[Tensor] = None,
-                 tensor_life: int = 1,
+                 tensor_life: int,
                  ) -> None:
+        # [Life of Tensor through Portal]
+        #
+        # The tensor can be retrieved by use_tensor() up to 'tensor_life'
+        # times. When the life becomes 0, the tensor will be deleted for
+        # deallocation in CUDA memory.
+        #
+        # The below events participate in a tensor through a portal:
+        #
+        #  1. [x] blue()
+        #  2. [ ]   PortalBlue.forward
+        #  3. [ ] copy()
+        #  4. [ ]   PortalCopy.forward
+        #  5. [ ] orange()
+        #  6. [x]   PortalOrange.forward
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #  7. [ ] orange() (recomputed)
+        #  8. [x]   PortalOrange.forward (recomputed)
+        #  9. [ ]   PortalOrange.backward
+        # 10. [ ] PortalCopy.backward
+        # 11. [x] blue() (recomputed)
+        # 12. [ ]   PortalBlue.forward (recomputed)
+        # 13. [ ]   PortalBlue.backward
+        #
+        # 1, 6, 8, and 11 calls use_tensor().
+        #
         self.tensor = tensor
-        self.grad = grad
-
-        # How many times the tensor can be retrieved by use_tensor().
-        # Typically, it is 1 because every stashed tensor must be popped only
-        # once. But it should be 2 if checkpointing is enabled for
-        # recomputation.
         self.tensor_life = tensor_life
+
+        self.grad: Optional[Tensor] = None
 
     def blue(self) -> Tensor:
         """Creates a :class:`PortalBlue` which hides the underlying tensor from
@@ -47,10 +67,8 @@ class Portal:
             ---------- Join --
 
         """
-        if self.tensor is None:
-            raise RuntimeError('tensor in portal has been removed')
-
-        return PortalBlue.apply(self, self.tensor)
+        tensor = self.use_tensor()
+        return PortalBlue.apply(self, tensor)
 
     def orange(self, phony: Tensor) -> Tensor:
         """Creates a :class:`PortalOrange` which retrieves the hidden tensor
@@ -63,9 +81,7 @@ class Portal:
             -- Fork --------- f(a, b) --
 
         """
-        if self.tensor is None:
-            raise RuntimeError('tensor in portal has been removed')
-
+        self.check_tensor_life()
         return PortalOrange.apply(self, phony)
 
     def copy(self,
@@ -82,23 +98,27 @@ class Portal:
             -- Fork ---------- Join --
 
         """
-        if self.tensor is None:
-            raise RuntimeError('tensor in portal has been removed')
-
+        self.check_tensor_life()
         return PortalCopy.apply(self, prev_stream, next_stream, phony)
 
-    def keep_tensor(self, tensor: Optional[Tensor]) -> None:
+    def check_tensor_life(self) -> None:
+        if self.tensor_life == 0:
+            raise RuntimeError('tensor in portal has been removed')
+
+    def put_tensor(self, tensor: Optional[Tensor], tensor_life: int) -> None:
         """Stores a tensor into this portal."""
-        self.tensor = tensor
+        self.tensor_life = tensor_life
+        if tensor_life > 0:
+            self.tensor = tensor
 
     def use_tensor(self) -> Tensor:
         """Retrieves the underlying tensor and decreases the tensor  life. When
         the life becomes 0, it the tensor will be removed.
         """
-        if self.tensor is None:
-            raise RuntimeError('tensor in portal has been removed')
+        self.check_tensor_life()
 
         tensor = self.tensor
+        assert tensor is not None
 
         self.tensor_life -= 1
         if self.tensor_life == 0:
@@ -106,7 +126,7 @@ class Portal:
 
         return tensor
 
-    def keep_grad(self, grad: Tensor) -> None:
+    def put_grad(self, grad: Tensor) -> None:
         """Stores a gradient into this portal."""
         self.grad = grad
 
@@ -133,14 +153,10 @@ class PortalBlue(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Context,  # type: ignore
                 portal: Portal,
+                # This tensor must be retrieved by portal.use_tensor().
                 tensor: Tensor,
                 ) -> Tensor:
-        # This condition is guaranteed by Portal.blue(). However, this function
-        # still has to take the tensor for passing its gradient.
-        assert tensor is portal.tensor
-
         ctx.portal = portal
-
         phony = get_phony(tensor.device, requires_grad=False)
         return phony.detach()
 
@@ -164,7 +180,7 @@ class PortalOrange(torch.autograd.Function):
     @staticmethod
     def backward(ctx: Context, grad: Tensor) -> Tuple[None, None]:  # type: ignore
         # The paired PortalBlue will use the gradient.
-        ctx.portal.keep_grad(grad)
+        ctx.portal.put_grad(grad)
         return None, None
 
 

@@ -1,8 +1,7 @@
 """Tracks skip tensors on a thread."""
 from contextlib import contextmanager
 import threading
-from typing import Callable, Dict, Generator, List, Optional, Tuple
-import weakref
+from typing import Dict, Generator, List, Optional, Tuple
 
 from torch import Tensor
 
@@ -70,41 +69,23 @@ class SkipTrackerThroughPotals(SkipTracker):
             super().save(batch, ns, name, tensor)
             return
 
-        if (ns, name) in self.portals:
-            # Reuse the existing portal.
-            portal = self.portals[(ns, name)]
-            portal.keep_tensor(tensor)
+        # See [Tensor Life of Portal] to understand the tensor_life values.
+        if (ns, name) not in self.portals:
+            if is_checkpointing():
+                tensor_life = 3  # Delete at [8. PortalOrange.forward (recomputed)]
+            else:
+                tensor_life = 2  # Delete at [6. PortalOrange.forward]
+            portal = Portal(tensor, tensor_life)
+            self.portals[(ns, name)] = portal
 
         else:
-            # Under checkpointing, the tensor should be kept from the first
-            # PortalOrange. It will be reused by the second (recomputed)
-            # PortalOrange.
-            if is_checkpointing():
-                tensor_life = 2
-            else:
-                tensor_life = 1
-
-            portal = Portal(tensor, tensor_life=tensor_life)
-            self.portals[(ns, name)] = portal
+            # Under recomputation, the portal already exists.
+            portal = self.portals[(ns, name)]
+            tensor_life = 1  # Delete at [11. blue() (recomputed)]
+            portal.put_tensor(tensor, tensor_life)
 
         phony = portal.blue()
         batch[0] = join(batch[0], phony)
-
-        # If the grad mode is enabled, delete on backpropagation.
-        if phony.requires_grad:
-            phony.register_hook(self._hook_to_delete(ns, name))
-
-    # TODO: just keep on empty portals.
-    def _hook_to_delete(self, ns: Namespace, name: str) -> Callable[[Tensor], Tensor]:
-        ref = weakref.ref(self)
-
-        def hook(grad: Tensor) -> Tensor:
-            self = ref()
-            if self is not None:
-                del self.portals[(ns, name)]
-            return grad
-
-        return hook
 
     def load(self, batch: Batch, ns: Namespace, name: str) -> Optional[Tensor]:
         """Loads a skip tensor to pop. The given micro-batch will be connected
@@ -118,11 +99,6 @@ class SkipTrackerThroughPotals(SkipTracker):
         portal = self.portals[(ns, name)]
         batch[0], phony = fork(batch[0])
         tensor = portal.orange(phony)
-
-        # If the grad mode is disabled, delete on forward propagation.
-        if not tensor.requires_grad and not is_checkpointing():
-            del self.portals[(ns, name)]
-
         return tensor
 
     def copy(self,
