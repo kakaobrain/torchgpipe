@@ -1,6 +1,6 @@
-"""A portal keeps a tensor in the pocket plane. The tensor becomes hidden to
-the autograd engine. The link between two functions out of autograd is one of
-the most important parts of skip connections.
+"""Portal keeps a tensor in the pocket plane. The tensor becomes hidden to the
+autograd engine. The link between two functions out of autograd is one of the
+most important parts of skip connections.
 
 The metaphor is inspired by Portal™ from Valve.
 
