@@ -229,12 +229,14 @@ class GPipe(Module):
         if checkpoint not in ['always', 'except_last', 'never']:
             raise ValueError("checkpoint is not one of 'always', 'except_last', or 'never'")
 
+        verify_module(module)
+
+        # Verify if the underlying skippable modules satisfy integrity. The
+        # integrity can be verified before forward() because it is static.
         verify_skippables(module)
 
         self.chunks = chunks
         self.checkpoint = checkpoint
-
-        verify_module(module)
 
         if deferred_batch_norm:
             module = DeferredBatchNorm.convert_deferred_batch_norm(module, chunks)
