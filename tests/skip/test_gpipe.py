@@ -4,6 +4,7 @@ from torch import nn
 
 from torchgpipe import GPipe
 from torchgpipe.skip import pop, skippable, stash
+from torchgpipe.skip.portal import PortalBlue, PortalCopy, PortalOrange
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='cuda required')
@@ -58,3 +59,41 @@ def test_1to3(balance, checkpoint):
 
     assert torch.allclose(output.norm(), torch.tensor(1039.159, device=out_device))
     assert torch.allclose(input.grad.norm(), torch.tensor(0.0004533053, device=in_device))
+
+
+def test_none_skip():
+    @skippable(stash=['none'])
+    class Stash(nn.Module):
+        def forward(self, input):
+            yield stash('none', None)
+            return input
+
+    @skippable(pop=['none'])
+    class Pop(nn.Module):
+        def forward(self, input):
+            none = yield pop('none')
+            assert none is None
+            return input
+
+    model = nn.Sequential(Stash(), Pop())
+    model = GPipe(model, [1, 1], devices=['cpu', 'cpu'], chunks=5)
+
+    input = torch.rand(10, requires_grad=True)
+    output = model(input)
+
+    def assert_grad_fn_is_not_portal(grad_fn, visited=set()):
+        if grad_fn in visited or grad_fn is None:
+            return
+
+        assert not isinstance(grad_fn, PortalBlue._backward_cls)
+        assert not isinstance(grad_fn, PortalCopy._backward_cls)
+        assert not isinstance(grad_fn, PortalOrange._backward_cls)
+
+        visited.add(grad_fn)
+        for next_grad_fn, _ in grad_fn.next_functions:
+            assert_grad_fn_is_not_portal(next_grad_fn, visited)
+
+    assert_grad_fn_is_not_portal(output.grad_fn)
+
+    output.sum().backward()
+    assert input.grad.mean().item() == 1
