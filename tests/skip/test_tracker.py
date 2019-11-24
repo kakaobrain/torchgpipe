@@ -62,7 +62,6 @@ def test_reuse_portal():
 
     skip_tracker.save(batch, None, 'test', a)
     portal = skip_tracker.portals[(None, 'test')]
-    assert portal.tensor is a
 
     skip_tracker.save(batch, None, 'test', b)
-    assert portal.tensor is b
+    assert portal is skip_tracker.portals[(None, 'test')]
