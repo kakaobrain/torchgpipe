@@ -74,7 +74,7 @@ def test_skip_leak(count_leaked_portals, train, gpipe, checkpoint, monkeypatch):
     assert count_leaked_portals() == 0
 
 
-def test_delete_after_second_portal_orange(monkeypatch):
+def test_when_portal_tensor_is_deleted(monkeypatch):
     # Collect existing portals.
     portals = []
 
@@ -83,12 +83,21 @@ def test_delete_after_second_portal_orange(monkeypatch):
         portals.append(self)
     monkeypatch.setattr(Portal, '__init__', init)
 
+    # Store the total number of portals that hold a tensor at each PortalBlue.
+    blue_timeline = []
+
+    def blue(self, blue=Portal.blue):
+        phony = blue(self)
+        blue_timeline.append(len([p for p in portals if p.tensor is not None]))
+        return phony
+    monkeypatch.setattr(Portal, 'blue', blue)
+
     # Store the total number of portals that hold a tensor at each PortalOrange.
-    timeline = []
+    orange_timeline = []
 
     def orange(self, phony, orange=Portal.orange):
         tensor = orange(self, phony)
-        timeline.append(len([p for p in portals if p.tensor is not None]))
+        orange_timeline.append(len([p for p in portals if p.tensor is not None]))
         return tensor
     monkeypatch.setattr(Portal, 'orange', orange)
 
@@ -97,8 +106,15 @@ def test_delete_after_second_portal_orange(monkeypatch):
     input = torch.rand(3, requires_grad=True, device=model.devices[0])
     model(input).norm().backward()
 
-    # The timeline is deterministic because this test uses CPUs only.
-    assert timeline == [
+    # The timelines are deterministic because this test uses CPUs only.
+    assert blue_timeline == [
+        1,  # PortalBlue[0]
+        2,  # PortalBlue[1]
+        3,  # PortalBlue[2] without checkpointing
+        0,  # Recomputed PortalBlue[1]
+        0,  # Recomputed PortalBlue[0]
+    ]
+    assert orange_timeline == [
         2,  # PortalOrange[0]
         3,  # PortalOrange[1]
         2,  # PortalOrange[2] without checkpointing
