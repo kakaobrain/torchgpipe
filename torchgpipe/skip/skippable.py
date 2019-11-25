@@ -293,7 +293,7 @@ def verify_skippables(module: nn.Sequential) -> None:
             continue
 
         for name in layer.stashable_names & layer.poppable_names:
-            msg = "'%s' declared '%s' both as stashable and as poppable" % (layer_name, name)
+            msg = f"'{layer_name}' declared '{name}' both as stashable and as poppable"
             msgs.append(msg)
 
         for ns, name in layer.stashable():
@@ -301,7 +301,8 @@ def verify_skippables(module: nn.Sequential) -> None:
                 continue
 
             if (ns, name) in stashed:
-                msg = "'%s' redeclared '%s' as stashable" % (layer_name, name)
+                msg = (f"'{layer_name}' redeclared '{name}' as stashable "
+                       'but not isolated by namespace')
                 msgs.append(msg)
                 continue
 
@@ -312,20 +313,20 @@ def verify_skippables(module: nn.Sequential) -> None:
                 continue
 
             if (ns, name) in popped:
-                msg = "'%s' redeclared '%s' as poppable" % (layer_name, name)
+                msg = (f"'{layer_name}' redeclared '{name}' as poppable "
+                       'but not isolated by namespace')
                 msgs.append(msg)
                 continue
 
             if (ns, name) not in stashed:
-                msg = "'%s' declared '%s' as poppable but it was not stashed" \
-                      '' % (layer_name, name)
+                msg = f"'{layer_name}' declared '{name}' as poppable but it was not stashed"
                 msgs.append(msg)
                 continue
 
             popped.add((ns, name))
 
     for (_, name) in stashed - popped:
-        msg = "any module did not declare '%s' as poppable" % (name,)
+        msg = f"any module did not declare '{name}' as poppable"
         msgs.append(msg)
 
     if msgs:
