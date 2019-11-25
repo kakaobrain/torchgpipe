@@ -69,7 +69,18 @@ class SkipTrackerThroughPotals(SkipTracker):
             super().save(batch, ns, name, tensor)
             return
 
-        # See [Tensor Life of Portal] to understand the tensor_life values.
+        # See [Tensor Life of Portal] at Portal.put_tensor() to understand the
+        # below tensor_life values. Here are the cropped events which retrieve
+        # the tensor in portal.:
+        #
+        #  1. [x] blue()
+        #     ...
+        #  6. [x]   PortalOrange.forward
+        #     ...
+        #  8. [x]   PortalOrange.forward (recomputed)
+        #     ...
+        # 11. [x] blue() (recomputed)
+        #
         if (ns, name) not in self.portals:
             if is_checkpointing():
                 # Under checkpointing, the tensor used by the first
