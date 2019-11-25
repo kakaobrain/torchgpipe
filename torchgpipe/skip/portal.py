@@ -1,5 +1,5 @@
 """Portal keeps a tensor in the pocket plane. The tensor becomes hidden to the
-autograd engine. The link between three functions (:class:`PortalBlue`,
+autograd engine. The connection through three functions (:class:`PortalBlue`,
 :class:`PortalOrange`, and :class:`PortalCopy`) out of autograd is one of the
 most important parts of skip connections.
 
