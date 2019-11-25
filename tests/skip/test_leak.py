@@ -6,6 +6,7 @@ from torch import nn
 
 from torchgpipe import GPipe
 from torchgpipe.skip import pop, skippable, stash
+from torchgpipe.skip.portal import Portal
 from torchgpipe.skip.tracker import current_skip_tracker as _current_skip_tracker
 
 
@@ -71,3 +72,36 @@ def test_skip_leak(count_leaked_portals, train, gpipe, checkpoint, monkeypatch):
             model(input)
 
     assert count_leaked_portals() == 0
+
+
+def test_delete_after_second_portal_orange(monkeypatch):
+    # Collect existing portals.
+    portals = []
+
+    def init(self, tensor, tensor_life, init=Portal.__init__):
+        init(self, tensor, tensor_life)
+        portals.append(self)
+    monkeypatch.setattr(Portal, '__init__', init)
+
+    # Store the total number of portals that hold a tensor at each PortalOrange.
+    timeline = []
+
+    def orange(self, phony, orange=Portal.orange):
+        tensor = orange(self, phony)
+        timeline.append(len([p for p in portals if p.tensor is not None]))
+        return tensor
+    monkeypatch.setattr(Portal, 'orange', orange)
+
+    model = nn.Sequential(Stash(), Pop())
+    model = GPipe(model, balance=[1, 1], devices=['cpu', 'cpu'], chunks=3)
+    input = torch.rand(3, requires_grad=True, device=model.devices[0])
+    model(input).norm().backward()
+
+    # The timeline is deterministic because this test uses CPUs only.
+    assert timeline == [
+        2,  # PortalOrange[0]
+        3,  # PortalOrange[1]
+        2,  # PortalOrange[2] without checkpointing
+        1,  # Recomputed PortalOrange[1]
+        0,  # Recomputed PortalOrange[0]
+    ]
