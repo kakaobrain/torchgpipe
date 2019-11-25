@@ -23,7 +23,7 @@ def test_stash_not_pop():
 
     with pytest.raises(TypeError) as e:
         verify_skippables(nn.Sequential(Layer1()))
-    assert "any module did not declare 'foo' as poppable" in str(e.value)
+    assert "no module declared 'foo' as poppable but stashed" in str(e.value)
 
 
 def test_pop_unknown():
