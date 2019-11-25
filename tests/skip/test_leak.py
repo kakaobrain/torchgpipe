@@ -106,7 +106,8 @@ def test_when_portal_tensor_is_deleted(monkeypatch):
     input = torch.rand(3, requires_grad=True, device=model.devices[0])
     model(input).norm().backward()
 
-    # The timelines are deterministic because this test uses CPUs only.
+    # The timelines are deterministic because this test uses CPUs only. Both
+    # forward and backward uses per-device workers.
     assert blue_timeline == [
         1,  # PortalBlue[0]
         2,  # PortalBlue[1]
