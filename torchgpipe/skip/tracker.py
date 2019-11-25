@@ -72,6 +72,10 @@ class SkipTrackerThroughPotals(SkipTracker):
         # See [Tensor Life of Portal] to understand the tensor_life values.
         if (ns, name) not in self.portals:
             if is_checkpointing():
+                # Under checkpointing, the tensor used by the first
+                # PortalOrange should be kept in the portal. This tensor will
+                # be used again by the second PortalOrange during the
+                # recomputation.
                 tensor_life = 3  # Delete at [8. PortalOrange.forward (recomputed)]
             else:
                 tensor_life = 2  # Delete at [6. PortalOrange.forward]
