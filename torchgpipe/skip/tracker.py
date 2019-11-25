@@ -79,13 +79,18 @@ class SkipTrackerThroughPotals(SkipTracker):
                 tensor_life = 3  # Delete at [8. PortalOrange.forward (recomputed)]
             else:
                 tensor_life = 2  # Delete at [6. PortalOrange.forward]
+
             portal = Portal(tensor, tensor_life)
             self.portals[(ns, name)] = portal
 
         else:
             # Under recomputation, the portal already exists.
             portal = self.portals[(ns, name)]
+
+            # The existing tensor life already became 0. It should be reset as
+            # 1 to delete the tensor after the second PortalBlue immediately.
             tensor_life = 1  # Delete at [11. blue() (recomputed)]
+
             portal.put_tensor(tensor, tensor_life)
 
         phony = portal.blue()
