@@ -62,8 +62,8 @@ class SkipTrackerThroughPotals(SkipTracker):
         self.portals: Dict[Tuple[Namespace, str], Portal] = {}
 
     def save(self, batch: Batch, ns: Namespace, name: str, tensor: Optional[Tensor]) -> None:
-        """Saves a stashed skip tensor into a portal. The skip tensor will be
-        connected onto the given micro-batch with :class:`Join`.
+        """Saves the stashed skip tensor in a portal. The portal is then
+        connected to the given micro-batch with :class:`Join`.
         """
         if not self.skip_layout.requires_copy(ns, name):
             super().save(batch, ns, name, tensor)
@@ -88,9 +88,8 @@ class SkipTrackerThroughPotals(SkipTracker):
         batch[0] = join(batch[0], phony)
 
     def load(self, batch: Batch, ns: Namespace, name: str) -> Optional[Tensor]:
-        """Loads a skip tensor to pop. The given micro-batch will be connected
-        onto the skip tensor with :class:`Fork`. It will return ``None`` if
-        there's no such skip tensor.
+        """Loads a skip tensor from the corresponding portal to pop. The given
+        micro-batch is connected to the portal with :class:`Fork`.
         """
         if not self.skip_layout.requires_copy(ns, name):
             tensor = super().load(batch, ns, name)
@@ -108,8 +107,9 @@ class SkipTrackerThroughPotals(SkipTracker):
              ns: Namespace,
              name: str,
              ) -> None:
-        """Copies a skip tensor. The given micro-batch and the skip tensor will
-        be tied with :class:`Fork` and :class:`Join`.
+        """Copies the skip tensor in the corresponding portal. The given
+        micro-batch and the portal will be tied with :class:`Fork` and
+        :class:`Join`.
         """
         assert self.skip_layout.requires_copy(ns, name)
 

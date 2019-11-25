@@ -1,4 +1,4 @@
-"""Static skip connection layout of a ``@skippable`` module."""
+"""Static skip connection layout of ``@skippable`` modules."""
 from typing import Dict, Iterable, List, Tuple
 
 from torch import nn
@@ -45,7 +45,7 @@ class SkipLayout:
         for prev_j, ns, name in self.by_partition[next_j]:
             if prev_j == next_j:
                 # This skip tensor will be popped at the same partition where
-                # stashed it. In this case, copy is not required.
+                # it is stashed. In this case, copy is not required.
                 continue
 
             yield (prev_j, ns, name)

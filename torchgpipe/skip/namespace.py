@@ -52,7 +52,7 @@ class Namespace(metaclass=abc.ABCMeta):
 
     # Namespaces should support ordering, since SkipLayout will sort tuples
     # including a namespace. But actual order between namespaces is not
-    # necessary. That's why they are ordered by version 4 UUID which generates
+    # important. That's why they are ordered by version 4 UUID which generates
     # random numbers.
     def __lt__(self, other: Any) -> bool:
         if isinstance(other, Namespace):
