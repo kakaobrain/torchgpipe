@@ -10,14 +10,14 @@ from torchgpipe.skip.tracker import current_skip_tracker as _current_skip_tracke
 
 
 @skippable(stash=['skip'])
-class StashLayer(nn.Module):
+class Stash(nn.Module):
     def forward(self, input):
         yield stash('skip', input)
         return input
 
 
 @skippable(pop=['skip'])
-class PopLayer(nn.Module):
+class Pop(nn.Module):
     def forward(self, input):
         skip = yield pop('skip')
         return input + skip
@@ -26,7 +26,7 @@ class PopLayer(nn.Module):
 @pytest.fixture
 def count_leaked_portals(monkeypatch):
     """This fixture is a function to count leaked
-    :class:`torchgpipe.portal.Portal` objects.
+    :class:`torchgpipe.skip.portal.Portal` objects.
     """
     skip_trackers = WeakSet()
 
@@ -51,7 +51,7 @@ def count_leaked_portals(monkeypatch):
                          [(False, None), (True, 'never'), (True, 'always')],
                          ids=['bare', 'gpipe[never]', 'gpipe[always]'])
 def test_skip_leak(count_leaked_portals, train, gpipe, checkpoint, monkeypatch):
-    model = nn.Sequential(StashLayer(), PopLayer())
+    model = nn.Sequential(Stash(), Pop())
 
     if gpipe:
         model = GPipe(model,
