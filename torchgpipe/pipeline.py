@@ -10,7 +10,7 @@ from torchgpipe.checkpoint import Checkpointing
 from torchgpipe.copy import Copy, Wait
 from torchgpipe.dependency import fork, join
 from torchgpipe.microbatch import Batch
-from torchgpipe.skip.layout import SkipLayout
+from torchgpipe.skip.layout import SkipLayout, inspect_skip_layout
 from torchgpipe.skip.tracker import SkipTrackerThroughPotals, use_skip_tracker
 from torchgpipe.stream import AbstractStream, current_stream, use_device
 from torchgpipe.worker import Task, spawn_workers
@@ -87,6 +87,9 @@ class Pipeline:
             copy_streams = [[current_stream(d)] * len(batches) for d in devices]
         self.copy_streams = copy_streams
 
+        if skip_layout is None:
+            skip_layout = inspect_skip_layout(partitions)
+
         self.skip_layout = skip_layout
         self.checkpoint_stop = checkpoint_stop
 
@@ -130,10 +133,9 @@ class Pipeline:
 
             next_stream = copy_streams[j][i]
 
-            if skip_layout is not None:
-                for prev_j, ns, name in skip_layout.copy_policy(j):
-                    prev_stream = copy_streams[prev_j][i]
-                    skip_trackers[i].copy(batches[i], prev_stream, next_stream, ns, name)
+            for prev_j, ns, name in skip_layout.copy_policy(j):
+                prev_stream = copy_streams[prev_j][i]
+                skip_trackers[i].copy(batches[i], prev_stream, next_stream, ns, name)
 
             if j != 0:
                 prev_stream = copy_streams[j-1][i]
