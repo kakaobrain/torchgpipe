@@ -37,18 +37,18 @@ def count_leaked_portals(monkeypatch):
             counter += len([x for x in skip_tracker.tensors if x is not None])
         return counter
 
-    def current_skip_tracker():
-        skip_tracker = _current_skip_tracker()
+    def _current_skip_tracker(orig=current_skip_tracker):
+        skip_tracker = orig()
         skip_trackers.add(skip_tracker)
         return skip_tracker
-    monkeypatch.setattr('torchgpipe.skip.tracker.current_skip_tracker', current_skip_tracker)
+    monkeypatch.setattr('torchgpipe.skip.tracker.current_skip_tracker', _current_skip_tracker)
 
     return count
 
 
 @pytest.mark.parametrize('train', [True, False], ids=['train', 'eval'])
 @pytest.mark.parametrize('gpipe, checkpoint',
-                         [(False, None), (True, 'never'), (True, 'always')],
+                         [(False, None), (True, 'always'), (True, 'never')],
                          ids=['bare', 'gpipe[never]', 'gpipe[always]'])
 def test_skip_leak(count_leaked_portals, train, gpipe, checkpoint, monkeypatch):
     model = nn.Sequential(Stash(), Pop())
