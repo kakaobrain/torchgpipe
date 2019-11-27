@@ -49,7 +49,7 @@ class SkipTracker:
 
 class SkipTrackerThroughPotals(SkipTracker):
     """Tracks saved skip tensors through portals. The skip tensors will be
-    hided into portals so that the autograd engine cannot track them.
+    hidden in portals so that the autograd engine does not need to track them.
 
     This tracker is only used when the training or evaluating module is wrapped
     with :class:`torchgpipe.GPipe`.
@@ -70,8 +70,8 @@ class SkipTrackerThroughPotals(SkipTracker):
             return
 
         # See [Tensor Life of Portal] at Portal.put_tensor() to understand the
-        # below tensor_life values. Here are the cropped events which retrieve
-        # the tensor in portal.:
+        # below tensor_life values. Here are the selected events which retrieve
+        # the tensor in portal:
         #
         #  1. [x] blue()
         #     ...
@@ -84,7 +84,7 @@ class SkipTrackerThroughPotals(SkipTracker):
         if (ns, name) not in self.portals:
             if is_checkpointing():
                 # Under checkpointing, the tensor used by the first
-                # PortalOrange should be kept in the portal. This tensor will
+                # PortalOrange should be alive in the portal. This tensor will
                 # be used again by the second PortalOrange during the
                 # recomputation.
                 tensor_life = 3  # Delete at [8. PortalOrange.forward (recomputed)]

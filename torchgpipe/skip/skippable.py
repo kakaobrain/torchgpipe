@@ -275,8 +275,8 @@ class pop:
 def verify_skippables(module: nn.Sequential) -> None:
     """Verifies if the underlying skippable modules satisfy integrity.
 
-    Every skip tensors must have only one pair of ``stash`` and ``pop``. If
-    there are one or more unmatched pairs, it will raise :exc:`TypeError` with
+    Every skip tensor must has only one pair of ``stash`` and ``pop``. If there
+    are one or more unmatched pairs, it will raise :exc:`TypeError` with
     detailed messages.
 
     Raises:

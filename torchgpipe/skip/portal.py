@@ -1,7 +1,7 @@
 """Portal keeps a tensor in the pocket plane. The tensor becomes hidden to the
-autograd engine. The connection through three functions (:class:`PortalBlue`,
-:class:`PortalOrange`, and :class:`PortalCopy`) out of autograd is one of the
-most important parts of skip connections.
+autograd engine. The shared context of three functions (:class:`PortalBlue`,
+:class:`PortalOrange`, and :class:`PortalCopy`) out of the computation graph is
+one of the most important feature of :mod:`torchgpipe.skip`.
 
 The metaphor is inspired by Portal™ from Valve.
 
