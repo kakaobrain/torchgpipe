@@ -30,8 +30,8 @@ class Portal:
         """Creates a :class:`PortalBlue` which hides the underlying tensor from
         the autograd engine.
 
-        The main lane of an autograd graph should join to
-        the phony it returns::
+        Join the returning phony to the main lane of the autograd graph to
+        assure the correct backpropagation::
 
             PortalBlue --+
                          |
