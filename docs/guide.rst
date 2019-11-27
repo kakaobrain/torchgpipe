@@ -58,13 +58,14 @@ specify GPUs to use with `devices` parameter::
 Nested Sequentials
 ------------------
 
-Consecutive layers in a :class:`nn.Sequential <torch.nn.Sequential>` module can
-be grouped as a partition by :class:`~torchgpipe.GPipe`. However, you may want
-to split logically consecutive layers in nested sequentials. To split a module
-with nested sequentials, you should flatten the module before wrapping with
-:class:`~torchgpipe.GPipe`.
+:class:`~torchgpipe.GPipe` splits only children of a :class:`nn.Sequential
+<torch.nn.Sequential>` module. However, some child can also be another
+sequential module. In this case of nested sequentials, you may want to split
+nested, but logically consecutive layers in the module recursively.
 
-Follow this code snippet which flattens nested sequentials::
+Recursive split is not supported by :class:`~torchgpipe.GPipe`. You have the
+responsibility to flatten the module. Fortunately, it's not hard with PyTorch.
+Follow this code snippet which shows how nested sequentials can be flattened::
 
    _3_layers = nn.Sequential(...)  # len(_3_layers) == 3
    _4_layers = nn.Sequential(...)  # len(_4_layers) == 4
