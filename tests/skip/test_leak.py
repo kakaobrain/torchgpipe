@@ -103,3 +103,24 @@ def test_delete_portal_tensor(train, checkpoint):
         model.eval()
         with torch.no_grad():
             model(input)
+
+
+@pytest.mark.parametrize('train', [True, False], ids=['train', 'eval'])
+def test_no_portal_without_gpipe(train, monkeypatch):
+    def deny(*args, **kwargs):
+        raise AssertionError('tried to create Portal without GPipe')
+
+    monkeypatch.setattr('torchgpipe.skip.portal.Portal.__init__', deny)
+
+    model = nn.Sequential(Stash(), Pop())
+
+    input = torch.rand(10, requires_grad=True)
+
+    if train:
+        model.train()
+        output = model(input)
+        output.norm().backward()
+    else:
+        model.eval()
+        with torch.no_grad():
+            model(input)
