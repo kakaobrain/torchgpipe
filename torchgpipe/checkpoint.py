@@ -96,33 +96,35 @@ class Checkpointing:
         batch[0] = join(batch[0], phony)
 
 
-class State(threading.local):
+class ThreadLocal(threading.local):
     def __init__(self) -> None:
         self.is_checkpointing = False
         self.is_recomputing = False
 
-    @contextmanager
-    def enable_checkpointing(self) -> Generator[None, None, None]:
-        """Makes :func:`is_checkpointing` return ``True`` within a context."""
-        orig = self.is_checkpointing
-        self.is_checkpointing = True
-        try:
-            yield
-        finally:
-            self.is_checkpointing = orig
 
-    @contextmanager
-    def enable_recomputing(self) -> Generator[None, None, None]:
-        """Makes :func:`is_recomputing` return ``True`` within a context."""
-        orig = self.is_recomputing
-        self.is_recomputing = True
-        try:
-            yield
-        finally:
-            self.is_recomputing = orig
+thread_local = ThreadLocal()
 
 
-_state = State()
+@contextmanager
+def enable_checkpointing() -> Generator[None, None, None]:
+    """Makes :func:`is_checkpointing` return ``True`` within a context."""
+    orig = thread_local.is_checkpointing
+    thread_local.is_checkpointing = True
+    try:
+        yield
+    finally:
+        thread_local.is_checkpointing = orig
+
+
+@contextmanager
+def enable_recomputing() -> Generator[None, None, None]:
+    """Makes :func:`is_recomputing` return ``True`` within a context."""
+    orig = thread_local.is_recomputing
+    thread_local.is_recomputing = True
+    try:
+        yield
+    finally:
+        thread_local.is_recomputing = orig
 
 
 def is_checkpointing() -> bool:
@@ -132,7 +134,7 @@ def is_checkpointing() -> bool:
         bool: ``True`` if it's under checkpointing.
 
     """
-    return _state.is_checkpointing
+    return thread_local.is_checkpointing
 
 
 def is_recomputing() -> bool:
@@ -145,7 +147,7 @@ def is_recomputing() -> bool:
     .. seealso:: :ref:`Detecting Recomputation`
 
     """
-    return _state.is_recomputing
+    return thread_local.is_recomputing
 
 
 class Context:
@@ -231,7 +233,7 @@ class Checkpoint(torch.autograd.Function):
         ctx.input_atomic = input_atomic
         ctx.save_for_backward(*input)
 
-        with torch.no_grad(), _state.enable_checkpointing():
+        with torch.no_grad(), enable_checkpointing():
             output = function(input[0] if input_atomic else input)
 
         return output
@@ -279,7 +281,7 @@ class Recompute(torch.autograd.Function):
         input_leaf = tuple(x.detach().requires_grad_(x.requires_grad) for x in input)
 
         with restore_rng_states(input[0].device, ctx.rng_states):
-            with torch.enable_grad(), _state.enable_recomputing():
+            with torch.enable_grad(), enable_recomputing():
                 output = ctx.function(input_leaf[0] if ctx.input_atomic else input_leaf)
 
         ctx.recomputed.append((output, input_leaf))

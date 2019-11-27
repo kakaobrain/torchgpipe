@@ -4,17 +4,22 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Type, Union, cast
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 from torchgpipe.checkpoint import Checkpointing
 from torchgpipe.copy import Copy, Wait
 from torchgpipe.dependency import fork, join
 from torchgpipe.microbatch import Batch
+from torchgpipe.skip.layout import SkipLayout, inspect_skip_layout
+from torchgpipe.skip.tracker import SkipTrackerThroughPotals, use_skip_tracker
 from torchgpipe.stream import AbstractStream, current_stream, use_device
 from torchgpipe.worker import Task, spawn_workers
 
 __all__: List[str] = []
 
+
+Tensors = Tuple[Tensor, ...]
+TensorOrTensors = Union[Tensor, Tensors]
 
 ExcInfo = Tuple[Type[BaseException], BaseException, TracebackType]
 
@@ -68,6 +73,7 @@ class Pipeline:
                  partitions: List[nn.Sequential],
                  devices: Optional[List[torch.device]] = None,
                  copy_streams: Optional[List[List[AbstractStream]]] = None,
+                 skip_layout: Optional[SkipLayout] = None,
                  checkpoint_stop: int = 0,
                  ) -> None:
         self.batches = batches
@@ -81,6 +87,10 @@ class Pipeline:
             copy_streams = [[current_stream(d)] * len(batches) for d in devices]
         self.copy_streams = copy_streams
 
+        if skip_layout is None:
+            skip_layout = inspect_skip_layout(partitions)
+
+        self.skip_layout = skip_layout
         self.checkpoint_stop = checkpoint_stop
 
     def run(self) -> None:
@@ -92,21 +102,28 @@ class Pipeline:
         batches = self.batches
         partitions = self.partitions
         devices = self.devices
+        skip_layout = self.skip_layout
 
         m = len(batches)
         n = len(partitions)
 
+        skip_trackers = [SkipTrackerThroughPotals(skip_layout) for _ in batches]
+
         with spawn_workers(devices) as (in_queues, out_queues):
             for schedule in clock_cycles(m, n):
-                self.fence(schedule)
-                self.compute(schedule, in_queues, out_queues)
+                self.fence(schedule, skip_trackers)
+                self.compute(schedule, skip_trackers, in_queues, out_queues)
 
-    def fence(self, schedule: List[Tuple[int, int]]) -> None:
+    def fence(self,
+              schedule: List[Tuple[int, int]],
+              skip_trackers: List[SkipTrackerThroughPotals],
+              ) -> None:
         """Copies micro-batches after computation for the previous
         micro-batches.
         """
         batches = self.batches
         copy_streams = self.copy_streams
+        skip_layout = self.skip_layout
 
         for i, j in schedule:
             # Ensure that batches[i-1] is executed after batches[i] in
@@ -114,13 +131,19 @@ class Pipeline:
             if i != 0:
                 depend(batches[i-1], batches[i])
 
+            next_stream = copy_streams[j][i]
+
+            for prev_j, ns, name in skip_layout.copy_policy(j):
+                prev_stream = copy_streams[prev_j][i]
+                skip_trackers[i].copy(batches[i], prev_stream, next_stream, ns, name)
+
             if j != 0:
                 prev_stream = copy_streams[j-1][i]
-                next_stream = copy_streams[j][i]
                 copy(batches[i], prev_stream, next_stream)
 
     def compute(self,
                 schedule: List[Tuple[int, int]],
+                skip_trackers: List[SkipTrackerThroughPotals],
                 in_queues: List[InQueue],
                 out_queues: List[OutQueue],
                 ) -> None:
@@ -171,13 +194,25 @@ class Pipeline:
             # Determine whether checkpointing or not.
             checkpoint = (i < checkpoint_stop)
             if checkpoint:
-                chk = Checkpointing(partition, batch)
+                def function(input: TensorOrTensors,
+                             partition: nn.Sequential = partition,
+                             skip_tracker: SkipTrackerThroughPotals = skip_trackers[i],
+                             ) -> TensorOrTensors:
+                    with use_skip_tracker(skip_tracker):
+                        return partition(input)
+
+                chk = Checkpointing(function, batch)
                 task = Task(streams[j], compute=chk.checkpoint, finalize=chk.recompute)
-                del chk
+                del function, chk
 
             else:
-                def compute(batch: Batch = batch, partition: nn.Sequential = partition) -> Batch:
-                    return batch.call(partition)
+                def compute(batch: Batch = batch,
+                            partition: nn.Sequential = partition,
+                            skip_tracker: SkipTrackerThroughPotals = skip_trackers[i],
+                            ) -> Batch:
+                    with use_skip_tracker(skip_tracker):
+                        return batch.call(partition)
+
                 task = Task(streams[j], compute=compute, finalize=None)
                 del compute
 

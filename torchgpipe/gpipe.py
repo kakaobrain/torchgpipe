@@ -10,6 +10,8 @@ import torch.cuda
 from torchgpipe import microbatch
 from torchgpipe.batchnorm import DeferredBatchNorm
 from torchgpipe.pipeline import Pipeline
+from torchgpipe.skip.layout import inspect_skip_layout
+from torchgpipe.skip.skippable import verify_skippables
 from torchgpipe.stream import AbstractStream, new_stream
 
 __all__ = ['GPipe']
@@ -227,10 +229,14 @@ class GPipe(Module):
         if checkpoint not in ['always', 'except_last', 'never']:
             raise ValueError("checkpoint is not one of 'always', 'except_last', or 'never'")
 
+        verify_module(module)
+
+        # Verify if the underlying skippable modules satisfy integrity. The
+        # integrity can be verified before forward() because it is static.
+        verify_skippables(module)
+
         self.chunks = chunks
         self.checkpoint = checkpoint
-
-        verify_module(module)
 
         if deferred_batch_norm:
             module = DeferredBatchNorm.convert_deferred_batch_norm(module, chunks)
@@ -245,6 +251,7 @@ class GPipe(Module):
             raise ValueError(recommend_auto_balance(str(exc)))
 
         self._copy_streams: List[List[AbstractStream]] = []
+        self._skip_layout = inspect_skip_layout(self.partitions)
 
     def __len__(self) -> int:
         """Counts the length of the underlying sequential module."""
@@ -363,6 +370,7 @@ class GPipe(Module):
                             self.partitions,
                             self.devices,
                             copy_streams,
+                            self._skip_layout,
                             checkpoint_stop)
         pipeline.run()
 
