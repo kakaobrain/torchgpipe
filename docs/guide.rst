@@ -55,6 +55,34 @@ specify GPUs to use with `devices` parameter::
                  devices=[4, 2],  # Specify GPUs.
                  chunks=8)
 
+Input and Output Device
+-----------------------
+
+Unlike a typical module, with :class:`~torchgpipe.GPipe`, the input device is
+different from the output device except for when there is only one partition.
+This is because the first partition and last partition are placed in different
+devices.
+
+Therefore, you have to move the input and target to the corresponding devices.
+It can be done with :attr:`GPipe.devices <torchgpipe.GPipe.devices>`, which
+holds the list of devices for each partition::
+
+   in_device = model.devices[0]
+   out_device = model.devices[-1]
+
+   for input, target in data_loader:
+       # input on in_device
+       input = input.to(in_device, non_blocking=True)
+
+       # target on out_device
+       target = target.to(out_device, non_blocking=True)
+
+       # output on out_device
+       output = model(input)
+       loss = F.cross_entropy(output, target)
+       loss.backward()
+       ...
+
 Nested Sequentials
 ------------------
 
@@ -92,34 +120,6 @@ micro-batches and checkpointing is equivalent to model parallelism. You can
 disable them with ``chunks=1`` and ``checkpoint='never'`` options::
 
    model = GPipe(model, balance=[2, 2], chunks=1, checkpoint='never')
-
-Input and Output Device
-~~~~~~~~~~~~~~~~~~~~~~~
-
-Unlike a typical module, with :class:`~torchgpipe.GPipe`, the input device is
-different from the output device except for when there is only one partition.
-This is because the first partition and last partition are placed in different
-devices.
-
-Therefore, you have to move the input and target to the corresponding devices.
-It can be done with :attr:`GPipe.devices <torchgpipe.GPipe.devices>`, which
-holds the list of devices for each partition::
-
-   in_device = model.devices[0]
-   out_device = model.devices[-1]
-
-   for input, target in data_loader:
-       # input on in_device
-       input = input.to(in_device, non_blocking=True)
-
-       # target on out_device
-       target = target.to(out_device, non_blocking=True)
-
-       # output on out_device
-       output = model(input)
-       loss = F.cross_entropy(output, target)
-       loss.backward()
-       ...
 
 Automatic Balancing
 ~~~~~~~~~~~~~~~~~~~
