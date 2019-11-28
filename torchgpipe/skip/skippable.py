@@ -342,6 +342,9 @@ def verify_skippables(module: nn.Sequential) -> None:
     Here are a few failure cases. :func:`verify_skippables` will report failure
     for these cases::
 
+        # Layer1 stashes "1to3".
+        # Layer3 pops "1to3".
+
         nn.Sequential(Layer1(), Layer2())
         #               └──── ?
 
