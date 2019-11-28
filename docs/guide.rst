@@ -467,6 +467,27 @@ example, a conceptual U-Net can be designed like this. There are 3 pairs of
        Segment(),
    )
 
+Some skip connection might be conditional depending on its input. However,
+:func:`@skippable <torchgpipe.skip.skippable>` doesn't allow missing of
+:func:`~torchgpipe.skip.stash` or :func:`~torchgpipe.skip.pop`. But it allows
+:data:`None` as the placeholder of skip tensor::
+
+   @skippable(stash=['skip'])
+   class MaybeStash(nn.Module):
+       def forward(self, input):
+           skip = input if test(input) else None
+           yield stash('skip', skip)
+           return f(input)
+
+   @skippable(pop=['skip'])
+   class MaybePop(nn.Module):
+       def forward(self, input):
+           output = f(input)
+           skip = yield pop('skip')
+           if skip is not None:
+               output += skip
+           return output
+
 Detecting Recomputation
 -----------------------
 
