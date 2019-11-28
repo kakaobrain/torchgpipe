@@ -45,6 +45,6 @@ Inspecting GPipe Timeline
 Automatic Balancing
 ~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: torchgpipe.balance.balance_by_time(partitions, module, sample, timeout=1.0)
+.. autofunction:: torchgpipe.balance.balance_by_time(partitions, module, sample, timeout=1.0, device=torch.device('cuda'))
 
-.. autofunction:: torchgpipe.balance.balance_by_size(partitions, module, input, chunks=1, param_scale=2.0)
+.. autofunction:: torchgpipe.balance.balance_by_size(partitions, module, input, chunks=1, param_scale=2.0, device=torch.device('cuda'))
