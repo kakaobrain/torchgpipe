@@ -21,13 +21,13 @@ Applying GPipe
 ~~~~~~~~~~~~~~
 
 To train a module with GPipe, simply wrap it with :class:`torchgpipe.GPipe`.
-Your module must be a :class:`nn.Sequential <torch.nn.Sequential>` as GPipe
-will automatically split the module into partitions. A partition is a group of
-consecutive layers that run on a single device together. `balance` argument
-determines the number of layers in each partition. `chunks` argument specifies
-the number of micro-batches. Input, output, and intermediate tensors must be
-``Tensor`` or ``Tuple[Tensor, ...]``. See also `Restrictions`_ for more
-details.
+Your module must be a :class:`nn.Sequential <torch.nn.Sequential>` as
+:class:`~torchgpipe.GPipe` will automatically split the module into partitions.
+A partition is a group of consecutive layers that run on a single device
+together. `balance` argument determines the number of layers in each partition.
+`chunks` argument specifies the number of micro-batches. Input, output, and
+intermediate tensors must be :class:`~torch.Tensor` or ``Tuple[Tensor, ...]``.
+See also `Restrictions`_ for more details.
 
 The below example code shows how to split a module with four layers into two
 partitions each having two layers. This code also splits a mini-batch into 8
@@ -44,11 +44,11 @@ micro-batches::
    for input in data_loader:
        output = model(input)
 
-GPipe optimizes training using CUDA. You should not move the module to a GPU
-yourself, because GPipe automatically moves each partition over different
-devices. By default, available GPUs starting from ``cuda:0`` are selected in
-order for each partition. You can also specify GPUs to use with `devices`
-parameter::
+:class:`~torchgpipe.GPipe` optimizes training using CUDA. You should not move
+the module to a GPU yourself, because :class:`~torchgpipe.GPipe` automatically
+moves each partition over different devices. By default, available GPUs
+starting from ``cuda:0`` are selected in order for each partition. You can also
+specify GPUs to use with `devices` parameter::
 
    model = GPipe(model,
                  balance=[2, 2],
@@ -64,9 +64,10 @@ disable them with ``chunks=1`` and ``checkpoint='never'`` options::
 Input and Output Device
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Unlike a typical module, with GPipe, the input device is different from the
-output device except for when there is only one partition. This is because the
-first partition and last partition are placed in different devices.
+Unlike a typical module, with :class:`~torchgpipe.GPipe`, the input device is
+different from the output device except for when there is only one partition.
+This is because the first partition and last partition are placed in different
+devices.
 
 Therefore, you have to move the input and target to the corresponding devices.
 It can be done with :attr:`GPipe.devices <torchgpipe.GPipe.devices>`, which
@@ -238,14 +239,14 @@ Tensor or Tensors:
       def forward(input: Tensor) -> Dict[str, Tensor]: ...
       def forward(input: Tensor) -> Tuple[Tensor, str]: ...
 
-   The reason is that GPipe can't assume how the non-tensor inputs for a
-   mini-batch can be split for micro-batches.
+   The reason is that :class:`~torchgpipe.GPipe` can't assume how the
+   non-tensor inputs for a mini-batch can be split for micro-batches.
 
 Unique Parameters:
    :class:`~torchgpipe.GPipe` places each partition on the corresponding
    device. When placing a partition, the parameters of the partition are also
-   moved to the destination. GPipe cannot support a module with a parameter on
-   two or more devices::
+   moved to the destination. :class:`~torchgpipe.GPipe` cannot support a module
+   with a parameter on two or more devices::
 
       >>> conv1 = nn.Conv2d(3, 3, 1)
       >>> conv2 = nn.Conv2d(3, 3, 1)
@@ -307,8 +308,8 @@ a skip connection can be implemented by making underlying layers with
 
    model = nn.Sequential(Layer1(), Layer2(), Layer3())
 
-Because of the skip connection being represented as a normal parameter, GPipe
-can move the tensors from partition to partition::
+Because of the skip connection being represented as a normal parameter,
+:class:`~torchgpipe.GPipe` can move the tensors from partition to partition::
 
    model = GPipe(model, balance=[1, 1, 1], chunks=8)
 
@@ -329,7 +330,7 @@ running estimates twice, modules' ``forward`` method needs be able to detect
 that this is the recomputation.
 
 It can be done by :func:`~torchgpipe.is_recomputing`. This function returns
-``True`` if called during the recomputation::
+:data:`True` if called during the recomputation::
 
    class Counter(nn.Module):
        def __init__(self):

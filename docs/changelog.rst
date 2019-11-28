@@ -34,7 +34,7 @@ v0.0.3
 Released on September 30, 2019.
 
 Featured:
-   torchgpipe now overlaps copy and computation using the separate CUDA
+   :mod:`torchgpipe` now overlaps copy and computation using the separate CUDA
    streams. Previously, GPU could not compute a partition while copying
    micro-batches across different GPUs because they all happened on the same
    default CUDA stream.

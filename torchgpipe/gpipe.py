@@ -146,13 +146,13 @@ class GPipe(Module):
     GPipe combines pipeline parallelism with checkpointing to reduce peak
     memory required to train while minimizing device under-utilization.
 
-    You should determine the balance when defining a GPipe module, as balancing
-    will not be done automatically. The module will be partitioned into
-    multiple devices according to the given balance. You may rely on heuristics
-    to find your own optimal configuration.
+    You should determine the balance when defining a :class:`GPipe` module, as
+    balancing will not be done automatically. The module will be partitioned
+    into multiple devices according to the given balance. You may rely on
+    heuristics to find your own optimal configuration.
 
     Args:
-        module (nn.Sequential):
+        module (torch.nn.Sequential):
             sequential module to be parallelized
         balance (ints):
             list of number of layers in each partition
@@ -334,7 +334,7 @@ class GPipe(Module):
         applied at partition boundaries too.
 
         Args:
-            input (tensor or tensors): input mini-batch
+            input (torch.Tensor or tensors): input mini-batch
 
         Returns:
             tensor or tensors: output mini-batch

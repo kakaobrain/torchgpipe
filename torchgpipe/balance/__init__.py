@@ -52,9 +52,9 @@ def balance_by_time(partitions: int,
     Args:
         partitions (int):
             intended number of partitions
-        module (nn.Sequential):
+        module (torch.nn.Sequential):
             sequential module to be partitioned
-        sample (Tensor):
+        sample (torch.Tensor):
             example input with arbitrary batch size
 
     Keyword Args:
@@ -129,9 +129,9 @@ def balance_by_size(partitions: int,
     Args:
         partitions (int):
             intended number of partitions
-        module (nn.Sequential):
+        module (torch.nn.Sequential):
             sequential module to be partitioned
-        input (Tensor):
+        input (torch.Tensor):
             example mini-batch with the same size to train
 
     Keyword Args:
