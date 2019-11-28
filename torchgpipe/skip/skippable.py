@@ -302,6 +302,25 @@ class stash:
         name (str): name of skip tensor
         input (torch.Tensor or None): tensor to skip
 
+    Instead of a :class:`~torch.Tensor`, :data:`None` also can be used for a skip
+    tensor. It helps to define a conditional skip connection::
+
+        @skippable(stash=['skip'])
+        class MaybeStash(nn.Module):
+            def forward(self, input):
+                skip = input if test(input) else None
+                yield stash('skip', skip)
+                return f(input)
+
+        @skippable(pop=['skip'])
+        class MaybePop(nn.Module):
+            def forward(self, input):
+                output = f(input)
+                skip = yield pop('skip')
+                if skip is not None:
+                    output += skip
+                return output
+
     """
     __slots__ = ('name', 'tensor')
 
