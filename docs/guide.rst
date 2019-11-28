@@ -345,20 +345,20 @@ Because of the skip connection being represented as a normal parameter,
 
    model = GPipe(model, balance=[1, 1, 1], chunks=8)
 
-It is the most straightforward approach to implement skip connections. But
+It looks fairly straightforward approach to implement skip connections. But
 there is a disadvantage. In the above example, the skip tensor is copied to the
 second device, but it is never used at the device. Unnecessarily copied tensor
-wastes time and memory.
-
-The following section introduces alternative approach for skip connection.
+wastes time and memory. The following section introduces alternative approach
+for skip connection.
 
 Long Skip Connections
 ---------------------
 
 The disadvantage mentioned above might be catastrophic if the unnecessarily
 copied tensor is very large, or it is copied over many devices. The second case
-often occurs when implementing long skip connections. Let's assume now we have
-8 layers between input and output::
+often occurs when implementing long skip connections.
+
+Let's assume now we have 8 layers between input and output::
 
    latent = layer1(input)
    latent = layer2(latent)
@@ -378,9 +378,9 @@ for skip tensors. A module can stash a tensor into the storage or pop. This
 functionality still works well without :mod:`torchgpipe`.
 
 The decorator declares which skip tensors would be stashed or popped in the
-decorated module class to let :class:`~torchgpipe.GPipe` understand the
-connections. To learn the usage, let's examine with the example of 8 layers.
-Here we use name "skip" for the skip connection between ``Layer1`` and
+decorated module class to let :class:`~torchgpipe.GPipe` understand layout of
+the connections. To learn the usage, let's examine with the example of 8
+layers. Here we use name "skip" for the skip connection between ``Layer1`` and
 ``Layer8``::
 
    # Layer1 stashes 'skip'.
@@ -395,7 +395,7 @@ Here we use name "skip" for the skip connection between ``Layer1`` and
 
 When ``Layer1`` prepares a skip tensor, it can stash the tensor into the hidden
 storage by :func:`yield stash() <torchgpipe.skip.stash>`. Yes, we will define
-``forward()`` as a generator instead of a normal function::
+``forward()`` as a generator_ instead of a normal function::
 
    @skippable(stash=['skip'])
    class Layer1(nn.Module):
@@ -403,6 +403,8 @@ storage by :func:`yield stash() <torchgpipe.skip.stash>`. Yes, we will define
            skip = input
            yield stash('skip', skip)
            return layer1(input)
+
+.. _generator: https://docs.python.org/3/howto/functional.html#generators
 
 With the similar way, ``Layer8`` also can pop the stashed skip tensor by
 :func:`yield pop() <torchgpipe.skip.pop>`::
@@ -414,7 +416,7 @@ With the similar way, ``Layer8`` also can pop the stashed skip tensor by
            return layer8(input) + skip
 
 Now the regardless intermediate layers don't require to pass the skip tensor
-to ``Layer8``::
+to next layers until ``Layer8``::
 
    class Layer2(nn.Module):
        def forward(self, input):
@@ -432,8 +434,9 @@ multiple skip tensors. However, there are obvious restriction:
 - One skip tensor must be stashed and popped exactly once.
 
 Then, how to reuse a skippable module two or more times in a sequential module?
-You can isolate some skip names by :class:`~torch.skip.Namespace`. For example,
-a conceptual U-Net can be designed like this::
+You can isolate some skip names into a :class:`~torch.skip.Namespace`. For
+example, a conceptual U-Net can be designed like this. There are 3 pairs of
+``Encoder`` and ``Decoder``::
 
    # 1F. Encoder ------------------ Decoder - Segment
    #        \                          /
