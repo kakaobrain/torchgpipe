@@ -65,8 +65,8 @@ class Skippable(nn.Module):
         module only if they are isolated by different namespaces.
 
         Here's an example using the same name for skip tensors twice. Each pair
-        of ``Layer1`` and ``Layer2`` is isolated with its own namespace. There
-        is no conflict anymore::
+        of ``Layer1`` and ``Layer2`` is isolated with its own namespace ``ns1``
+        and ``ns2``. There is no conflict anymore::
 
             ns1 = Namespace()
             ns2 = Namespace()
@@ -224,11 +224,6 @@ def skippable(stash: Iterable[str] = (),
     be stashed by ``yield stash(name, tensor)`` and also popped by ``tensor =
     yield pop(name)``.
 
-    Every skip tensor must have only one pair of ``stash`` and ``pop``.
-    :class:`~torchgpipe.GPipe` will check this restriction automatically when
-    wrapping a module with skippable modules. You can also check the
-    restriction by :func:`~torchgpipe.skip.verify_skippables`.
-
     Here is an example with three layers. A skip tensor named ``1to3`` is
     stashed and popped at the first and last layer, respectively::
 
@@ -260,6 +255,12 @@ def skippable(stash: Iterable[str] = (),
                 carol = yield pop('carol')
                 return input + carol
 
+    Every skip tensor must have only one pair of ``stash`` and ``pop``.
+    :class:`~torchgpipe.GPipe` will check this restriction automatically when
+    wrapping a module. You are able to check the restriction by
+    :func:`~torchgpipe.skip.verify_skippables` without
+    :class:`~torchgpipe.GPipe`.
+
     .. note::
 
         :func:`@skippable <skippable>` changes the type of the wrapped class.
@@ -270,6 +271,8 @@ def skippable(stash: Iterable[str] = (),
 
         1. Naively ignore type errors by ``# type: ignore``.
         2. Use ``skippable()()`` as a function instead of a decorator.
+
+    .. seealso:: :ref:`Long Skip Connections`
 
     """
     stashable_names = frozenset(stash)
@@ -326,7 +329,8 @@ def verify_skippables(module: nn.Sequential) -> None:
     are one or more unmatched pairs, it will raise :exc:`TypeError` with
     detailed messages.
 
-    Here are counterexamples::
+    Here are counterexamples. :func:`verify_skippables` will report failure for
+    these cases::
 
         nn.Sequential(Layer1(), Layer2())
         #               └──── ?
