@@ -25,7 +25,7 @@ Skip Connections
 
 .. autodecorator:: torchgpipe.skip.skippable([stash], [pop])
 
-   .. automethod:: torchgpipe.skip.skippable.Skippable.isolate(ns, [only=name])
+   .. automethod:: torchgpipe.skip.skippable.Skippable.isolate(ns, [only=names])
 
 .. autofunction:: torchgpipe.skip.stash(name, tensor)
 

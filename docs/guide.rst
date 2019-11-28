@@ -86,14 +86,15 @@ holds the list of devices for each partition::
 Nested Sequentials
 ------------------
 
-:class:`~torchgpipe.GPipe` splits only children of a :class:`nn.Sequential
-<torch.nn.Sequential>` module. However, some child can also be another
-sequential module. In this case of nested sequentials, you may want to split
-nested, but logically consecutive layers in the module recursively.
+When :class:`~torchgpipe.GPipe` splits a :class:`nn.Sequential
+<torch.nn.Sequential>` module, it regards every child of the module as a
+single, non-divisible layer. However, it may be the case that some child is
+another sequential module and one may want to split them further.
 
-Recursive split is not supported by :class:`~torchgpipe.GPipe`. You have the
-responsibility to flatten the module. Fortunately, it's not hard with PyTorch.
-Follow this code snippet which shows how nested sequentials can be flattened::
+This kind of recursive split of a nested sequential module is not intended nor
+supported by :class:`~torchgpipe.GPipe`. You have the responsibility to flatten
+the module. Fortunately, this is not hard in PyTorch. Follow this code snippet
+which shows how a nested sequential module can be flattened::
 
    _3_layers = nn.Sequential(...)  # len(_3_layers) == 3
    _4_layers = nn.Sequential(...)  # len(_4_layers) == 4
@@ -115,9 +116,9 @@ Follow this code snippet which shows how nested sequentials can be flattened::
 Typical Model Parallelism
 -------------------------
 
-The typical model parallelism is a special case of GPipe. GPipe without
-micro-batches and checkpointing is equivalent to model parallelism. You can
-disable them with ``chunks=1`` and ``checkpoint='never'`` options::
+The typical model parallelism is a special case of GPipe. Model parallelism is
+equivalent to GPipe if micro-batching and checkpointing are disabled. Set
+``chunks=1`` and ``checkpoint='never'`` for this::
 
    model = GPipe(model, balance=[2, 2], chunks=1, checkpoint='never')
 
@@ -345,17 +346,17 @@ Because of the skip connection being represented as a normal parameter,
 
    model = GPipe(model, balance=[1, 1, 1], chunks=8)
 
-It looks fairly straightforward approach to implement skip connections. But
+This seems a fairly straightforward way to implement skip connections. But
 there is a disadvantage. In the above example, the skip tensor is copied to the
-second device, but it is never used at the device. Unnecessarily copied tensor
-wastes time and memory. The following section introduces alternative approach
-for skip connection.
+second device, but it is never used at the device. Unnecessary copies of skip
+tensors may waste time and memory. The following section introduces an
+alternative approach for skip connection.
 
 Long Skip Connections
 ---------------------
 
-The disadvantage mentioned above might be catastrophic if the unnecessarily
-copied tensor is very large, or it is copied over many devices. The second case
+The disadvantage mentioned above might be catastrophic if it involves
+unnecessary copies of a large tensor, and/or over many devices. The second case
 often occurs when implementing long skip connections.
 
 Let's assume now we have 8 layers between input and output::
@@ -369,19 +370,19 @@ Let's assume now we have 8 layers between input and output::
    latent = layer7(latent)
    output = layer8(latent) + input  # skip connection
 
-With the prior approach, :class:`~torchgpipe.GPipe` will copy the skip tensor
-to all devices, but 6 of them are unnecessary. The alternative approach is to
-expose where the skip tensor is produced and consumed. Now we will introduce
-the :func:`@skippable <torchgpipe.skip.skippable>` class decorator to toss the
-tensor without going through regardless layers. It provides a hidden storage
-for skip tensors. A module can stash a tensor into the storage or pop. This
-functionality still works well without :mod:`torchgpipe`.
+With the prior approach, the skip tensor will be copied to every device, but
+six devices do not need it. The alternative approach is to expose in which
+layer the skip tensor is produced and consumed. We introduce the
+:func:`@skippable <torchgpipe.skip.skippable>` class decorator to toss the
+tensor directly, without needing to pass it to irrelevant layers in between. A
+module can stash a tensor into the storage or pop. This functionality still
+works well without :mod:`torchgpipe`.
 
 The decorator declares which skip tensors would be stashed or popped in the
 decorated module class to let :class:`~torchgpipe.GPipe` understand layout of
-the connections. To learn the usage, let's examine with the example of 8
-layers. Here we use name "skip" for the skip connection between ``Layer1`` and
-``Layer8``::
+the connections. For exposition, let us explain the way to implement the
+8-layer example above using :mod:`torchgpipe.skip`. Here we use name "skip" for
+the skip connection between ``Layer1`` and ``Layer8``::
 
    # Layer1 stashes 'skip'.
    @skippable(stash=['skip'])
@@ -394,8 +395,8 @@ layers. Here we use name "skip" for the skip connection between ``Layer1`` and
        ...
 
 When ``Layer1`` prepares a skip tensor, it can stash the tensor into the hidden
-storage by :func:`yield stash() <torchgpipe.skip.stash>`. Yes, we will define
-``forward()`` as a generator_ instead of a normal function::
+storage by :func:`yield stash() <torchgpipe.skip.stash>`. As you may have
+noticed, we define ``forward()`` as a generator_ instead of a normal function::
 
    @skippable(stash=['skip'])
    class Layer1(nn.Module):
@@ -406,8 +407,8 @@ storage by :func:`yield stash() <torchgpipe.skip.stash>`. Yes, we will define
 
 .. _generator: https://docs.python.org/3/howto/functional.html#generators
 
-With the similar way, ``Layer8`` also can pop the stashed skip tensor by
-:func:`yield pop() <torchgpipe.skip.pop>`::
+Similarly, ``Layer8`` also can pop the stashed skip tensor by :func:`yield
+pop() <torchgpipe.skip.pop>`::
 
    @skippable(pop=['skip'])
    class Layer8(nn.Module):
@@ -415,8 +416,7 @@ With the similar way, ``Layer8`` also can pop the stashed skip tensor by
            skip = yield pop('skip')
            return layer8(input) + skip
 
-Now the regardless intermediate layers don't require to pass the skip tensor
-to next layers until ``Layer8``::
+Now the intermediate layers do not interact with the skip tensor at all::
 
    class Layer2(nn.Module):
        def forward(self, input):
@@ -428,21 +428,23 @@ to next layers until ``Layer8``::
 
 You can design any complex skip connections with :func:`@skippable
 <torchgpipe.skip.skippable>` since a skippable module could stash and/or pop
-multiple skip tensors. However, there are obvious restriction:
+multiple skip tensors. However, there are restrictions:
 
 - Every skip name must be unique within a sequential module.
-- One skip tensor must be stashed and popped exactly once.
+- Every skip tensor must be stashed and popped exactly once.
 
 Then, how to reuse a skippable module two or more times in a sequential module?
 You can isolate some skip names into a :class:`~torch.skip.Namespace`. For
 example, a conceptual U-Net can be designed like this. There are 3 pairs of
 ``Encoder`` and ``Decoder``::
 
-   # 1F. Encoder ------------------ Decoder - Segment
-   #        \                          /
-   # 2F.  Encoder ---------------- Decoder
-   #          \                      /
-   # 3F.   Encoder - Bottleneck - Decoder
+   # 1F. Encoder -------- Decoder -- Segment
+   #        \                /
+   # 2F.  Encoder ------ Decoder
+   #          \            /
+   # 3F.   Encoder ---- Decoder
+   #            \        /
+   # 4F.        Bottleneck
 
    @skippable(stash=['skip'])
    class Encoder(nn.Module):
@@ -469,8 +471,8 @@ example, a conceptual U-Net can be designed like this. There are 3 pairs of
 
 Some skip connection might be conditional depending on its input. However,
 :func:`@skippable <torchgpipe.skip.skippable>` doesn't allow missing of
-:func:`~torchgpipe.skip.stash` or :func:`~torchgpipe.skip.pop`. But it allows
-:data:`None` as the placeholder of skip tensor::
+:func:`~torchgpipe.skip.stash` or :func:`~torchgpipe.skip.pop`. Instead, it
+allows :data:`None` as the placeholder of skip tensor::
 
    @skippable(stash=['skip'])
    class MaybeStash(nn.Module):

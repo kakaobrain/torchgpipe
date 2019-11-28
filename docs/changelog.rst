@@ -8,8 +8,8 @@ Not released yet.
 
 Featured:
    :func:`@skippable <torchgpipe.skip.skippable>` for efficient skip
-   connections. With this interface, :class:`~torchgpipe.GPipe` won't copy skip
-   tensors through regardless layers anymore.
+   connections. With this interface, :class:`~torchgpipe.GPipe` copies skip
+   tensors directly to the destination device.
 
 Improvements:
    - Checkpointing deterministically handles randomness managed by PyTorch.

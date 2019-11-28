@@ -128,7 +128,7 @@ def enable_recomputing() -> Generator[None, None, None]:
 
 
 def is_checkpointing() -> bool:
-    """Whether if the current forward propagation is under checkpointing.
+    """Whether the current forward propagation is under checkpointing.
 
     Returns:
         bool: ``True`` if it's under checkpointing.
@@ -138,7 +138,7 @@ def is_checkpointing() -> bool:
 
 
 def is_recomputing() -> bool:
-    """Whether if the current forward propagation is under checkpoint
+    """Whether the current forward propagation is under checkpoint
     recomputation. Use this to prevent duplicated side-effects at forward
     propagation::
 

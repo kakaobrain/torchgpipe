@@ -9,7 +9,7 @@ __all__ = ['Namespace']
 
 @total_ordering
 class Namespace(metaclass=abc.ABCMeta):
-    """An isolated namespace for skip tensors used by :meth:`isolate()
+    """Namespace for isolating skip tensors used by :meth:`isolate()
     <torchgpipe.skip.skippable.Skippable.isolate>`.
     """
     __slots__ = ('id',)
