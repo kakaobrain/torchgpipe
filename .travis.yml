@@ -25,12 +25,15 @@ jobs:
         - pip install flake8 mypy
         - lint () { flake8 "$1" && mypy "$1"; }
       script:
-        - lint .
-        - lint examples/resnet
-        - lint examples/resnet101_speed_benchmark
-        - lint examples/resnet101_accuracy_benchmark
-        - lint examples/amoebanet
-        - lint examples/amoebanetd_speed_benchmark
+        - lint torchgpipe
+        - lint tests
+        - lint benchmarks/models/resnet
+        - lint benchmarks/models/amoebanet
+        - lint benchmarks/models/unet3d
+        - lint benchmarks/resnet101-speed
+        - lint benchmarks/resnet101-accuracy
+        - lint benchmarks/amoebanetd-speed
+        - lint benchmarks/amoebanetd-memory
 
 # Test with various Python and PyTorch versions.
 install:

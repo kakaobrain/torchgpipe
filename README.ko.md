@@ -86,144 +86,71 @@ API 문서를 비롯한 자세한 문서는 [torchgpipe.readthedocs.io][rtd]에�
 
 ## 벤치마크
 
-### ResNet-101 속도 벤치마크
+각 벤치마크의 자세한 내용과 추가적인 벤치마크는
+[torchgpipe.readthedocs.io][rtd-benchmarks]에서 확인할 수 있습니다.
 
-실험 | torchgpipe | GPipe (논문)
----------- | -----: | -----:
-naive-1    |     1x |     1x
-pipeline-1 | 0.756x |   0.8x
-pipeline-2 | 1.489x | 1.418x
-pipeline-4 | 2.629x | 2.182x
-pipeline-8 | 4.367x | 2.891x
-
-GPipe 논문의 그림3 (b)에 보고된 ResNet-101 학습 속도 벤치마크를
-재현했습니다.
-
-GPipe 없이 한 장치에서 ResNet-101을 학습 시켰을 때 속도인 naive-1을 기준으로
-설정했습니다. pipeline-1은 파티션 1개짜리, pipeline-8은 파티션 8개짜리 GPipe로
-학습시켰을 때 naive-1 대비 상대속도를 나타냅니다. pipeline-1의 경우 Pipeline
-Parallelism이 적용되지 않고 Checkpointing 오버헤드만 있어서 naive-1에 비해
-오히려 더 느립니다.
-
-[examples/resnet101_speed_benchmark](examples/resnet101_speed_benchmark)에서
-실험 코드를 확인할 수 있습니다.
+[rtd-benchmarks]: https://torchgpipe.readthedocs.io/en/stable/benchmarks.html
 
 ### ResNet-101 정확도 벤치마크
 
 배치크기 | torchgpipe | nn.DataParallel | Goyal et al.
---: | ---------: | ---------: | ---------:
-256 | 21.99±0.13 | 22.02±0.11 | 22.08±0.06
- 1k | 22.24±0.19 | 22.04±0.24 |        N/A
- 4k | 22.13±0.09 |        N/A |        N/A
+-------- | ---------: | --------------: | -----------:
+256      | 21.99±0.13 |      22.02±0.11 |   22.08±0.06
+1K       | 22.24±0.19 |      22.04±0.24 |          N/A
+4K       | 22.13±0.09 |             N/A |          N/A
 
-[Accurate, Large Minibatch SGD](https://arxiv.org/abs/1706.02677) 논문의 테이블
-2(c)에 보고된 ResNet-101 정확도(오답률) 벤치마크를 재현했습니다.
+GPipe를 사용해 학습할 때 추가적인 하이퍼파라미터 조정이 없길 바랍니다. 이를
+검증하기 위해 [Accurate, Large Minibatch SGD](https://arxiv.org/abs/1706.02677)
+논문의 표2(c)에 보고된 ResNet-101 정확도(오답률) 벤치마크를 재현했습니다.
 
-[examples/resnet101_accuracy_benchmark](examples/resnet101_accuracy_benchmark)에서
-실험 코드를 확인할 수 있습니다.
+### U-Net (B, C) 메모리 벤치마크
 
-### AmoebaNet-D 속도 벤치마크
+실험       | U-Net (B, C) | 파라미터 | 메모리 사용량
+---------- | ------------ | -------: | ------------:
+baseline   | (6, 72)      |   362.2M |      20.3 GiB
+pipeline-1 | (11, 128)    |    2.21B |      20.5 GiB
+pipeline-2 | (24, 128)    |    4.99B |      43.4 GiB
+pipeline-4 | (24, 160)    |    7.80B |      79.1 GiB
+pipeline-8 | (48, 160)    |   15.82B |     154.1 GiB
 
-실험 | torchgpipe | GPipe (논문)
----------- | -----: | -----:
-naive-2    |     1x |     1x
-pipeline-2 | 1.465x | 1.156x
-pipeline-4 | 2.225x | 2.483x
-pipeline-8 | 3.044x | 3.442x
+GPipe로 얼마나 큰 U-Net 모델을 학습시킬 수 있는지 측정했습니다. *baseline*은
+GPipe를 적용하지 않은 경우를 나타내고, *pipeline-1*, *-2*, *-4*, *-8*은 GPipe를
+적용했을 때 GPU 수에 따른 경우를 나타냅니다.
 
-GPipe 논문의 그림3 (a)에 보고된 AmoebaNet-D 학습 속도 벤치마크 비교에선
-torchgpipe와 GPipe간 다소 차이가 있습니다. 이는 TensorFlow로 구현된
-AmoebaNet-D를 PyTorch 마이그레이션 과정에서 발생하는 것으로, torchgpipe에 의해
-발생한 차이는 아니라고 판단됩니다. 안정된 AmoebaNet-D 재현이 가능할 때 결과를
-업데이트 할 예정입니다.
+이 벤치마크엔 간략화한 U-Net 구조를 사용했습니다. 모델의 크기는 하이퍼파라미터
+B와 C로 결정합니다. 각각 레이어 수와 필터 수에 비례합니다.
 
-GPipe 없이 두 장치에서 AmoebaNet-D을 학습 시켰을 때 속도인 naive-2을 기준으로
-설정했습니다. pipeline-2에서는 논문보다 조금 더 빨랐지만 pipeline-4, 8에서는
-느렸습니다.
+### U-Net (5, 64) 속도 벤치마크
 
-### AmoebaNet-D 메모리 벤치마크
+실험       | 처리량   | 속도향상
+---------- | -------: | -------:
+baseline   | 28.500/s |       1×
+pipeline-1 | 24.456/s |   0.858×
+pipeline-2 | 35.502/s |   1.246×
+pipeline-4 | 67.042/s |   2.352×
+pipeline-8 | 88.497/s |   3.105×
 
-<table>
-  <thead>
-    <tr>
-      <th rowspan="2">실험</th>
-      <th colspan="2">naive-1</th>
-      <th colspan="2">pipeline-1</th>
-      <th colspan="2">pipeline-2</th>
-      <th colspan="2">pipeline-4</th>
-      <th colspan="2">pipeline-8</th>
-    </tr>
-    <tr align="center">
-      <td>torchgpipe</td>
-      <td>논문</td>
-      <td>torchgpipe</td>
-      <td>논문</td>
-      <td>torchgpipe</td>
-      <td>논문</td>
-      <td>torchgpipe</td>
-      <td>논문</td>
-      <td>torchgpipe</td>
-      <td>논문</td>
-    </tr>
-  </thead>
-  <tbody>
-    <tr align="center">
-      <td>AmoebaNet-D (L, F)</td>
-      <td colspan="2">(6, 208)</td>
-      <td colspan="2">(6, 416)</td>
-      <td colspan="2">(6, 544)</td>
-      <td colspan="2">(12, 544)</td>
-      <td colspan="2">(24, 512)</td>
-    </tr>
-    <tr align="center">
-      <td># of Model Parameters</td>
-      <td>90M</td>
-      <td>82M</td>
-      <td>358M</td>
-      <td>318M</td>
-      <td>613M</td>
-      <td>542M</td>
-      <td>1.16B</td>
-      <td>1.05B</td>
-      <td>2.01B</td>
-      <td>1.80B</td>
-    </tr>
-    <tr align="center">
-      <td>Total Peak Model Parameter Memory</td>
-      <td>1.00GB</td>
-      <td>1.05GB</td>
-      <td>4.01GB</td>
-      <td>3.80GB</td>
-      <td>6.45GB</td>
-      <td>6.45GB</td>
-      <td>13.00GB</td>
-      <td>12.53GB</td>
-      <td>22.42GB</td>
-      <td>24.62GB</td>
-    </tr>
-    <tr align="center">
-      <td>Total Peak Activation Memory</td>
-      <td>-</td>
-      <td>6.26GB</td>
-      <td>6.64GB</td>
-      <td>3.46GB</td>
-      <td>11.31GB</td>
-      <td>8.11GB</td>
-      <td>18.72GB</td>
-      <td>15.21GB</td>
-      <td>35.78GB</td>
-      <td>26.24GB</td>
-    </tr>
-  </tbody>
-</table>
+U-Net 구조는 여러 롱스킵커넥션을 포함합니다. 스킵커넥션에서의 효율성을 검증하기
+위해 U-Net에서 GPU 수에 따른 처리량을 측정했습니다.
 
-GPipe 논문의 테이블1에 보고된 AmoebaNet-D 메모리 효율 벤치마크를 재현했습니다.
-AmoebaNet-D 모델은 레이어 수에 비례하는 파라미터 L과 필터 개수에 비례하는
-파라미터 F로 모델크기를 조절할 수 있습니다.
+### AmoebaNet-D (18, 256) Speed Benchmark
 
-한 개의 GPU에서 GPipe를 사용하지 않은 naive-1보다 GPipe를 사용한 pipeline-1에서
-더 큰 모델을 학습시킬 수 있는걸 볼 수 있습니다. GPU 개수를 늘린 pipeline-8에선
-naive-1 대비 22배 이상 큰 모델도 학습시킬 수 있었습니다.
+실험      | 처리량    | torchgpipe | Huang et al.
+--------- | --------: | ---------: | -----------:
+n=2, m=1  |  26.733/s |         1× |           1×
+n=2, m=4  |  41.133/s |     1.546× |        1.07×
+n=2, m=32 |  47.386/s |     1.780× |        1.21×
+n=4, m=1  |  26.827/s |     1.006× |        1.13×
+n=4, m=4  |  44.543/s |     1.680× |        1.26×
+n=4, m=32 |  72.412/s |     2.711× |        1.84×
+n=8, m=1  |  24.918/s |     0.932× |        1.38×
+n=8, m=4  |  70.065/s |     2.625× |        1.72×
+n=8, m=32 | 132.413/s |     4.966× |        3.48×
+
+(*n*: 파티션 수, *m*: 마이크로배치 수)
+
+[GPipe](https://arxiv.org/abs/1811.06965) 논문의 표2에 보고된 AmoebaNet-D (18,
+256) 학습 속도 벤치마크를 재현했습니다. 논문의 *K*를 *n*으로 바꿔 표기했습니다.
 
 ## 참고사항
 

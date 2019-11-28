@@ -94,148 +94,76 @@ references.
 
 ## Benchmarking
 
-### ResNet-101 Speed Benchmark
+The full details and more benchmarks are available in
+[torchgpipe.readthedocs.io][rtd-benchmarks].
 
-Experiment | torchgpipe | GPipe (original)
----------- | -----: | -----:
-naive-1    |     1x |     1x
-pipeline-1 | 0.756x |   0.8x
-pipeline-2 | 1.489x | 1.418x
-pipeline-4 | 2.629x | 2.182x
-pipeline-8 | 4.367x | 2.891x
-
-The table shows the reproduced speed benchmark on ResNet-101, as stated by
-reported in Figure 3(b) of the paper.
-
-Naive-1 indicates the baseline setting that ResNet-101 on a single device is
-trained without GPipe. The speeds under other settings are measured relative to
-the speed of naive-1 (which is considered as the unit speed). Pipeline-k means
-k partitions with GPipe using k devices. Pipeline-1 is slower than naive-1
-since it does not benefit from pipeline parallelism but has checkpointing
-overhead.
-
-The reproducible code can be found in
-[examples/resnet101_speed_benchmark](examples/resnet101_speed_benchmark).
+[rtd-benchmarks]: https://torchgpipe.readthedocs.io/en/stable/benchmarks.html
 
 ### ResNet-101 Accuracy Benchmark
 
 Batch size | torchgpipe | nn.DataParallel | Goyal et al.
---: | ---------: | ---------: | ---------:
-256 | 21.99±0.13 | 22.02±0.11 | 22.08±0.06
- 1k | 22.24±0.19 | 22.04±0.24 |        N/A
- 4k | 22.13±0.09 |        N/A |        N/A
+---------- | ---------: | --------------: | -----------:
+256        | 21.99±0.13 |      22.02±0.11 |   22.08±0.06
+1K         | 22.24±0.19 |      22.04±0.24 |          N/A
+4K         | 22.13±0.09 |             N/A |          N/A
 
-The table shows the reproduced accuracy(top-1 error rate) benchmark on
-ResNet-101, as stated by reported in Table 2(c) of [Accurate, Large Minibatch
-SGD](https://arxiv.org/abs/1706.02677) paper.
+GPipe should be transparent not to introduce additional hyperparameter tuning.
+To verify the transparency, we reproduced top-1 error rate of ResNet-101 on
+ImageNet, as reported in Table 2(c) of [Accurate, Large Minibatch
+SGD](https://arxiv.org/abs/1706.02677) by Goyal et al.
 
-The reproducible code can be found in
-[examples/resnet101_accuracy_benchmark](examples/resnet101_accuracy_benchmark).
+### U-Net (B, C) Memory Benchmark
 
-### AmoebaNet-D Speed Benchmark
+Experiment | U-Net (B, C) | Parameters | Memory usage
+---------- | ------------ | ---------: | -----------:
+baseline   | (6, 72)      |     362.2M |     20.3 GiB
+pipeline-1 | (11, 128)    |      2.21B |     20.5 GiB
+pipeline-2 | (24, 128)    |      4.99B |     43.4 GiB
+pipeline-4 | (24, 160)    |      7.80B |     79.1 GiB
+pipeline-8 | (48, 160)    |     15.82B |    154.1 GiB
 
-Experiment | torchgpipe | GPipe (original)
----------- | -----: | -----:
-naive-2    |     1x |     1x
-pipeline-2 | 1.465x | 1.156x
-pipeline-4 | 2.225x | 2.483x
-pipeline-8 | 3.044x | 3.442x
+The table shows how GPipe facilitates scaling U-Net models. *baseline* denotes
+the baseline without pipeline parallelism nor checkpointing, and *pipeline-1*,
+*-2*, *-4*, *-8* denotes that the model is trained with GPipe with the
+corresponding number of partitions.
 
-The table shows the reproduced speed benchmark on AmoebaNet-D, as reported in
-Figure 3(a) of the paper. But there is some difference between torchgpipe and
-GPipe. We believe that this difference is not caused by the difference of
-torchgpipe and GPipe, rather by reimplementing the AmoebaNet-D model in
-TensorFlow for PyTorch. Results will be updated whenever a stable and
-reproducible AmoebaNet-D in PyTorch is available.
-
-Naive-2 indicates the baseline setting that AmoebaNet-D on two devices is
-trained without GPipe. Pipeline-2 is a little faster than the paper, but
-pipeline-4 and pipeline-8 are slower.
-
-### AmoebaNet-D Memory Benchmark
-
-<table>
-  <thead>
-    <tr>
-      <th rowspan="2">Experiment</th>
-      <th colspan="2">naive-1</th>
-      <th colspan="2">pipeline-1</th>
-      <th colspan="2">pipeline-2</th>
-      <th colspan="2">pipeline-4</th>
-      <th colspan="2">pipeline-8</th>
-    </tr>
-    <tr align="center">
-      <td>torchgpipe</td>
-      <td>GPipe<br>(original)</td>
-      <td>torchgpipe</td>
-      <td>GPipe<br>(original)</td>
-      <td>torchgpipe</td>
-      <td>GPipe<br>(original)</td>
-      <td>torchgpipe</td>
-      <td>GPipe<br>(original)</td>
-      <td>torchgpipe</td>
-      <td>GPipe<br>(original)</td>
-    </tr>
-  </thead>
-  <tbody>
-    <tr align="center">
-      <td>AmoebaNet-D (L, F)</td>
-      <td colspan="2">(6, 208)</td>
-      <td colspan="2">(6, 416)</td>
-      <td colspan="2">(6, 544)</td>
-      <td colspan="2">(12, 544)</td>
-      <td colspan="2">(24, 512)</td>
-    </tr>
-    <tr align="center">
-      <td># of Model Parameters</td>
-      <td>90M</td>
-      <td>82M</td>
-      <td>358M</td>
-      <td>318M</td>
-      <td>613M</td>
-      <td>542M</td>
-      <td>1.16B</td>
-      <td>1.05B</td>
-      <td>2.01B</td>
-      <td>1.80B</td>
-    </tr>
-    <tr align="center">
-      <td>Total Peak Model Parameter Memory</td>
-      <td>1.00GB</td>
-      <td>1.05GB</td>
-      <td>4.01GB</td>
-      <td>3.80GB</td>
-      <td>6.45GB</td>
-      <td>6.45GB</td>
-      <td>13.00GB</td>
-      <td>12.53GB</td>
-      <td>22.42GB</td>
-      <td>24.62GB</td>
-    </tr>
-    <tr align="center">
-      <td>Total Peak Activation Memory</td>
-      <td>-</td>
-      <td>6.26GB</td>
-      <td>6.64GB</td>
-      <td>3.46GB</td>
-      <td>11.31GB</td>
-      <td>8.11GB</td>
-      <td>18.72GB</td>
-      <td>15.21GB</td>
-      <td>35.78GB</td>
-      <td>26.24GB</td>
-    </tr>
-  </tbody>
-</table>
-
-It shows the better memory utilization of AmoebaNet-D with GPipe, as stated in
-Table 1 of the paper. The size of an AmoebaNet-D model is determined by two
-hyperparameters L and F which are proportional to the number of layers and
+Here we used a simplified U-Net architecture. The size of a model is determined
+by hyperparameters B and C which are proportional to the number of layers and
 filters, respectively.
 
-The difference between naive-1 and pipeline-1 indicates GPipe's capability to
-leverage training a larger model. With 8 GPUs, GPipe is capable of training a
-model which is 22 times larger compared to the naive-1 setting.
+### U-Net (5, 64) Speed Benchmark
+
+Experiment | Throughput | Speed up
+---------- | ---------: | -------:
+baseline   |   28.500/s |       1×
+pipeline-1 |   24.456/s |   0.858×
+pipeline-2 |   35.502/s |   1.246×
+pipeline-4 |   67.042/s |   2.352×
+pipeline-8 |   88.497/s |   3.105×
+
+To verify efficiency with skip connections, we measured the throughput of U-Net
+with various number of devices. We chose to use U-Net since it has several long
+skip connections.
+
+### AmoebaNet-D (18, 256) Speed Benchmark
+
+Experiment | Throughput | torchgpipe | Huang et al.
+---------- | ---------: | ---------: | -----------:
+n=2, m=1   |   26.733/s |         1× |           1×
+n=2, m=4   |   41.133/s |     1.546× |        1.07×
+n=2, m=32  |   47.386/s |     1.780× |        1.21×
+n=4, m=1   |   26.827/s |     1.006× |        1.13×
+n=4, m=4   |   44.543/s |     1.680× |        1.26×
+n=4, m=32  |   72.412/s |     2.711× |        1.84×
+n=8, m=1   |   24.918/s |     0.932× |        1.38×
+n=8, m=4   |   70.065/s |     2.625× |        1.72×
+n=8, m=32  |  132.413/s |     4.966× |        3.48×
+
+(*n*: number of partitions, *m*: number of micro-batches)
+
+The table shows the reproduced speed benchmark on AmoebaNet-D (18, 256), as
+reported in Table 2 of [GPipe](https://arxiv.org/abs/1811.06965) by Huang et
+al. Note that we replaced *K* in the paper with *n*.
 
 ## Notes
 
