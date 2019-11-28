@@ -298,6 +298,10 @@ class stash:
             yield stash('name', input)
             return f(input)
 
+    Args:
+        name (str): name of skip tensor
+        input (torch.Tensor or None): tensor to skip
+
     """
     __slots__ = ('name', 'tensor')
 
@@ -314,6 +318,12 @@ class pop:
         def forward(self, input):
             skip = yield pop('name')
             return f(input) + skip
+
+    Args:
+        name (str): name of skip tensor
+
+    Returns:
+        the skip tensor stashed at a prior module
 
     """
     __slots__ = ('name',)
