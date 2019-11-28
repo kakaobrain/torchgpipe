@@ -224,8 +224,8 @@ def skippable(stash: Iterable[str] = (),
     stashed by ``yield stash(name, tensor)`` or popped by ``tensor = yield
     pop(name)``.
 
-    Here is an example with three layers. A skip tensor named ``1to3`` is
-    stashed and popped at the first and last layer, respectively::
+    Here is an example with three layers. A skip tensor named "1to3" is stashed
+    and popped at the first and last layer, respectively::
 
         @skippable(stash=['1to3'])
         class Layer1(nn.Module):
@@ -255,9 +255,9 @@ def skippable(stash: Iterable[str] = (),
                 carol = yield pop('carol')
                 return input + carol
 
-    Every skip tensor must be associated with exactly one pair of :func:`stash`
-    and :func:`pop`. :class:`~torchgpipe.GPipe` checks this restriction
-    automatically when wrapping a module. You can also check the restriction by
+    Every skip tensor must be associated with exactly one pair of `stash` and
+    `pop`. :class:`~torchgpipe.GPipe` checks this restriction automatically
+    when wrapping a module. You can also check the restriction by
     :func:`~torchgpipe.skip.verify_skippables` without
     :class:`~torchgpipe.GPipe`.
 
@@ -335,9 +335,9 @@ class pop:
 def verify_skippables(module: nn.Sequential) -> None:
     """Verifies if the underlying skippable modules satisfy integrity.
 
-    Every skip tensor must has only one pair of ``stash`` and ``pop``. If there
-    are one or more unmatched pairs, it will raise :exc:`TypeError` with
-    detailed messages.
+    Every skip tensor must has only one pair of `stash` and `pop`. If there are
+    one or more unmatched pairs, it will raise :exc:`TypeError` with detailed
+    messages.
 
     Here are a few failure cases. :func:`verify_skippables` will report failure
     for these cases::
@@ -360,7 +360,7 @@ def verify_skippables(module: nn.Sequential) -> None:
 
     Raises:
         TypeError:
-            one or more pairs of ``stash`` and ``pop`` are not matched.
+            one or more pairs of `stash` and `pop` are not matched.
 
     """
     stashed: Set[Tuple[Namespace, str]] = set()
