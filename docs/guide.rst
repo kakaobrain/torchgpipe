@@ -179,13 +179,14 @@ Checkpointing drastically helps to reduce memory usage, but the overall
 training would slow down by about 25%. You can handle how to apply
 checkpointing on your model. There are three options:
 
-- ``always`` -- Apply checkpointing over all micro-batches.
-- ``except_last`` (default) -- Apply checkpointing except the last micro-batch.
-- ``never`` -- Checkpointing is never applied.
+- ``'always'`` -- Apply checkpointing over all micro-batches.
+- ``'except_last'`` (default) -- Apply checkpointing except the last
+  micro-batch.
+- ``'never'`` -- Checkpointing is never applied.
 
 Usually, checkpointing at the last micro-batch may not be useful because the
 saved memory will be reconstructed immediately. That's why we choose
-``except_last`` as the default option.
+``'except_last'`` as the default option.
 
 If you decide not to use checkpointing at all, :class:`nn.DataParallel
 <torch.nn.DataParallel>` might be more efficient than GPipe.
@@ -240,7 +241,7 @@ Sequential:
    a :class:`nn.Sequential <torch.nn.Sequential>` model.
 
    .. _the sequential ResNet example:
-      https://github.com/kakaobrain/torchgpipe/tree/master/examples/resnet
+      https://github.com/kakaobrain/torchgpipe/tree/master/benchmarks/models/resnet
 
    :class:`nn.Sequential <torch.nn.Sequential>` assumes that every underlying
    layer takes only one argument. Calling ``forward(x)`` on
@@ -258,7 +259,7 @@ Sequential:
 Tensor or Tensors:
    As we discussed above, each layer must take only one argument due to
    :class:`nn.Sequential <torch.nn.Sequential>`. There is one more restriction.
-   Every underlying layers' input and output must be ``Tensor`` or
+   Every underlying layers' input and output must be :class:`~torch.Tensor` or
    ``Tuple[Tensor, ...]``::
 
       # OK
@@ -435,8 +436,8 @@ multiple skip tensors. However, there are restrictions:
 
 Then, how can we instantiate multiple skippable modules from the same class in
 a sequential module? You can isolate some skip names into a
-:class:`~torch.skip.Namespace`. For example, a conceptual U-Net can be designed
-like this. There are 3 pairs of ``Encoder`` and ``Decoder``::
+:class:`~torchgpipe.skip.Namespace`. For example, a conceptual U-Net can be
+designed like this. There are 3 pairs of ``Encoder`` and ``Decoder``::
 
    # 1F. Encoder -------- Decoder -- Segment
    #        \                /

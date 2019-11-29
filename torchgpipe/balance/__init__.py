@@ -66,8 +66,8 @@ def balance_by_time(partitions: int,
             current CUDA device)
 
     Returns:
-        A list of number of layers in each partition. Use it for the
-        ``balance`` parameter of :class:`~torchgpipe.GPipe`.
+        A list of number of layers in each partition. Use it for the `balance`
+        parameter of :class:`~torchgpipe.GPipe`.
 
     .. note::
         `module` and `sample` must be placed on the same device.
@@ -145,8 +145,8 @@ def balance_by_size(partitions: int,
             device)
 
     Returns:
-        A list of number of layers in each partition. Use it for the
-        ``balance`` parameter of :class:`~torchgpipe.GPipe`.
+        A list of number of layers in each partition. Use it for the `balance`
+        parameter of :class:`~torchgpipe.GPipe`.
 
     .. note::
         `module` and `input` must be placed on the same CUDA device.

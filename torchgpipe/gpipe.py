@@ -205,7 +205,7 @@ class GPipe(Module):
     chunks: int = 1
 
     #: The checkpoint mode to determine when to enable checkpointing. It is one
-    #: of ``always``, ``except_last``, or ``never``.
+    #: of ``'always'``, ``'except_last'``, or ``'never'``.
     checkpoint: str = 'except_last'
 
     def __init__(self,

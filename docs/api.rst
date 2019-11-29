@@ -4,6 +4,8 @@ API
 GPipe Module
 ~~~~~~~~~~~~
 
+.. py:module:: torchgpipe
+
 .. autoclass:: torchgpipe.GPipe(module, balance, \**kwargs)
 
    .. automethod:: forward(input)
@@ -22,6 +24,8 @@ GPipe Module
 
 Skip Connections
 ~~~~~~~~~~~~~~~~
+
+.. py:module:: torchgpipe.skip
 
 .. autodecorator:: torchgpipe.skip.skippable([stash], [pop])
 
@@ -42,8 +46,12 @@ Inspecting GPipe Timeline
 
 .. autofunction:: torchgpipe.is_recomputing()
 
+.. _torchgpipe.balance:
+
 Automatic Balancing
 ~~~~~~~~~~~~~~~~~~~
+
+.. py:module:: torchgpipe.balance
 
 .. autofunction:: torchgpipe.balance.balance_by_time(partitions, module, sample, timeout=1.0, device=torch.device('cuda'))
 
