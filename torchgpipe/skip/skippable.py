@@ -215,8 +215,9 @@ def skippable(stash: Iterable[str] = (),
               pop: Iterable[str] = (),
               ) -> Callable[[Type[SkippableModule]], Type[Skippable]]:
     """The decorator to define a :class:`nn.Module <torch.nn.Module>` with skip
-    connections. Decorated modules are called "skippable". A skippable module
-    works well with or without :mod:`torchgpipe`.
+    connections. Decorated modules are called "skippable". This functionality
+    works perfectly fine even the module is not wrapped by
+    :class:`~torchgpipe.GPipe`.
 
     Each skip tensor is managed by its name. Before manipulating skip tensors,
     a skippable module must statically declare the names for skip tensors by

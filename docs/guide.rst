@@ -375,8 +375,8 @@ six devices do not need it. The alternative approach is to expose in which
 layer the skip tensor is produced and consumed. We introduce the
 :func:`@skippable <torchgpipe.skip.skippable>` class decorator to toss the
 tensor directly, without needing to pass it to irrelevant layers in between. A
-module can stash a tensor into the storage or pop. This functionality still
-works well without :mod:`torchgpipe`.
+module can stash a tensor into the storage or pop. This functionality works
+perfectly fine even the module is not wrapped by :class:`~torchgpipe.GPipe`.
 
 The decorator declares which skip tensors would be stashed or popped in the
 decorated module class to let :class:`~torchgpipe.GPipe` understand layout of
