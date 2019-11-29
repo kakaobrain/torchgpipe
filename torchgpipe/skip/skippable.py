@@ -79,9 +79,8 @@ class Skippable(nn.Module):
                 Layer3().isolate(ns1),
             )
 
-        Typically, ``only`` parameter is omitted to isolate all skip tensors.
-        By the way, this parameter can be used for isolating a subset of skip
-        tensors::
+        When `only` parameter is omitted, all skip tensors are isolated. You
+        can isolate a subset of skip tensors by passing `only` parameter::
 
             ns_alice = Namespace()
             ns_bob = Namespace()
@@ -100,7 +99,7 @@ class Skippable(nn.Module):
         Keyword Args:
             only (iterable of strs):
                 names of specific skip tensors to be isolated (omit this option
-                to isolate all skip tensors declared in)
+                to isolate all skip tensors declared in this module)
 
         Returns:
             this module itself
@@ -216,7 +215,7 @@ def skippable(stash: Iterable[str] = (),
               ) -> Callable[[Type[SkippableModule]], Type[Skippable]]:
     """The decorator to define a :class:`nn.Module <torch.nn.Module>` with skip
     connections. Decorated modules are called "skippable". This functionality
-    works perfectly fine even the module is not wrapped by
+    works perfectly fine even when the module is not wrapped by
     :class:`~torchgpipe.GPipe`.
 
     Each skip tensor is managed by its name. Before manipulating skip tensors,
@@ -301,7 +300,7 @@ class stash:
 
     Args:
         name (str): name of skip tensor
-        input (torch.Tensor or None): tensor to skip
+        input (torch.Tensor or None): tensor to pass to the skip connection
 
     """
     __slots__ = ('name', 'tensor')
@@ -336,9 +335,9 @@ class pop:
 def verify_skippables(module: nn.Sequential) -> None:
     """Verifies if the underlying skippable modules satisfy integrity.
 
-    Every skip tensor must has only one pair of `stash` and `pop`. If there are
-    one or more unmatched pairs, it will raise :exc:`TypeError` with detailed
-    messages.
+    Every skip tensor must have only one pair of `stash` and `pop`. If there
+    are one or more unmatched pairs, it will raise :exc:`TypeError` with the
+    detailed messages.
 
     Here are a few failure cases. :func:`verify_skippables` will report failure
     for these cases::

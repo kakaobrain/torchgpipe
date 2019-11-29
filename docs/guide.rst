@@ -376,13 +376,13 @@ layer the skip tensor is produced and consumed. We introduce the
 :func:`@skippable <torchgpipe.skip.skippable>` class decorator to toss the
 tensor directly, without needing to pass it to irrelevant layers in between. A
 module can stash a tensor into the storage or pop. This functionality works
-perfectly fine even the module is not wrapped by :class:`~torchgpipe.GPipe`.
+perfectly fine even when the module is not wrapped by
+:class:`~torchgpipe.GPipe`.
 
 The decorator declares which skip tensors would be stashed or popped in the
-decorated module class to let :class:`~torchgpipe.GPipe` understand layout of
-the connections. For exposition, let us explain the way to implement the
-8-layer example above using :mod:`torchgpipe.skip`. Here we use name "skip" for
-the skip connection between ``Layer1`` and ``Layer8``::
+decorated module. Let us explain how to implement the 8-layer example above
+using :mod:`torchgpipe.skip`. Here we use the name "skip" for the skip
+connection between ``Layer1`` and ``Layer8``::
 
    # Layer1 stashes 'skip'.
    @skippable(stash=['skip'])
@@ -469,10 +469,10 @@ like this. There are 3 pairs of ``Encoder`` and ``Decoder``::
        Segment(),
    )
 
-Some skip connection might be conditional depending on its input. However,
-:func:`@skippable <torchgpipe.skip.skippable>` doesn't allow missing of
-:func:`~torchgpipe.skip.stash` or :func:`~torchgpipe.skip.pop`. Instead, it
-allows :data:`None` as the placeholder of skip tensor::
+Some skip connection may be conditional on input. However, :func:`@skippable
+<torchgpipe.skip.skippable>` doesn't allow :func:`~torchgpipe.skip.stash` or
+:func:`~torchgpipe.skip.pop` missing. Instead, it allows :data:`None` in place
+of skip tensor::
 
    @skippable(stash=['skip'])
    class MaybeStash(nn.Module):
