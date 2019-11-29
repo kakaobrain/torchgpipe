@@ -1,10 +1,10 @@
 Changelog
 =========
 
-v0.0.5 (WIP)
+v0.0.5
 ~~~~~~
 
-Not released yet.
+Released on November 29, 2019.
 
 Featured:
    :func:`@skippable <torchgpipe.skip.skippable>` for efficient skip
