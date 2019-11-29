@@ -6,6 +6,11 @@ v0.0.5 (WIP)
 
 Not released yet.
 
+Featured:
+   :func:`@skippable <torchgpipe.skip.skippable>` for efficient skip
+   connections. With this interface, :class:`~torchgpipe.GPipe` copies skip
+   tensors directly to the destination device.
+
 Improvements:
    - Checkpointing deterministically handles randomness managed by PyTorch.
    - :func:`~torchgpipe.balance.balance_by_size` analyzes parameters as well.

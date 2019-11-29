@@ -166,9 +166,9 @@ class GPipe(Module):
             when to enable checkpointing, one of ``'always'``,
             ``'except_last'``, or ``'never'`` (default: ``'except_last'``)
         deferred_batch_norm (bool):
-            whether to use deferred BatchNorm moving statistics
-            (default: ``False``, see :ref:`Deferred Batch Normalization` for
-            more details)
+            whether to use deferred BatchNorm moving statistics (default:
+            :data:`False`, see :ref:`Deferred Batch Normalization` for more
+            details)
 
     Raises:
         TypeError:

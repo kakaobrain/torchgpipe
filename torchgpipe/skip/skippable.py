@@ -60,27 +60,49 @@ class Skippable(nn.Module):
             yield self.namespaced(name)
 
     def isolate(self: T, ns: Namespace, *, only: Optional[Iterable[str]] = None) -> T:
-        """Isolates a specific or every skip name into a namespace.
+        r"""Isolates a specified subset or the whole set of skip tensors into a
+        namespace. In a single sequential module, skip tensors with the same
+        name are not allowed unless they are isolated by different namespaces.
+
+        Here's an example using the same name for skip tensors twice. Each pair
+        of ``Layer1`` and ``Layer2`` is isolated with its own namespace ``ns1``
+        and ``ns2``. There is no conflict anymore::
+
+            ns1 = Namespace()
+            ns2 = Namespace()
+
+            model = nn.Sequential(
+                Layer1().isolate(ns1),
+                Layer1().isolate(ns2),
+                Layer2(),
+                Layer3().isolate(ns2),
+                Layer3().isolate(ns1),
+            )
+
+        When `only` parameter is omitted, all skip tensors are isolated. You
+        can isolate a subset of skip tensors by passing `only` parameter::
+
+            ns_alice = Namespace()
+            ns_bob = Namespace()
+
+            model = nn.Sequential(
+                ...
+                StashStashPop().isolate(ns_alice, only=['alice']) \
+                               .isolate(ns_bob, only=['bob']),
+                ...
+            )
 
         Args:
             ns (Namespace):
                 namespace for isolation
 
         Keyword Args:
-            only (str):
-                specific skip name to be isolated (omit this option to isolate
-                all skip names declared)
+            only (iterable of strs):
+                names of specific skip tensors to be isolated (omit this option
+                to isolate all skip tensors declared in this module)
 
-        Usage::
-            ns1 = Namespace()
-            ns2 = Namespace()
-
-            model = nn.Sequential(
-                Stash().isolate(ns1),
-                Stash().isolate(ns2),
-                Pop().isolate(ns2),
-                Pop().isolate(ns1),
-            )
+        Returns:
+            this module itself
 
         """
         names: Iterable[str]
@@ -187,18 +209,24 @@ class Skippable(nn.Module):
         return output
 
 
+# TODO(sublee): Move to above of Skippable class for better read flow.
 def skippable(stash: Iterable[str] = (),
               pop: Iterable[str] = (),
               ) -> Callable[[Type[SkippableModule]], Type[Skippable]]:
-    """The decorator to define a :class:`~torch.nn.Module` with skip
-    connections. Decorated modules are called "skippable".
+    """The decorator to define a :class:`nn.Module <torch.nn.Module>` with skip
+    connections. Decorated modules are called "skippable". This functionality
+    works perfectly fine even when the module is not wrapped by
+    :class:`~torchgpipe.GPipe`.
 
     Each skip tensor is managed by its name. Before manipulating skip tensors,
-    a skippable module must declare statically which names will be used. Then a
-    skip tensor can be stashed by ``yield stash(name, tensor)`` or be popped by
-    ``tensor = yield pop(name)``.
+    a skippable module must statically declare the names for skip tensors by
+    `stash` and/or `pop` parameters. Skip tensors with pre-declared name can be
+    stashed by ``yield stash(name, tensor)`` or popped by ``tensor = yield
+    pop(name)``.
 
-    Example::
+    Here is an example with three layers. A skip tensor named "1to3" is stashed
+    and popped at the first and last layer, respectively::
+
         @skippable(stash=['1to3'])
         class Layer1(nn.Module):
             def forward(self, input):
@@ -217,16 +245,34 @@ def skippable(stash: Iterable[str] = (),
 
         model = nn.Sequential(Layer1(), Layer2(), Layer3())
 
+    One skippable module can stash or pop multiple skip tensors::
+
+        @skippable(stash=['alice', 'bob'], pop=['carol'])
+        class StashStashPop(nn.Module):
+            def forward(self, input):
+                yield stash('alice', f_alice(input))
+                yield stash('bob', f_bob(input))
+                carol = yield pop('carol')
+                return input + carol
+
+    Every skip tensor must be associated with exactly one pair of `stash` and
+    `pop`. :class:`~torchgpipe.GPipe` checks this restriction automatically
+    when wrapping a module. You can also check the restriction by
+    :func:`~torchgpipe.skip.verify_skippables` without
+    :class:`~torchgpipe.GPipe`.
+
     .. note::
 
-        ``@skippable()`` decorator changes the type of the wrapped class. But
-        currently (mypy v0.740), mypy could not understand class decorators yet
-        (`#3135 <https://github.com/python/mypy/issues/3135>`_).
+        :func:`@skippable <skippable>` changes the type of the wrapped class.
+        But currently (mypy v0.740), mypy could not understand class decorators
+        yet (`#3135 <https://github.com/python/mypy/issues/3135>`_).
 
         There are two workarounds:
 
         1. Naively ignore type errors by ``# type: ignore``.
         2. Use ``skippable()()`` as a function instead of a decorator.
+
+    .. seealso:: :ref:`Long Skip Connections`
 
     """
     stashable_names = frozenset(stash)
@@ -244,11 +290,17 @@ def skippable(stash: Iterable[str] = (),
 
 
 class stash:
-    """The command to stash a skip tensor::
+    """The command to stash a skip tensor.
+
+    ::
 
         def forward(self, input):
             yield stash('name', input)
             return f(input)
+
+    Args:
+        name (str): name of skip tensor
+        input (torch.Tensor or None): tensor to pass to the skip connection
 
     """
     __slots__ = ('name', 'tensor')
@@ -259,11 +311,19 @@ class stash:
 
 
 class pop:
-    """The command to pop a skip tensor::
+    """The command to pop a skip tensor.
+
+    ::
 
         def forward(self, input):
             skip = yield pop('name')
             return f(input) + skip
+
+    Args:
+        name (str): name of skip tensor
+
+    Returns:
+        the skip tensor previously stashed by another layer under the same name
 
     """
     __slots__ = ('name',)
@@ -275,13 +335,35 @@ class pop:
 def verify_skippables(module: nn.Sequential) -> None:
     """Verifies if the underlying skippable modules satisfy integrity.
 
-    Every skip tensor must has only one pair of ``stash`` and ``pop``. If there
-    are one or more unmatched pairs, it will raise :exc:`TypeError` with
+    Every skip tensor must have only one pair of `stash` and `pop`. If there
+    are one or more unmatched pairs, it will raise :exc:`TypeError` with the
     detailed messages.
+
+    Here are a few failure cases. :func:`verify_skippables` will report failure
+    for these cases::
+
+        # Layer1 stashes "1to3".
+        # Layer3 pops "1to3".
+
+        nn.Sequential(Layer1(), Layer2())
+        #               └──── ?
+
+        nn.Sequential(Layer2(), Layer3())
+        #                   ? ────┘
+
+        nn.Sequential(Layer1(), Layer2(), Layer3(), Layer3())
+        #               └───────────────────┘       ^^^^^^
+
+        nn.Sequential(Layer1(), Layer1(), Layer2(), Layer3())
+        #             ^^^^^^      └───────────────────┘
+
+    To use the same name for multiple skip tensors, they must be isolated by
+    different namespaces. See :meth:`isolate()
+    <torchgpipe.skip.skippable.Skippable.isolate>`.
 
     Raises:
         TypeError:
-            one or more pairs of ``stash`` and ``pop`` are not matched.
+            one or more pairs of `stash` and `pop` are not matched.
 
     """
     stashed: Set[Tuple[Namespace, str]] = set()
