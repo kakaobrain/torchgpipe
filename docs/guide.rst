@@ -433,10 +433,10 @@ multiple skip tensors. However, there are restrictions:
 - Every skip name must be unique within a sequential module.
 - Every skip tensor must be stashed and popped exactly once.
 
-Then, how to reuse a skippable module two or more times in a sequential module?
-You can isolate some skip names into a :class:`~torch.skip.Namespace`. For
-example, a conceptual U-Net can be designed like this. There are 3 pairs of
-``Encoder`` and ``Decoder``::
+Then, how can we instantiate multiple skippable modules from the same class in
+a sequential module? You can isolate some skip names into a
+:class:`~torch.skip.Namespace`. For example, a conceptual U-Net can be designed
+like this. There are 3 pairs of ``Encoder`` and ``Decoder``::
 
    # 1F. Encoder -------- Decoder -- Segment
    #        \                /
