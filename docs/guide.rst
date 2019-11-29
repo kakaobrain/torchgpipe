@@ -92,7 +92,7 @@ single, non-divisible layer. However, it may be the case that some child is
 another sequential module and one may want to split them further.
 
 This kind of recursive split of a nested sequential module is not intended nor
-supported by :class:`~torchgpipe.GPipe`. You have the responsibility to flatten
+supported by :class:`~torchgpipe.GPipe`. It's your responsibility to flatten
 the module. Fortunately, this is not hard in PyTorch. Follow this code snippet
 which shows how a nested sequential module can be flattened::
 
