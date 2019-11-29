@@ -29,11 +29,14 @@ jobs:
         - lint tests
         - lint benchmarks/models/resnet
         - lint benchmarks/models/amoebanet
-        - lint benchmarks/models/unet3d
-        - lint benchmarks/resnet101-speed
-        - lint benchmarks/resnet101-accuracy
-        - lint benchmarks/amoebanetd-speed
+        - lint benchmarks/models/unet
         - lint benchmarks/amoebanetd-memory
+        - lint benchmarks/amoebanetd-speed
+        - lint benchmarks/resnet101-accuracy
+        - lint benchmarks/resnet101-speed
+        - lint benchmarks/unet-memory
+        - lint benchmarks/unet-speed
+        - lint benchmarks/unet-timeline
 
 # Test with various Python and PyTorch versions.
 install:
