@@ -1,5 +1,3 @@
-from weakref import WeakSet
-
 import pytest
 import torch
 from torch import nn
