@@ -21,7 +21,7 @@ copied entirely.
 from collections import deque
 from contextlib import contextmanager
 import threading
-from typing import Any, Callable, Deque, Generator, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Deque, Generator, List, Optional, Tuple, Union
 
 import torch
 from torch import ByteTensor, Tensor
@@ -36,11 +36,23 @@ __all__ = ['is_checkpointing', 'is_recomputing']
 
 Tensors = Tuple[Tensor, ...]
 TensorOrTensors = Union[Tensor, Tensors]
-Function = Callable[[TensorOrTensors], TensorOrTensors]
 
 # Types for shared memory between Checkpoint and Recompute.
 Recomputed = Tuple[TensorOrTensors, Tensors]         # (output, input_leaf)
 RNGStates = Tuple[ByteTensor, Optional[ByteTensor]]  # (cpu_rng_state, gpu_rng_state)
+
+
+if TYPE_CHECKING:
+    from typing_extensions import Protocol
+else:
+    Protocol = object
+
+
+# Protocol with __call__ instead of Callable can be used as an attribute type.
+# See: https://github.com/python/mypy/issues/708#issuecomment-561735949
+class Function(Protocol):
+    def __call__(self, input: TensorOrTensors) -> TensorOrTensors:
+        ...
 
 
 def checkpoint(function: Function, input: TensorOrTensors) -> TensorOrTensors:
@@ -167,13 +179,7 @@ class Context:
     """
     recomputed: Deque[Recomputed]
     rng_states: Deque[RNGStates]
-
-    # NOTE(sublee): 'function' cannot be annotated with 'Function' because mypy
-    # infers this attribute as an instance method. That's why this is annotated
-    # with 'Any' instead.
-    # See: https://github.com/python/mypy/issues/708.
-    function: Any
-
+    function: Function
     input_atomic: bool
 
     saved_tensors: Tuple[Tensor, ...]
