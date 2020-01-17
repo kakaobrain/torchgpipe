@@ -13,11 +13,6 @@ class Function:
     @staticmethod
     def backward(ctx: Any, *grad_outputs: Any) -> Any: ...
 
-#MODIFIED BY TORCHGPIPE
-    @staticmethod
-    def apply(*args: Any, **kwargs: Any) -> Any: ...
-#END
-
 class NestedIOFunction(Function):
     # The 'type: ignore' statements are needed here because these functions are declared as '@staticmethod' in the
     # superclass (Function) but are instance methods here, which mypy reports as incomptabile.

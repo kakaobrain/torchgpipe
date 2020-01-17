@@ -13,14 +13,8 @@ class _BatchNorm(Module):
     weight: Parameter = ...
     bias: Parameter = ...
 
-#MODIFIED BY TORCHGPIPE
-    running_mean: Tensor
-    running_var: Tensor
-    num_batches_tracked: Tensor
-
-    def __init__(self, num_features: int, eps: float = ..., momentum: Optional[float] = ..., affine: bool = ...,
+    def __init__(self, num_features: int, eps: float = ..., momentum: float = ..., affine: bool = ...,
                  track_running_stats: bool = ...) -> None: ...
-#END
 
     def reset_running_stats(self) -> None: ...
 

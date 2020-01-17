@@ -1,5 +1,5 @@
 from .module import Module
-from typing import Any, Optional, Union, overload, TypeVar, Iterable, Tuple, Mapping
+from typing import Any, Optional, Union, overload, TypeVar, Iterable, Tuple, Mapping, Iterator
 from collections import OrderedDict
 from ... import Tensor
 from .. import Parameter
@@ -31,14 +31,9 @@ class Sequential(Module):
 
     def __len__(self) -> int: ...
 
-#MODIFIED BY TORCHGPIPE
-    TensorOrTensors = Union[Tensor, Tuple[Tensor, ...]]
-    def forward(self, input: TensorOrTensors) -> TensorOrTensors: ...  # type: ignore
-    def __call__(self, input: TensorOrTensors) -> TensorOrTensors: ...  # type: ignore
+    def forward(self, input: Tensor) -> Tensor: ...  # type: ignore
 
-    from typing import Iterator
-    def __iter__(self) -> Iterator[Module]: ...
-#END
+    def __call__(self, input: Tensor) -> Tensor: ...  # type: ignore
 
 
 class ModuleList(Module):
@@ -56,7 +51,7 @@ class ModuleList(Module):
 
     def __len__(self) -> int: ...
 
-    def __iter__(self) -> Iterable[Module]: ...
+    def __iter__(self) -> Iterator[Module]: ...
 
     def __iadd__(self: T, modules: Iterable[Module]) -> T: ...
 
@@ -78,7 +73,7 @@ class ModuleDict(Module):
 
     def __len__(self) -> int: ...
 
-    def __iter__(self) -> Iterable[str]: ...
+    def __iter__(self) -> Iterator[str]: ...
 
     def __contains__(self, key: str) -> bool: ...
 
@@ -110,7 +105,7 @@ class ParameterList(Module):
 
     def __len__(self) -> int: ...
 
-    def __iter__(self) -> Iterable[Parameter]: ...
+    def __iter__(self) -> Iterator[Parameter]: ...
 
     def __iadd__(self: T, parameters: Iterable[Parameter]) -> T: ...
 
@@ -132,7 +127,7 @@ class ParameterDict(Module):
 
     def __len__(self) -> int: ...
 
-    def __iter__(self) -> Iterable[str]: ...
+    def __iter__(self) -> Iterator[str]: ...
 
     def __contains__(self, key: str) -> bool: ...
 

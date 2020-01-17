@@ -31,7 +31,7 @@ class Module(Generic[T_co]):
 
     def apply(self: T, fn: Callable[['Module'], None]) -> T: ...
 
-    def cuda(self: T, device: Union[int, device]) -> T: ...
+    def cuda(self: T, device: Optional[Union[int, device]] = ...) -> T: ...
 
     def cpu(self: T) -> T: ...
 
@@ -94,10 +94,6 @@ class Module(Generic[T_co]):
 
     def named_modules(self, memo: Optional[Set['Module']] = ..., prefix: str = ...) -> Iterator[
         Tuple[str, 'Module']]: ...
-
-#MODIFIED BY TORCHGPIPE
-    training: bool
-#END
 
     def train(self: T, mode: bool = ...) -> T: ...
 

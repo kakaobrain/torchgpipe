@@ -1,3 +1,0 @@
-#MODIFIED BY TORCHGPIPE
-def version() -> int: ...
-#END
