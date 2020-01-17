@@ -31,9 +31,14 @@ class Sequential(Module):
 
     def __len__(self) -> int: ...
 
-    def forward(self, input: Tensor) -> Tensor: ...  # type: ignore
+#MODIFIED BY TORCHGPIPE
+    TensorOrTensors = Union[Tensor, Tuple[Tensor, ...]]
+    def forward(self, input: TensorOrTensors) -> TensorOrTensors: ...  # type: ignore
+    def __call__(self, input: TensorOrTensors) -> TensorOrTensors: ...  # type: ignore
 
-    def __call__(self, input: Tensor) -> Tensor: ...  # type: ignore
+    from typing import Iterator
+    def __iter__(self) -> Iterator[Module]: ...
+#END
 
 
 class ModuleList(Module):

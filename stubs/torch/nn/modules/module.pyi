@@ -104,3 +104,7 @@ class Module(Generic[T_co]):
     def share_memory(self: T) -> T: ...
 
     def extra_repr(self) -> str: ...
+
+#MODIFIED BY TORCHGPIPE
+    training: bool
+#END
