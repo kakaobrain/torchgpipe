@@ -8,8 +8,8 @@ class _LRScheduler:
 #MODIFIED BY TORCHGPIPE
     from typing import List
     def get_lr(self) -> List[float]: ...
+    def step(self, epoch: Optional[int] = ...) -> None: ...
 #END
-    def step(self, epoch: Optional[int]) -> None: ...
 
 class LambdaLR(_LRScheduler):
 #MODIFIED BY TORCHGPIPE
