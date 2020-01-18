@@ -44,3 +44,7 @@ from .rnn import GRU as GRU, GRUCell as GRUCell, LSTM as LSTM, LSTMCell as LSTMC
 from .sparse import Embedding as Embedding, EmbeddingBag as EmbeddingBag
 from .upsampling import Upsample as Upsample, UpsamplingBilinear2d as UpsamplingBilinear2d, \
     UpsamplingNearest2d as UpsamplingNearest2d
+
+#MODIFIED BY TORCHGPIPE
+from .modules.flatten import Flatten as Flatten
+#END

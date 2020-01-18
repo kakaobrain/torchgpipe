@@ -4,7 +4,3 @@ from .parallel import DataParallel as DataParallel
 from . import init as init
 from . import utils as utils
 from . import functional as functional
-
-#MODIFIED BY TORCHGPIPE
-from .modules.flatten import Flatten
-#END
