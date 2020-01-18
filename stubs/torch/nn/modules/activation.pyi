@@ -100,6 +100,11 @@ class GLU(Module):
     def __call__(self, input: Tensor) -> Tensor: ...  # type: ignore
 
 
+class GELU(Module):
+    def forward(self, input: Tensor) -> Tensor: ...  # type: ignore
+    def __call__(self, input: Tensor) -> Tensor: ...  # type: ignore
+
+
 class Hardshrink(Module):
     lambd: float = ...
 

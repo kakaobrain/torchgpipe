@@ -244,6 +244,7 @@ class GPipe(Module):
         if devices is None:
             devices = range(torch.cuda.device_count())
         devices = [torch.device(d) for d in devices]
+        devices = cast(List[torch.device], devices)
 
         try:
             self.partitions, self.balance, self.devices = split_module(module, balance, devices)
