@@ -177,11 +177,11 @@ torchgpipe 프로젝트는 [카카오브레인][]의 [이흥섭][], [정명룡][
 해당 라이브러리를 연구용으로 사용할 경우, 아래 BibTeX 링크를 인용해야 합니다.
 
 ```
-@misc{torchgpipe,
-  author       = {Lee, Heungsub and Jeong, Myungryong and Kim, Chiheon and
-                  Lim, Sungbin and Kim, Ildoo and Baek, Woonhyuk and Yoon, Boogeon},
-  title        = {torchgpipe, {A} {GPipe} implementation in {PyTorch}},
-  howpublished = {\url{https://github.com/kakaobrain/torchgpipe}},
-  year         = {2019}
+@article{kim2020torchgpipe,
+    title={torchgpipe: On-the-fly Pipeline Parallelism for Training Giant Models},
+    author={Chiheon Kim and Heungsub Lee and Myungryong Jeong and Woonhyuk Baek and Boogeon Yoon and Ildoo Kim and Sungbin Lim and Sungwoong Kim},
+    year={2020},
+    eprint={2004.09910},
+    archivePrefix={arXiv}
 }
 ```
