@@ -63,10 +63,10 @@ If you apply this library to any project and research, please cite our code:
 
 .. sourcecode:: bibtex
 
-   @misc{torchgpipe,
-     author       = {Lee, Heungsub and Jeong, Myungryong and Kim, Chiheon and
-                     Lim, Sungbin and Kim, Ildoo and Baek, Woonhyuk and Yoon, Boogeon},
-     title        = {torchgpipe, {A} {GPipe} implementation in {PyTorch}},
-     howpublished = {\url{https://github.com/kakaobrain/torchgpipe}},
-     year         = {2019}
+   @article{kim2020torchgpipe,
+       title={torchgpipe: On-the-fly Pipeline Parallelism for Training Giant Models},
+       author={Chiheon Kim and Heungsub Lee and Myungryong Jeong and Woonhyuk Baek and Boogeon Yoon and Ildoo Kim and Sungbin Lim and Sungwoong Kim},
+       year={2020},
+       eprint={2004.09910},
+       archivePrefix={arXiv}
    }

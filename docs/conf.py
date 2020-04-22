@@ -81,6 +81,7 @@ html_theme_options = {
 
     'extra_nav_links': {
         'Source Code': 'https://github.com/kakaobrain/torchgpipe',
+        'Technical Report': 'https://arxiv.org/abs/2004.09910',
         'Original Paper': 'https://arxiv.org/abs/1811.06965',
     },
 }
