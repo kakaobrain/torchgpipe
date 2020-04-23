@@ -12,8 +12,8 @@ def test_inplace_on_requires_grad():
     x = torch.rand(1)
     y = model(x)
 
-    message = 'a leaf Variable that requires grad has been used in an in-place operation.'
-    with pytest.raises(RuntimeError, match=message):
+    match = 'a leaf Variable that requires grad (is being|has been) used in an in-place operation.'
+    with pytest.raises(RuntimeError, match=match):
         y.backward()
 
 
@@ -27,8 +27,8 @@ def test_inplace_on_not_requires_grad():
     x = torch.rand(1)
     y = model(x)
 
-    message = 'a leaf Variable that requires grad has been used in an in-place operation.'
-    with pytest.raises(RuntimeError, match=message):
+    match = 'a leaf Variable that requires grad (is being|has been) used in an in-place operation.'
+    with pytest.raises(RuntimeError, match=match):
         y.backward()
 
 
