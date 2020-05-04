@@ -2,7 +2,7 @@ from collections import deque
 from contextlib import contextmanager
 import multiprocessing as mp
 import subprocess
-from typing import Dict, Generator, List, cast
+from typing import Dict, Generator, List
 
 
 def collect_gpu_utils(device_ids: List[int]) -> List[int]:
@@ -48,7 +48,6 @@ def track_gpu_utils(device_ids: List[int],
                     ) -> Generator[List[float], None, None]:
     # Spawn a worker.
     ctx = mp.get_context('spawn')
-    ctx = cast(mp.context.DefaultContext, ctx)
     conn, conn_worker = ctx.Pipe(duplex=True)
     p = ctx.Process(target=_worker, args=(device_ids, interval, conn_worker))
     p.start()
