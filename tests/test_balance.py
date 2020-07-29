@@ -141,8 +141,8 @@ def test_layerwise_sandbox(device):
         assert layer.training
         assert all(p.device.type == device for p in layer.parameters())
 
-    assert all(not l.training for l in model)
-    assert all(p.device.type == 'cpu' for p in model.parameters())
+    assert all(not layer.training for layer in model)
+    assert all(param.device.type == 'cpu' for param in model.parameters())
 
 
 @pytest.mark.parametrize('device', devices)
