@@ -1,10 +1,13 @@
 Changelog
 =========
 
-v0.0.6 (WIP)
+v0.0.6
 ~~~~~~
 
-Not released yet.
+Released on July 29, 2020.
+
+- Updated docs.
+- Added support for PyTorch 1.5.
 
 v0.0.5
 ~~~~~~
