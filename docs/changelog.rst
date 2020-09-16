@@ -4,7 +4,7 @@ Changelog
 v0.0.7
 ~~~~~~
 
-- Changed license to BSD-3-Clause License.
+Changed the license to BSD-3-Clause.
 
 v0.0.6
 ~~~~~~

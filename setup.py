@@ -55,7 +55,7 @@ setup(
 
     version=version,
 
-    license='BSD-3-Clause License',
+    license='BSD-3-Clause',
     url='https://github.com/kakaobrain/torchgpipe',
     author='Kakao Brain',
     maintainer='Heungsub Lee, Myungryong Jeong, Chiheon Kim',
