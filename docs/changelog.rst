@@ -4,6 +4,8 @@ Changelog
 v0.0.7
 ~~~~~~
 
+Released on September 18, 2020.
+
 Changed the license to BSD-3-Clause.
 
 v0.0.6
