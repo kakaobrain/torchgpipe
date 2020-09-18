@@ -48,7 +48,7 @@ Authors and Licensing
 
 This project is developed by `Heungsub Lee`_, `Myungryong Jeong`_, and `Chiheon
 Kim`_ at `Kakao Brain`_, with `Sungbin Lim`_, `Ildoo Kim`_, `Woonhyuk Baek`_,
-and `Boogeon Yoon`_'s help. It is distributed under Apache License 2.0.
+and `Boogeon Yoon`_'s help. It is distributed under the 3-clause BSD license.
 
 .. _Heungsub Lee: https://subl.ee/
 .. _Myungryong Jeong: https://github.com/mrJeong

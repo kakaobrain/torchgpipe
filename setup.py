@@ -55,7 +55,7 @@ setup(
 
     version=version,
 
-    license='Apache License 2.0',
+    license='BSD-3-Clause',
     url='https://github.com/kakaobrain/torchgpipe',
     author='Kakao Brain',
     maintainer='Heungsub Lee, Myungryong Jeong, Chiheon Kim',
@@ -77,7 +77,7 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: Apache Software License',
+        'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',

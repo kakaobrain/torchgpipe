@@ -174,8 +174,8 @@ APIs are subject to change without warning until v0.1.0.
 
 torchgpipe project is developed by [Heungsub Lee][], [Myungryong Jeong][], and
 [Chiheon Kim][] at [Kakao Brain][], with [Sungbin Lim][], [Ildoo Kim][],
-[Woonhyuk Baek][], and [Boogeon Yoon][]'s help. It is distributed under [Apache
-License 2.0](LICENSE).
+[Woonhyuk Baek][], and [Boogeon Yoon][]'s help. It is distributed under [the 3-clause
+BSD license](LICENSE).
 
 [Kakao Brain]: https://kakaobrain.com/
 [Heungsub Lee]: https://subl.ee/
